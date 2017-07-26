@@ -2,7 +2,7 @@
 Sidekick
 ========
 
-Sidekick is a nice helpful friend that gives you functional superpowers.
+Sidekick is a helpful library that gives you functional superpowers.
 It implements a few utility functions and types that make functional programming 
 more pleasant in Python. It is designed to be used alone or in conjunction with other 
 functional programming libraries such as toolz, funcy, and Pyrsistent.
@@ -15,7 +15,7 @@ If you are lazy, simply import everything and start to play ;)
 Function composition
 ====================
 
-Heavyly functional in Python code often becomes an ugly unholy mess:
+Heavily functional in Python code quickly becomes an unholy mess:
 
 >>> print(
 ...     '\n'.join(
@@ -55,14 +55,14 @@ Let us unpack all those commands.
 
 **Function pipelines**
 
-Meet the function pipeline operator ``>>``. It is used to compose 
-functions to form a pipeline where one function passes its results to be 
+The function pipeline operator ``>>`` is used to compose 
+functions to form a pipeline where each function passes its results to be 
 consumed by the next. Hence,
 
 >>> pipeline = f1 >> f2 >> f3 >> ...
   
 is a function pipeline that calls ``f1()``, than pass the result to ``f2()``, 
-which goes to ``f3()`` and so one. The code above is equivalent to the nested 
+which goes to ``f3()``, and so on. The code above is equivalent to the nested 
 function definition:
 
 >>> pipeline = lambda x: ...(f3(f2(f1(x))))
@@ -87,9 +87,9 @@ self-contained example:
 >>> safe_sqrt(-4)
 2.0
 
-In the code bellow, the argument is passed first to the abs() function which 
-then redirects it to the sqrt(). The order the operators appear is the same 
-order in which the functions are processed.
+In the code above, the argument is passed first to the abs() function and then 
+is redirected it to the sqrt(). The order the operators appear is the same 
+order in which the functions are applied.
 
 The pipeline can also be constructed backwards, reading right to left:
 
@@ -98,7 +98,7 @@ The pipeline can also be constructed backwards, reading right to left:
 2.0
 
 In either case, the argument flows in the same direction that the pipeline 
-operator points to. Try to read it as an arrow that tells to where the 
+operator points to. Try to read it as an arrow that tells the direction 
 information flows. 
 
 
@@ -128,7 +128,7 @@ finally passes the result to f3.
 
 **Recapitulation**
 
-Let us recap:
+Let us recap. Remember the code we started with: 
 
 >>> print(
 ...     os.getcwd() | fn
@@ -140,7 +140,7 @@ Let us recap:
 ...         >> '\n'.join
 ... )
 
-Now it is not a foreign language anymore. This code starts with the current 
+This should not be a foreign language anymore. This line of code reads the current 
 working dir returned by os.getcwd() than passes it through a series of 
 transformations:
 
@@ -148,7 +148,7 @@ transformations:
 2. Select files with the '.py' extension using a quick lambda (more later...)
 3. Sort files by name using casefold to normalize
 4. Enumerate the sorted list
-5. Maps all items with in the ``"idx) filename'`` format.
+5. Maps all items to be a string in the ``"idx) filename'`` format.
 6. Join the list of files with new lines
 7. Finally, pass the result to the print function.    
 
@@ -169,9 +169,9 @@ variable definitions.
 Partial application
 ===================
 
-The fn object can be used as a decorator in order to enable quite a few 
-functional superpowers. We mentioned the pipeline and filter operators, but
-there are a few more surprises.
+The fn object can be used as a decorator to give regular functions 
+superpowers. We already mentioned the pipeline and filter operators. Let us see
+what else it can give us.
 
 Consider the function::
 
@@ -179,25 +179,27 @@ Consider the function::
     def g(x, y, z):
         return (x, y, z)
 
-``g`` can now be used as a filter or as a part of a pipeline. The fn decorator
-also enable a few methods for partial function application. Like normal Python
-functions, fn-functions use parenthesis to make call. If a function is called
-with square brackets, it defines a partial application:
+The function ``g`` can now be used as a filter or as a part of a pipeline. 
+Like normal Python functions, fn-functions also use parenthesis to make call. 
+If a function is called with square brackets, however, it makes a partial 
+application:
 
 >>> g2 = g[1, 2]
 >>> g2(3)
 (1, 2, 3)
 
-By default, partially application respect a auto-currying semantics. We decided to
-not make currying the default behavior for standard function calls to fn-functions 
-since currying can be very confusing on languages that support a variable number
-of arguments such as Python. (Autocurrying is the process in which a function 
-that do not receive all required arguments simply return another function that 
-receives the missing ones. It is an attempt to mimick real currying on languages
-that support functions with multiple arguments).
+By default, partial application respect a auto-currying semantics. We decided to
+not make currying the default behavior for standard function calls since 
+currying can be confusing on languages that support a variable number
+of arguments such as Python. If you never heard this name, autocurrying is the 
+process in which a function that do not receive all required arguments simply 
+return another function that receives the missing ones. It is an attempt to 
+mimick the behavior of curried programming languages define only single-argument
+functions (in those languages, e.g., Haskell, a function of two variables is
+a function of a single variable that returns another function of one variable).
 
-Sidekick also suports a more explicit function application using the partial
-attribute of fn functions. This is required to fix keyword arguments:
+fn-functions also suports a more explicit and flexible mode of partial function 
+application:
 
 >>> g.partial(1, y=2)
 
