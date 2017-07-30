@@ -1,6 +1,7 @@
 import operator as op
 from functools import partial
 
+from .adt import opt
 from .operators import (
     UNARY, BINARY, COMPARISON, METHODS, KEYWORDS, SYMBOLS
 )
@@ -10,9 +11,41 @@ from .bare_functions import identity, flip
 #
 # AST node types
 #
-OP = 'op'
-OP_SINGLE = 'op-single'
-CALL = 'call'
+class Ast( opt.BinOp(callable, object, object) 
+         | opt.SingleOp(callable, object) 
+         | opt.Call(object, tuple, dict) 
+         | opt.GetAttr(object, str)
+         | opt.Placeholder(int) ):
+    """
+    AST node for a placeholder expression.
+    """
+
+    def source(self):
+        return ast_source(self)
+
+
+ast_source = Ast.match_fn(
+    placeholder=lambda n:
+        '_' * n,
+
+    binop=lambda op, lhs, rhs:
+        '%s %s %s' % (lhs.source(), op_symbol(op), rhs.source()),
+
+    singleop=lambda op, obj:
+        '%s %s' % (op_symbol(op), obj.source()),
+
+    call=lambda obj, args, kwargs:
+        '%s(*%s, **%s)' % (obj, args, kwargs),
+
+    getattr=lambda attr, obj:
+        '%s.%s' % (obj, attr),
+)
+
+BinOp = Ast.BinOp
+SingleOp = Ast.SingleOp
+Call = Ast.Call
+GetAttr = Ast.GetAttr
+Placeholder = Ast.Placeholder
 
 
 #
@@ -39,7 +72,7 @@ def unary(op):
         else:
             f = self._acc
             acc = lambda x: op(f(x)) 
-        ast = (OP_SINGLE, op, self)
+        ast = SingleOp(op, self)
         return placeholder(ast, acc)
 
     method.__name__ = name
@@ -65,7 +98,7 @@ def binary(op):
         else:
             f = self._acc
             acc = lambda x: op(f(x), other) 
-        ast = (OP, op, self, other)
+        ast = BinOp(op, self, other)
         return placeholder(ast, acc)
     
     method.__name__ = name
@@ -81,7 +114,7 @@ def rbinary(op):
         else:
             f = self._acc
             acc = lambda x: op(other, f(x)) 
-        ast = (OP, op, other, self)
+        ast = BinOp(op, other, self)
         return placeholder(ast, acc)
     
     method.__name__ = name
@@ -111,25 +144,23 @@ class placeholder:
         return self.__repr__()
 
     def __repr__(self):
-        ast = self._ast
-        if ast is None:
+        if self._ast is None:
             return '_'
-
-        head = ast[0]
-        if head is OP:
-            op = op_symbol(ast[1]) 
-            return '(%r%s%r)' % (ast[2], op, ast[3])
-        elif head is OP_SINGLE:
-            raise NotImplementedError
-        else:
-            return '<quick lambda>'
+        return self._ast.source()
 
     def __getattr__(self, attr):
+        ast = self._ast
+        if ast.getattr:
+            obj, parent_attr = ast.getattr_args
+            attr = '%s.%s' % (parent_attr, attr)
+            ast = GetAttr(obj, attr)
+        else:
+            ast = GetAttr(ast, attr)
         acc = op.attrgetter(attr)
-        return placeholder((OP, op.attrgetter, attr, self), acc)
+        return placeholder(ast, acc)
 
     def __call__(self, *args, **kwargs):
-        ast = (CALL, self._ast, args, kwargs)
+        ast = Call(self._ast, args, kwargs)
         func = self._acc
         acc = lambda x: \
             func(x)(
@@ -140,12 +171,13 @@ class placeholder:
             )
         return placeholder(ast, acc)
 
+
 def F(func, *args, **kwargs):
     """
     A helper object that can be used to define function calls on a placeholder
     object.
     """
-    ast = (CALL, func, args, kwargs)
+    ast = Call(func, args, kwargs)
     acc = lambda x: \
         func(
             *((e._acc(x) if isinstance(e, placeholder) else e) 
@@ -183,4 +215,4 @@ def op_symbol(op):
 #
 # The placeholder symbol
 #
-_ = placeholder(None, identity)
+_ = placeholder(Ast.Placeholder(1), identity)

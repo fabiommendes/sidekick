@@ -27,8 +27,8 @@ setup(
     version=version,
     author='Fábio Macêdo Mendes',
     author_email='fabiomacedomendes@gmail.com',
-    url='',
-    description='A short description for your project.',
+    url='https://github.com/fabiommendes/sidekick/',
+    description='A library that gives you functional superpowers.',
     long_description=codecs.open('README.rst', 'rb', 'utf8').read(),
 
     # Classifiers (see https://pypi.python.org/pypi?%3Aaction=list_classifiers)
@@ -53,6 +53,8 @@ setup(
     extras_require={
         'dev': [
             'python-boilerplate[dev]',
+            'pytest-cov',
+            'invoke',
         ],
     },
 

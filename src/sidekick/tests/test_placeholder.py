@@ -1,4 +1,4 @@
-from sidekick import _, fn, op, F
+from sidekick import _, fn, op, F, record
 
 
 class TestPlaceholder:
@@ -42,4 +42,10 @@ class TestPlaceholder:
         f = fn(F(abs, _))
         assert f(-1) == 1
 
-        
+    def test_nested_attribute_access(self):
+        x = record(foo=record(bar=42))
+
+        assert fn(_.foo.bar == 42)(x) is True
+        assert fn(_.foo.bar == 40)(x) is False
+        assert fn(_.foo.bar.bit_length())(x) == 6
+                    
