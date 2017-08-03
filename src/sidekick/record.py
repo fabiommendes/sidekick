@@ -97,7 +97,9 @@ def _update_namespace(cls, ns):
     """
     
     fields = [(k, v) for k, v in ns.items() if isinstance(v, field)]
-    return dict(
+    methods = {k: v for k, v in ns.items() if not isinstance(v, field)}
+
+    namespace = dict(
         # Meta information
         _fields=fields,
         _fields_map=dict(fields),
@@ -124,10 +126,8 @@ def _update_namespace(cls, ns):
         _values=lambda self: (getattr(self, x) for x in self._iter()),
         _items=lambda self: zip(self._keys(), self._values()),
         _get=lambda self, attr, default=None: getattr(self, attr, default),
-
-        # Complete the namespace
-        **{k: v for k, v in ns.items() if not isinstance(v, field)},
     )
+    return dict(namespace, **methods)
 
 
 def _init_function_factory(fields):

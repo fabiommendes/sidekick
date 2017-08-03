@@ -1,7 +1,5 @@
-import inspect
-from functools import partial, wraps
+from functools import partial
 
-from .bare_functions import identity, flip
 from .placeholder import placeholder, _
 
 
@@ -12,12 +10,12 @@ def prop_delegate(name, default):
         fget = lambda self: getattr(self._, name, default())
     else:
         fget = lambda self: getattr(self._, name, default)
-    return property(fget) 
+    return property(fget)
 
 
 class fnMeta(type):
     "Metaclass for the fn type"
-    
+
     def __rshift__(self, other):
         return fn(other)
 
@@ -32,7 +30,12 @@ class fnMeta(type):
         """
         Construct a curried fn function.
         """
-        return cls(curry(func))
+        try:
+            curry = cls._curry
+        except AttributeError:
+            from .lib_functions import curry
+            cls._curry = curry
+        return fn(curry(func))
 
 
 class fn(metaclass=fnMeta):
@@ -79,15 +82,15 @@ class fn(metaclass=fnMeta):
         if not isinstance(item, tuple):
             item = item,
         return self.partial(*item)
-        
+
     # Make fn-functions behave nicely as methods
     def __get__(self, instance, cls=None):
         if instance is None:
             return self
         else:
             return partial(self._, instance)
-    
-    # Function attributes
+
+    # Function attributes and introspection
     __name__ = prop_delegate('__name__', 'lambda')
     __annotations__ = prop_delegate('__annotations__', dict)
     __closure__ = prop_delegate('__closure__', None)
@@ -98,6 +101,9 @@ class fn(metaclass=fnMeta):
     __module__ = prop_delegate('__module__', '')
     __doc__ = prop_delegate('__doc__', None)
 
+    def __getattr__(self, attr):
+        return getattr(self._, attr)
+
     # Public methods
     def partial(self, *args, **kwargs):
         """
@@ -105,52 +111,36 @@ class fn(metaclass=fnMeta):
         applied.
         """
         args_placeholder = \
-            any(isinstance(x, placeholder) for x in args) 
+            any(isinstance(x, placeholder) for x in args)
         kwargs_placeholder = \
             any(isinstance(x, placeholder) for x in kwargs.values())
 
         # Simple partial application with no placeholders
         if not (args_placeholder or kwargs_placeholder):
             return fn(partial(self._, *args, **kwargs))
-        
+
         elif not kwargs_placeholder:
             func = self._
             return fn(lambda x: \
-                func(*((x if e is _ else e) for e in args), **kwargs)
-            )
+                          func(*((x if e is _ else e) for e in args), **kwargs)
+                      )
 
         elif not args_placeholder:
             func = self._
             return fn(lambda x: \
-                func(
-                    *args, 
-                    **{k: (x if v is _ else v) for k, v in kwargs.items()}
-                )
-            )
-        
+                          func(
+                              *args,
+                              **{k: (x if v is _ else v) for k, v in
+                                 kwargs.items()}
+                          )
+                      )
+
         else:
             func = self._
             return fn(lambda x: \
-                func(
-                    *((x if e is _ else e) for e in args), 
-                    **{k: (x if v is _ else v) for k, v in kwargs.items()}
-                )
-            )
-
-
-def curry(func):
-    """
-    Return the curried version of a function.
-    """
-
-    spec = inspect.getfullargspec(func)
-    if spec.varargs or spec.varkw or spec.kwonlyargs:
-        raise TypeError('cannot curry a variadic function')
-    
-    def incomplete_factory(arity, used_args):
-        return lambda *args: (
-            func(*used_args, *args) 
-            if len(used_args) + len(args) >= arity 
-            else incomplete_factory(arity, used_args + args)
-        )
-    return incomplete_factory(len(spec.args), ())
+                          func(
+                              *((x if e is _ else e) for e in args),
+                              **{k: (x if v is _ else v) for k, v in
+                                 kwargs.items()}
+                          )
+                      )

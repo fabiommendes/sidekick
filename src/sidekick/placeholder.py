@@ -5,7 +5,8 @@ from .adt import opt
 from .operators import (
     UNARY, BINARY, COMPARISON, METHODS, KEYWORDS, SYMBOLS
 )
-from .bare_functions import identity, flip
+
+flip = lambda f: (lambda x, y: f(y, x))
 
 
 #
@@ -15,13 +16,17 @@ class Ast( opt.BinOp(callable, object, object)
          | opt.SingleOp(callable, object) 
          | opt.Call(object, tuple, dict) 
          | opt.GetAttr(object, str)
-         | opt.Placeholder(int) ):
+         | opt.Placeholder(int)
+         | opt.Cte(object) ):
     """
     AST node for a placeholder expression.
     """
 
     def source(self):
         return ast_source(self)
+
+    def __repr__(self):
+        return self.source()
 
 
 ast_source = Ast.match_fn(
@@ -39,6 +44,9 @@ ast_source = Ast.match_fn(
 
     getattr=lambda attr, obj:
         '%s.%s' % (obj, attr),
+
+    cte=lambda x:
+        repr(x),
 )
 
 BinOp = Ast.BinOp
@@ -46,7 +54,7 @@ SingleOp = Ast.SingleOp
 Call = Ast.Call
 GetAttr = Ast.GetAttr
 Placeholder = Ast.Placeholder
-
+Cte = Ast.Cte
 
 #
 # Operator factories and registration
@@ -90,15 +98,19 @@ def binary(op):
                 f = other._acc
                 acc = lambda x: op(x, f(x))
             else:
-                f = self._acc
-                acc = lambda x: op(f(x), x)
-            
-        if self is _:
-            acc = lambda x: op(x, other)
+                g = self._acc
+                f = other._acc
+                acc = lambda x: op(g(x), f(x))
+            ast = BinOp(op, self._ast, other._ast)
+        
         else:
-            f = self._acc
-            acc = lambda x: op(f(x), other) 
-        ast = BinOp(op, self, other)
+            if self is _:
+                acc = lambda x: op(x, other)
+            else:
+                f = self._acc
+                acc = lambda x: op(f(x), other)
+            ast = BinOp(op, self._ast, Cte(other))
+        
         return placeholder(ast, acc)
     
     method.__name__ = name
@@ -114,7 +126,7 @@ def rbinary(op):
         else:
             f = self._acc
             acc = lambda x: op(other, f(x)) 
-        ast = BinOp(op, other, self)
+        ast = BinOp(op, Cte(other), self._ast)
         return placeholder(ast, acc)
     
     method.__name__ = name
@@ -151,11 +163,9 @@ class placeholder:
     def __getattr__(self, attr):
         ast = self._ast
         if ast.getattr:
-            obj, parent_attr = ast.getattr_args
+            parent_attr, ast = ast.getattr_args
             attr = '%s.%s' % (parent_attr, attr)
-            ast = GetAttr(obj, attr)
-        else:
-            ast = GetAttr(ast, attr)
+        ast = GetAttr(attr, ast)
         acc = op.attrgetter(attr)
         return placeholder(ast, acc)
 
@@ -215,4 +225,4 @@ def op_symbol(op):
 #
 # The placeholder symbol
 #
-_ = placeholder(Ast.Placeholder(1), identity)
+_ = placeholder(Ast.Placeholder(1), lambda x: x)

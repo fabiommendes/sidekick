@@ -1,5 +1,4 @@
 import operator as op
-from functools import partial
 
 identity = lambda x: x
 

@@ -1,4 +1,8 @@
-import operator as op
+from .fn import fn
+from .placeholder import placeholder
+
+
+nullfunc = lambda *args, **kwargs: None
 
 
 class predicate:
@@ -6,40 +10,89 @@ class predicate:
     A predicate function.
     """
 
-    __slots__ = ('fn',)
-    __name__ = property(lambda x: x.fn.__name__)
+    __slots__ = ('_', '__dict__')
 
     def __init__(self, function):
-        self.fn = function
+        if isinstance(function, (fn, placeholder, predicate)):
+            function = function._
+        self._ = function
 
     def __call__(self, x):
-        return self.fn(x)
+        return bool(self._(x))
 
     def __or__(self, other):
-        other = self._other_fn
-        return predicate(lambda x: self.fn(x) or other(x))
-
-    def __ror__(self, other):
-        other = self._other_fn
-        return predicate(lambda x: other(x) or self.fn(x))
+        f = self._
+        other = _other_pred(other)
+        return predicate(lambda x: f(x) or other(x))
 
     def __and__(self, other):
-        other = self._other_fn
-        return predicate(lambda x: self.fn(x) and other(x))
+        f = self._
+        other = _other_pred(other)
+        return predicate(lambda x: f(x) and other(x))
 
-    def __rand__(self, other):
-        other = self._other_fn
-        return predicate(lambda x: other(x) and self.fn(x))
+    def __invert__(self):
+        f = self._
+        return predicate(lambda x: not f(x))
 
-    def __not__(self):
-        other = self._other_fn
-        return predicate(op.not_(self.fn))
-
-    @staticmethod
-    def _other_fn(other):
-        return other.fn if isinstance(other, predicate) else other
+    def __getattr__(self, attr):
+        return getattr(self._, attr)
 
 
+class cond:
+    """
+    Conditional pipeline.
+
+    It creates a function that takes a predicate and a true and false
+    branches. The resulting function executes either branch depending on the
+    value of the predicate.
+    """
+
+    def __init__(self, predicate, true=nullfunc, false=nullfunc):
+        self.predicate = predicate
+        self._true = true
+        self._false = false
+
+    def __call__(self, x):
+        if self.predicate(x):
+            return self._true(x)
+        else:
+            return self._false(x)
+
+    def __rshift__(self, other):
+        true, false = self._true, self._false
+        return cond(
+            self.predicate,
+            lambda x: other(true(x)),
+            lambda x: other(false(x)),
+        )
+
+    def __rrshift__(self, other):
+        true, false = self._true, self._false
+        return cond(
+            self.predicate,
+            lambda x: true(other(x)),
+            lambda x: false(other(x)),
+        )
+
+    def __ror__(self, other):
+        return self(other)
+
+    def true(self, true):
+        """
+        Sets the function for the True branch of the pipeline.
+        """
+        return cond(self.predicate, true, self._false)
+
+    def false(self, false):
+        """
+        Sets the function for the False branch of the pipeline.
+        """
+        return cond(self.predicate, self._true, false)
+
+
+#
+# Predicate factories
+#
 def typeof(cls):
     """
     Return a predicate function that checks if argument is an instance of a class.
@@ -49,7 +102,16 @@ def typeof(cls):
 
 def valueof(value):
     """
-    Return a predicate function that checks if the argument is the given value. 
+    Return a predicate function that checks if the argument is equal to
+    the given value.
+    """
+    return predicate(lambda x: x == value)
+
+
+def identityof(value):
+    """
+    Return a predicate function that checks if the argument has the same
+    identity of the given value.
     """
     return predicate(lambda x: x is value)
 
@@ -69,87 +131,27 @@ def allof(*predicates):
     """
     return predicate(lambda x: all(f(x) for f in predicates))
 
-isnone = valueof(None)
-istrue = valueof(True)
-isfalse = valueof(False)
-
 
 #
+# Predicate functions
+#
+isnone = identityof(None)
+istrue = identityof(True)
+isfalse = identityof(False)
+
 # Numeric
+isodd = predicate(lambda x: x % 2 == 1)
+iseven = predicate(lambda x: x % 2 == 0)
+ispositive = predicate(lambda x: x >= 0)
+isnegative = predicate(lambda x: x <= 0)
+isnonzero = predicate(lambda x: x != 0)
+iszero = predicate(lambda x: x == 0)
+
+
 #
-isodd = lambda x: x % 2 == 1
-iseven = lambda x: x % 2 == 0
-ispositive = lambda x: x >= 0
-isnegative = lambda x: x <= 0
-isnonzero = lambda x: x != 0
-iszero = lambda x: x == 0
-
-
-class cond:
-    """
-    Conditional pipeline.
-
-    It creates a function that takes a predicate and a true and false
-    branches. The resulting function executes either branch depending on the
-    value of the predicate.
-    """
-
-    def __init__(self, predicate, true=lambda: None, false=lambda: None):
-        self.predicate = predicate
-        self._true = true
-        self._false = false
-
-    def __call__(self, x):
-        if self.predicate(x):
-            return self.true(x)
-        else:
-            return self.false(x)
-
-    def __rshift__(self, other):
-        true, false = self._true, self._false
-        return cond(
-            self.predicate, 
-            lambda x: other(true(x)), 
-            lambda x: other(false(x)),
-        )
-        
-    def __rrshift__(self, other):
-        true, false = self._true, self._false
-        return cond(
-            self.predicate, 
-            lambda x: true(other(x)), 
-            lambda x: false(other(x)),
-        )
-
-    def true(self, true):
-        """
-        Sets the function for the True branch of the pipeline.
-        """
-        return cond(self.predicate, true, self.false)
-    
-    def false(self, false):
-        """
-        Sets the function for the False branch of the pipeline.
-        """
-        return cond(self.predicate, self.true, false)
-
-
-if __name__ == __main__:
-    f = (
-        cond(isnone | isfalse)
-            .true(
-                foo >> bar >> baz
-            )
-            .false(
-                const(None)
-            )
-    )
-
-    (
-        cond(cond)
-            .true(x)
-            .false(y)
-    )
-
-    cond(cond, true=x, false=y)
-
+# Auxiliary functions
+#
+def _other_pred(x):
+    if isinstance(x, predicate):
+        return x._
+    raise TypeError('can only compose with other predicate functions')

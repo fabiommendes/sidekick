@@ -1,4 +1,3 @@
-from functools import partial
 import operator as op
 
 
@@ -32,7 +31,7 @@ class attrgetter(metaclass=AttrGetterMeta):
     __attrs__ = property(lambda x: x._attrs)
 
     def __getattr__(self, attr):
-        return attrgetter._new(*self._attrs, attr)
+        return attrgetter._new(*(self._attrs + (attr,)))
 
     def __repr__(self):
         return 'attrgetter{attrs}'.format(
@@ -75,7 +74,7 @@ class caller(metaclass=CallerMeta):
     __attrs__ = property(lambda x: x._attrs)
 
     def __getattr__(self, attr):
-        return caller._new(*self._attrs, attr)
+        return caller._new(*(self._attrs + (attr,)))
 
     def __call__(self, *args, **kwargs):
         attrs = self._attrs
