@@ -16,7 +16,7 @@ matrix:
 
 # Package installation
 install:
-  - pip install tox coveralls
+  - pip install tox codecov
 
 # Run tests
 script:
@@ -24,4 +24,4 @@ script:
 
 # Register code coverage in coveralls
 after_success:
-  coveralls
+  codecov
