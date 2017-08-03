@@ -86,8 +86,24 @@ class TestFn:
         assert g(1, 2)(3) == (1, 2, 3)
         assert g(1)(2, 3) == (1, 2, 3)
 
-    def _test_curried_fn_functions(self, g):
+    def test_curried_fn_functions(self, g):
         assert fn.curried(g)(1, 2, 3) == (1, 2, 3)
         assert fn.curried(g)(1)(2)(3) == (1, 2, 3)
         assert fn.curried(g)(1, 2)(3) == (1, 2, 3)
         assert fn.curried(g)(1)(2, 3) == (1, 2, 3)
+
+    def test_fn_accepts_attribute_assignment(self, g):
+        g = fn(g)
+        g.foo = 'foo'
+        assert g.foo == 'foo'
+
+    def test_fn_preserves_function_attributes(self):
+        def foo(x):
+            return x
+
+        foo.attr = 'foo'
+
+        g = fn(foo)
+        assert g.__name__ == 'foo'
+        assert g.attr == 'foo'
+    

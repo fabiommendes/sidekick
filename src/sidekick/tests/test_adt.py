@@ -1,4 +1,4 @@
-from sidekick import Maybe, Just, Nothing, Union, opt
+from sidekick import Maybe, Just, Nothing, Union, opt, maybe, Ok, Err, Result
 from sidekick.adt import UnionMeta
 import pytest
 
@@ -71,6 +71,14 @@ class TestADT:
     def Maybe(self):
         return opt.Just(object) | opt.Nothing
 
+    @pytest.fixture
+    def just(self, Maybe):
+        return Maybe.Just(42)
+
+    @pytest.fixture
+    def nothing(self, Maybe):
+        return Maybe.Nothing
+
     def test_adt_has_correct_type(self, Maybe):
         x = Maybe.Just(42)
         y = Maybe.Nothing
@@ -84,7 +92,13 @@ class TestADT:
         assert repr(Maybe.Just(42)) == 'Just(42)'
         assert repr(Maybe.Nothing) == 'Nothing'
 
-    
+    def test_adt_requires_correct_number_of_arguments(self, Maybe):
+        with pytest.raises(TypeError):
+            Maybe.Just(1, 2)
+
+        with pytest.raises(TypeError):
+            Maybe.Just()
+
     def test_conditionals(self, Maybe):
         x = Maybe.Just(42)
         assert x.just
@@ -159,6 +173,30 @@ class TestADT:
                 err=lambda: 0,
             )
 
+    def test_adt_matches_instance(self, Maybe):
+        a = Maybe.Just(42)
+        b = Maybe.Nothing
+
+        assert a.match(just=lambda x: x, nothing=lambda: 0) == 42
+        assert b.match(just=lambda x: x, nothing=lambda: 0) == 0
+
+    def test_adt_matches_are_exaustive(self, Maybe):
+        err = ValueError
+        f1 = lambda x: x
+        f2 = lambda x: None
+
+        with pytest.raises(err):
+            Maybe.Nothing.match(just=f1)
+
+        with pytest.raises(err):
+            Maybe.Nothing.match(nothing=f1)
+
+        with pytest.raises(err):
+            Maybe.Nothing.match(just=f1, nothing=f2, other=f2)
+
+    def test_adt_has_hash(self, Maybe):
+        assert hash(Maybe.Nothing) != hash(Maybe.Just(1))
+
 
 class TestMaybe(TestADT):
     @pytest.fixture
@@ -198,3 +236,65 @@ class TestMaybe(TestADT):
         y = Maybe.Nothing
         assert x & y == y
         assert x | y == x
+
+    def test_ok_alias_just(self, just, nothing):
+        assert just.ok is just.just
+        assert nothing.ok is nothing.just
+
+    def test_convertion_to_result(self, just, nothing):
+        assert just.to_result().ok
+        assert nothing.to_result().err
+
+    def test_thruthness(self, just, nothing):
+        assert just
+        assert not nothing
+
+    def test_maybe_function_conversions(self, Maybe):
+        assert maybe(42) == Maybe.Just(42)
+        assert maybe(None) == Maybe.Nothing
+
+    def test_logical_operations(self, just, nothing):
+        assert just | nothing == nothing | just == just
+        assert just & nothing == nothing & just == nothing
+
+
+class TestResult:
+    @pytest.fixture
+    def ok(self):
+        return Ok(42)
+
+    @pytest.fixture
+    def err(self):
+        return Err('err')
+
+    def test_result_get_value(self, ok, err):
+        assert ok.value == 42
+        assert getattr(err, 'value', None) is None
+
+    def test_result_get_error(self, ok, err):
+        assert ok.error is None
+        assert err.error == 'err'
+
+    def test_result_apply_method(self, ok, err):
+        assert Result.apply(str, ok) == Ok('42')
+        assert Result.apply(str, err) == Err('err')
+
+    def test_result_then_chaining(self, ok, err):
+        assert ok.then(str) == Ok('42')
+        assert err.then(str) == Err('err')
+
+    def test_result_map_error_chaining(self, ok, err):
+        assert ok.map_error(str.upper) == Ok(42)
+        assert err.map_error(str.upper) == Err('ERR')
+
+    def test_test_get_value_from_result(self, ok, err):
+        assert ok.get() == 42
+        assert err.get() == None
+
+    def test_to_maybe(self, ok, err):
+        assert ok.to_maybe() == Maybe.Just(42)
+        assert err.to_maybe() == Maybe.Nothing
+
+    def test_logical_operations(self, ok, err):
+        assert ok | err == err | ok == ok
+        assert ok & err == err & ok == err
