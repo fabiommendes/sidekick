@@ -446,8 +446,6 @@ we shown above, Python is an OO language and it might be more useful to define
 it as a class with a few extra methods. Sidekick's Maybe implements a few 
 extra goodies besides the plain definition.
 
-##TODO: specific documentation 
-
 
 The Result type
 ---------------
@@ -458,6 +456,6 @@ The result type (sans extensions) is defined as::
 
 Hence it has two states: Ok and Err that both can hold additional data. Result
 is a functional way to represent a computation that may fail. It is used where
-in Python one would normally use a traceback.
+in Python one would normally use an exception.
 
 ##TODO: specific documentation 

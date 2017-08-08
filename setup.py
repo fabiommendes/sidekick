@@ -48,6 +48,7 @@ setup(
             'python-boilerplate[dev]',
             'pytest-cov',
             'invoke',
+            'manuel',
         ],
     },
 
