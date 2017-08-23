@@ -18,6 +18,8 @@ docs/_build/
 build/
 dist/
 htmlcov/
+src/sidekick/parser.out
+src/sidekick/parsetab.py
 
 # Python-boilerplate auto generated files
 src/sidekick/__meta__.py

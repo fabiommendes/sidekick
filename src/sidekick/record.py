@@ -13,9 +13,10 @@ class record(SimpleNamespace):
     """
 
     def __repr__(self):
+        items = sorted(self.__dict__.items(), key=lambda x: x[0])
         return '%s(%s)' % (
             self.__class__.__name__,
-            ', '.join('%s=%r' % item for item in self.__dict__.items())
+            ', '.join('%s=%r' % item for item in items)
         )
 
     def __hash__(self):
@@ -95,7 +96,7 @@ def _update_namespace(cls, ns):
     """
     Update Record class namespace with default implementations.
     """
-    
+    assert isinstance(ns, OrderedDict)
     fields = [(k, v) for k, v in ns.items() if isinstance(v, field)]
     methods = {k: v for k, v in ns.items() if not isinstance(v, field)}
 
