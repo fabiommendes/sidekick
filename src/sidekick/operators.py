@@ -6,6 +6,7 @@ def identity(x):
 
     return x
 
+
 UNARY = [
     op.abs, op.invert, op.neg, op.pos, op.index,
 ]
@@ -18,10 +19,6 @@ BINARY = [
     op.add, op.and_, op.floordiv, op.lshift, op.mod, op.mul,
     op.pow, op.rshift, op.sub, op.truediv, op.xor,
 ]
-
-if hasattr(op, 'matmul'):  # only on Python 3.5+
-    BINARY.append(op.matmul)
-
 
 COMPARISON = [
     op.eq, op.ge, op.gt, op.le, op.lt, op.ne,
@@ -39,7 +36,6 @@ SYMBOLS = {
     op.and_: '&',
     op.floordiv: '//',
     op.lshift: '<<',
-    op.matmul: '@',
     op.mod: '%',
     op.mul: '*',
     op.pow: '**',
@@ -54,3 +50,7 @@ SYMBOLS = {
     op.lt: '<',
     op.ne: '!=',
 }
+
+if hasattr(op, 'matmul'):  # only on Python 3.5+
+    BINARY.append(op.matmul)
+    SYMBOLS[op.matmul] = '@'
