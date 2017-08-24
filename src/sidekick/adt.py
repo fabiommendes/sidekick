@@ -290,13 +290,11 @@ def _maybe_bin_op(op):
     def binop(x, y):
         if isinstance(y, Maybe):
             if x.just and y.just:
-                return Just(op(x.just_value, y.just_value))
+                return Just(op(x.value, y.value))
             else:
                 return Nothing
-        elif x.just:
-            return Just(op(x.just_value, y))
         else:
-            return Nothing
+            return NotImplemented
 
     return binop
 
@@ -403,20 +401,28 @@ class Maybe(opt.Just(object) | opt.Nothing):
     def __or__(self, other):
         if isinstance(other, Maybe):
             return self if self.just else other
-        elif isinstance(other, Result):
-            return self if self.just else other.to_maybe()
         elif other is None:
             return self
         return NotImplemented
 
+    def __ror__(self, other):
+        if other is None:
+            return self
+        else:
+            return NotImplemented
+
     def __and__(self, other):
         if isinstance(other, Maybe):
             return self if self.nothing else other
-        elif isinstance(other, Result):
-            return self if self.nothing else other.to_maybe()
         elif other is None:
             return Nothing
         return NotImplemented
+
+    def __rand__(self, other):
+        if other is None:
+            return Nothing
+        else:
+            return NotImplemented
 
 
 def maybe(obj):
@@ -451,16 +457,17 @@ Nothing = Maybe.Nothing
 
 def _result_bin_op(op):
     """
-    Creates a binary op method for a Maybe from a binary function.
-
-    It executes the function for two Just instances and propagates any Nothings.
+    Creates a binary op method for a Result from a binary function.
     """
 
     def binop(x, y):
-        if x.ok and y.ok:
-            return Ok(op(x.value, y.value))
+        if isinstance(y, Result):
+            if x.ok and y.ok:
+                return Ok(op(x.value, y.value))
+            else:
+                return y if x.ok else x
         else:
-            return y if x.ok else x
+            return NotImplemented
 
     return binop
 
@@ -575,11 +582,23 @@ class Result(opt.Ok(object) | opt.Err(object)):
             return self if self.ok else other.to_result()
         return NotImplemented
 
+    def __ror__(self, other):
+        if isinstance(other, Maybe):
+            return other.to_result() if other.just else self
+        else:
+            return NotImplemented
+
     def __and__(self, other):
         if isinstance(other, Result):
             return self if self.err else other
         elif isinstance(other, Maybe):
             return self if self.err else other.to_result()
+
+    def __rand__(self, other):
+        if isinstance(other, Maybe):
+            return other.to_result() if other.nothing else self
+        else:
+            return NotImplemented
 
     def __negate__(self, other):
         return Err(self.value) if self.ok else Ok(self.error)

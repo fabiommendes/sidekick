@@ -1,3 +1,6 @@
+.. image:: https://codecov.io/gh/fabiommendes/sidekick/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/fabiommendes/sidekick
+
 ========
 Sidekick
 ========

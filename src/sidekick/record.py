@@ -103,7 +103,7 @@ def _update_namespace(cls, ns):
     namespace = dict(
         # Meta information
         _fields=fields,
-        _fields_map=dict(fields),
+        _fields_map=OrderedDict(fields),
 
         # Creation methods
         __slots__=tuple(k for k, v in fields),

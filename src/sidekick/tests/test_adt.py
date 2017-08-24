@@ -256,6 +256,18 @@ class TestMaybe(TestADT):
     def test_logical_operations(self, just, nothing):
         assert just | nothing == nothing | just == just
         assert just & nothing == nothing & just == nothing
+        assert just | None == None | just == just
+        assert just & None == None & just == nothing
+
+    def test_maybe_binops(self, just, nothing):
+        assert (just + just).just
+        assert just + nothing == nothing
+
+    def test_maybe_function(self, just, nothing):
+        assert maybe(42) == just
+        assert maybe(None) == nothing
+        assert maybe(Ok(42)) == just
+        assert maybe(Err('foo')) == nothing
 
 
 class TestResult:
@@ -297,4 +309,10 @@ class TestResult:
 
     def test_logical_operations(self, ok, err):
         assert ok | err == err | ok == ok
+        assert ok | Nothing == ok
         assert ok & err == err & ok == err
+        assert ok & Nothing == Nothing.to_result()
+
+    def test_result_operators(self, ok, err):
+        assert ok + ok == Ok(84)
+        assert ok + err == err
