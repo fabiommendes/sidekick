@@ -4,7 +4,7 @@ from .adt import (
     Maybe, Just, Nothing, maybe,
     Result, Ok, Err, result,
 )
-from .record import Record, field, record, namespace
+from .record import Record, field, record, namespace, record_to_dict
 from .placeholder import _, F
 from .fn import fn
 from .factories import attrgetter, caller

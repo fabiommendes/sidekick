@@ -24,8 +24,8 @@ class record(SimpleNamespace):  # noqa: N801
     def __hash__(self):
         return hash(tuple(self.__dict__.values()))
 
-    def __setattribute__(self, attr, value):
-        raise TypeError('cannot set attribute: immutable type')
+    def __setattr__(self, attr, value):
+        raise AttributeError('cannot set attribute: immutable type')
 
 
 namespace = SimpleNamespace
@@ -60,7 +60,7 @@ class RecordMeta(type):
             return super().__new__(cls, name, bases, ns)
         else:
             bases = tuple(x for x in bases if x is not cls._record_base)
-            ns = _update_namespace(cls, ns)
+            ns = _update_namespace(cls, ns, mutable)
 
             if mutable:
                 del ns['__hash__']
@@ -94,7 +94,7 @@ RecordMeta._record_base = Record
 #
 # Private factory functions
 #
-def _update_namespace(cls, ns):
+def _update_namespace(cls, ns, mutable):
     """
     Update Record class namespace with default implementations.
     """
@@ -129,7 +129,12 @@ def _update_namespace(cls, ns):
         _values=lambda self: (getattr(self, x) for x in self._iter()),
         _items=lambda self: zip(self._keys(), self._values()),
         _get=lambda self, attr, default=None: getattr(self, attr, default),
+        __getstate__=lambda self: tuple(self._values()),
+        __setstate__=lambda self, state: self.__init__(*state)
     )
+
+    if not mutable:
+        namespace['__setattr__'] = record.__setattr__
     return dict(namespace, **methods)
 
 
@@ -146,13 +151,14 @@ def _init_function_factory(fields):
 
     # Body of the __init__ function
     body = '\n    '.join(
-        'self.%s = %s' % (name, name)
+        '__cls.%s.__set__(self, %s)' % (name, name)
         for name, f in fields
     )
 
     # Complete source for the __init__ function
     code = (
         'def __init__(self, {args}):\n'
+        '    __cls = self.__class__\n'
         '    {body}'
     ).format(args=args, body=body or 'pass')
 
