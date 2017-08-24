@@ -22,7 +22,6 @@ iand = fn(_.iand)
 iconcat = fn(_.iconcat)
 ifloordiv = fn(_.ifloordiv)
 ilshift = fn(_.ilshift)
-imatmul = fn(_.imatmul)
 imod = fn(_.imod)
 imul = fn(_.imul)
 index = fn(_.index)
@@ -42,8 +41,6 @@ le = fn(_.le)
 length_hint = fn(_.length_hint)
 lshift = fn(_.lshift)
 lt = fn(_.lt)
-if hasattr(_, 'matmul'):
-    matmul = fn(_.matmul)
 methodcaller = fn(_.methodcaller)
 mod = fn(_.mod)
 mul = fn(_.mul)
@@ -59,5 +56,11 @@ sub = fn(_.sub)
 truediv = fn(_.truediv)
 truth = fn(_.truth)
 xor = fn(_.xor)
+
+# Methods for Python 3.5+
+if hasattr(_, 'matmul'):
+    matmul = fn(_.matmul)
+    imatmul = fn(_.imatmul)
+
 
 del fn
