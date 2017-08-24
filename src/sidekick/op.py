@@ -38,7 +38,6 @@ itemgetter = fn(_.itemgetter)
 itruediv = fn(_.itruediv)
 ixor = fn(_.ixor)
 le = fn(_.le)
-length_hint = fn(_.length_hint)
 lshift = fn(_.lshift)
 lt = fn(_.lt)
 methodcaller = fn(_.methodcaller)
@@ -62,5 +61,7 @@ if hasattr(_, 'matmul'):
     matmul = fn(_.matmul)
     imatmul = fn(_.imatmul)
 
+if hasattr(_, 'length_hint'):
+    length_hint = fn(_.length_hint)
 
 del fn
