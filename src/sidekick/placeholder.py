@@ -193,7 +193,7 @@ def F(func, *args, **kwargs):
             *((e._acc(x) if isinstance(e, placeholder) else e) 
                 for e in args),
             **{k: (e._acc(x) if isinstance(e, placeholder) else e)
-                for k, e in kwargs.items()},
+                for k, e in kwargs.items()}
         )
     return placeholder(ast, acc)
 

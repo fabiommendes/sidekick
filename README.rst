@@ -1,5 +1,16 @@
+.. image:: https://travis-ci.org/fabiommendes/sidekick.svg?branch=master
+   :target: https://travis-ci.org/fabiommendes/sidekick
+
 .. image:: https://codecov.io/gh/fabiommendes/sidekick/branch/master/graph/badge.svg
-  :target: https://codecov.io/gh/fabiommendes/sidekick
+   :target: https://codecov.io/gh/fabiommendes/sidekick
+
+.. image:: https://codeclimate.com/github/fabiommendes/sidekick/badges/gpa.svg
+   :target: https://codeclimate.com/github/fabiommendes/sidekick
+   :alt: Code Climate
+
+.. image:: https://codeclimate.com/github/fabiommendes/sidekick/badges/issue_count.svg
+   :target: https://codeclimate.com/github/fabiommendes/sidekick
+
 
 ========
 Sidekick
