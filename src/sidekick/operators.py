@@ -1,6 +1,10 @@
 import operator as op
 
-identity = lambda x: x
+
+def identity(x):
+    "Return its single argument."
+
+    return x
 
 UNARY = [
     op.abs, op.invert, op.neg, op.pos, op.index,
@@ -28,25 +32,25 @@ KEYWORDS = [
 ]
 
 SYMBOLS = {
-    op.invert: '~', 
-    op.neg: '-', 
-    op.pos: '+', 
-    op.add: '+', 
-    op.and_: '&', 
-    op.floordiv: '//', 
-    op.lshift: '<<', 
-    op.matmul: '@', 
-    op.mod: '%', 
+    op.invert: '~',
+    op.neg: '-',
+    op.pos: '+',
+    op.add: '+',
+    op.and_: '&',
+    op.floordiv: '//',
+    op.lshift: '<<',
+    op.matmul: '@',
+    op.mod: '%',
     op.mul: '*',
-    op.pow: '**', 
-    op.rshift: '>>', 
-    op.sub: '-', 
-    op.truediv: '/', 
+    op.pow: '**',
+    op.rshift: '>>',
+    op.sub: '-',
+    op.truediv: '/',
     op.xor: '^ ',
-    op.eq: '==', 
-    op.ge: '>=', 
-    op.gt: '>', 
-    op.le: '<=', 
-    op.lt: '<', 
+    op.eq: '==',
+    op.ge: '>=',
+    op.gt: '>',
+    op.le: '<=',
+    op.lt: '<',
     op.ne: '!=',
 }

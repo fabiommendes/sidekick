@@ -1,8 +1,10 @@
 class Node:
     pass
 
+
 class Var:
     pass
+
 
 class Expr:
     pass
@@ -36,18 +38,6 @@ def compile_elm(ast):
     """
 
 
-
 _ = Var(0)
 __ = Var(1)
 ___ = Var(2)
-
-
-print(_.attr)
-print(_.method(42))
-print(_ + 42)
-print(F(abs, _))
-
-
-print(compile(_.imag)(42))
-print(compile(_.conjugate())(42))
-print(compile(_ + 40)(2))

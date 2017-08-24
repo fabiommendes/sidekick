@@ -16,7 +16,7 @@ def make_manuel_suite(ns):
 
     # Wrap function so pytest does not expect an spurious "self" fixture.
     def _wrapped(func, name):
-        wrapped = lambda: func()
+        def wrapped(): return func()
         wrapped.__name__ = name
         return wrapped
 

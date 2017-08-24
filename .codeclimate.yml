@@ -1,9 +1,6 @@
+languages:
+  python: true
 engines:
-  duplication:
-    enabled: true
-    config:
-      languages:
-      - python
   fixme:
     enabled: true
   radon:

@@ -45,7 +45,7 @@ class TestLibFunctions:
         assert f(1, 2, 3, more=4) == 42
 
     def test_curry(self):
-        f = lambda x, y, z: x + 2 * y + 3 * z
+        def f(x, y, z): return x + 2 * y + 3 * z
         g = curry(f)
         assert g(1, 2, 3) == 14
         assert g(1)(2)(3) == 14

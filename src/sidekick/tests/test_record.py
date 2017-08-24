@@ -30,7 +30,7 @@ class TestRecord:
         assert pt is not copy(pt)
         assert pt == copy(pt)
         assert hash(pt) != -1
-    
+
     def test_record_constructors(self, pt, Point):
         assert pt == Point(1, 2)
         assert pt == Point(x=1, y=2)

@@ -7,13 +7,15 @@ def prop_delegate(name, default):
     "Delegate property to the _ attribute of an fn object."
 
     if callable(default):
-        fget = lambda self: getattr(self._, name, default())
+        def fget(self):
+            return getattr(self._, name, default())
     else:
-        fget = lambda self: getattr(self._, name, default)
+        def fget(self):
+            return getattr(self._, name, default)
     return property(fget)
 
 
-class fnMeta(type):
+class fnMeta(type):  # noqa: N801
     "Metaclass for the fn type"
 
     def __rshift__(self, other):
@@ -26,7 +28,7 @@ class fnMeta(type):
             return fn(func).partial(*args)
         return fn(other)
 
-    def curried(cls, func):
+    def curried(cls, func):  # noqa: N805
         """
         Construct a curried fn function.
         """
@@ -38,7 +40,7 @@ class fnMeta(type):
         return fn(curry(func))
 
 
-class fn(metaclass=fnMeta):
+class fn(metaclass=fnMeta):  # noqa: N801
     """
     A function wrapper that enable functional programming superpowers.
     """
@@ -107,9 +109,10 @@ class fn(metaclass=fnMeta):
     # Public methods
     def partial(self, *args, **kwargs):
         """
-        Return a fn-function with all given positional and keyword arguments 
+        Return a fn-function with all given positional and keyword arguments
         applied.
         """
+
         args_placeholder = \
             any(isinstance(x, placeholder) for x in args)
         kwargs_placeholder = \
@@ -121,26 +124,26 @@ class fn(metaclass=fnMeta):
 
         elif not kwargs_placeholder:
             func = self._
-            return fn(lambda x: \
-                          func(*((x if e is _ else e) for e in args), **kwargs)
+            return fn(lambda x:
+                      func(*((x if e is _ else e) for e in args), **kwargs)
                       )
 
         elif not args_placeholder:
             func = self._
-            return fn(lambda x: \
-                          func(
-                              *args,
-                              **{k: (x if v is _ else v) for k, v in
-                                 kwargs.items()}
-                          )
+            return fn(lambda x:
+                      func(
+                          *args,
+                          **{k: (x if v is _ else v) for k, v in
+                             kwargs.items()}
+                      )
                       )
 
         else:
             func = self._
-            return fn(lambda x: \
-                          func(
-                              *((x if e is _ else e) for e in args),
-                              **{k: (x if v is _ else v) for k, v in
-                                 kwargs.items()}
-                          )
+            return fn(lambda x:
+                      func(
+                          *((x if e is _ else e) for e in args),
+                          **{k: (x if v is _ else v) for k, v in
+                             kwargs.items()}
+                      )
                       )

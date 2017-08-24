@@ -3,21 +3,23 @@ from functools import partial
 
 from .adt import opt
 from .operators import (
-    UNARY, BINARY, COMPARISON, METHODS, KEYWORDS, SYMBOLS
+    UNARY, BINARY, COMPARISON, METHODS, SYMBOLS
 )
 
-flip = lambda f: (lambda x, y: f(y, x))
+
+def flip(f):
+    return lambda x, y: f(y, x)
 
 
 #
 # AST node types
 #
-class Ast( opt.BinOp(callable, object, object) 
-         | opt.SingleOp(callable, object) 
-         | opt.Call(object, tuple, dict) 
-         | opt.GetAttr(object, str)
-         | opt.Placeholder(int)
-         | opt.Cte(object) ):
+class Ast(opt.BinOp(callable, object, object)
+          | opt.SingleOp(callable, object)
+          | opt.Call(object, tuple, dict)
+          | opt.GetAttr(object, str)
+          | opt.Placeholder(int)
+          | opt.Cte(object)):
     """
     AST node for a placeholder expression.
     """
@@ -31,22 +33,22 @@ class Ast( opt.BinOp(callable, object, object)
 
 ast_source = Ast.match_fn(
     placeholder=lambda n:
-        '_' * n,
+    '_' * n,
 
     binop=lambda op, lhs, rhs:
-        '%s %s %s' % (lhs.source(), op_symbol(op), rhs.source()),
+    '%s %s %s' % (lhs.source(), op_symbol(op), rhs.source()),
 
     singleop=lambda op, obj:
-        '%s %s' % (op_symbol(op), obj.source()),
+    '%s %s' % (op_symbol(op), obj.source()),
 
     call=lambda obj, args, kwargs:
-        '%s(*%s, **%s)' % (obj, args, kwargs),
+    '%s(*%s, **%s)' % (obj, args, kwargs),
 
     getattr=lambda attr, obj:
-        '%s.%s' % (obj, attr),
+    '%s.%s' % (obj, attr),
 
     cte=lambda x:
-        repr(x),
+    repr(x),
 )
 
 BinOp = Ast.BinOp
@@ -56,30 +58,35 @@ GetAttr = Ast.GetAttr
 Placeholder = Ast.Placeholder
 Cte = Ast.Cte
 
+
 #
 # Operator factories and registration
 #
+
+
 def register_operators(operators):
     """
     Register a list of operators.
     """
 
     def decorator(cls):
-        for op in operators:
-            setattr(cls, op.__name__, op)
+        for op_ in operators:
+            setattr(cls, op_.__name__, op_)
         return cls
+
     return decorator
 
 
 def unary(op):
     name = '__%s__' % op.__name__.rstrip('_')
-    
+
     def method(self):
         if self is _:
             acc = op
         else:
             f = self._acc
-            acc = lambda x: op(f(x)) 
+            acc = lambda x: op(f(x))
+
         ast = SingleOp(op, self)
         return placeholder(ast, acc)
 
@@ -89,7 +96,7 @@ def unary(op):
 
 def binary(op):
     name = '__%s__' % op.__name__.rstrip('_')
-    
+
     def method(self, other):
         if isinstance(other, placeholder):
             if self is _ and other is _:
@@ -101,34 +108,37 @@ def binary(op):
                 g = self._acc
                 f = other._acc
                 acc = lambda x: op(g(x), f(x))
+
             ast = BinOp(op, self._ast, other._ast)
-        
+
         else:
             if self is _:
                 acc = lambda x: op(x, other)
             else:
                 f = self._acc
                 acc = lambda x: op(f(x), other)
+
             ast = BinOp(op, self._ast, Cte(other))
-        
+
         return placeholder(ast, acc)
-    
+
     method.__name__ = name
     return method
 
 
 def rbinary(op):
     name = '__r%s__' % op.__name__.rstrip('_')
-    
+
     def method(self, other):
         if self is _:
             acc = partial(op, other)
         else:
             f = self._acc
-            acc = lambda x: op(other, f(x)) 
+            acc = lambda x: op(other, f(x))
+
         ast = BinOp(op, Cte(other), self._ast)
         return placeholder(ast, acc)
-    
+
     method.__name__ = name
     return method
 
@@ -136,7 +146,7 @@ def rbinary(op):
 @register_operators(map(unary, UNARY))
 @register_operators(map(binary, BINARY + COMPARISON + METHODS))
 @register_operators(map(rbinary, BINARY))
-class placeholder:
+class placeholder:  # noqa: N801
     """
     Placeholder objects represents a variable or expression on quick lambda.
     """
@@ -150,7 +160,7 @@ class placeholder:
     @property
     def _(self):
         return compile_placeholder(self._ast, self._acc)
-    
+
     @property
     def __name__(self):
         return self.__repr__()
@@ -174,15 +184,15 @@ class placeholder:
         func = self._acc
         acc = lambda x: \
             func(x)(
-                *((e._acc(x) if isinstance(e, placeholder) else e) 
-                    for e in args),
+                *((e._acc(x) if isinstance(e, placeholder) else e)
+                  for e in args),
                 **{k: (e._acc(x) if isinstance(e, placeholder) else e)
-                    for k, e in kwargs.items()}
+                   for k, e in kwargs.items()}
             )
         return placeholder(ast, acc)
 
 
-def F(func, *args, **kwargs):
+def F(func, *args, **kwargs):  # noqa: N802
     """
     A helper object that can be used to define function calls on a placeholder
     object.
@@ -190,17 +200,17 @@ def F(func, *args, **kwargs):
     ast = Call(func, args, kwargs)
     acc = lambda x: \
         func(
-            *((e._acc(x) if isinstance(e, placeholder) else e) 
-                for e in args),
+            *((e._acc(x) if isinstance(e, placeholder) else e)
+              for e in args),
             **{k: (e._acc(x) if isinstance(e, placeholder) else e)
-                for k, e in kwargs.items()}
+               for k, e in kwargs.items()}
         )
     return placeholder(ast, acc)
 
 
 def compile_placeholder(ast, acc):
     """
-    Compile a placeholder expression and return the corresponding anonymous 
+    Compile a placeholder expression and return the corresponding anonymous
     function.
     """
 
@@ -217,6 +227,7 @@ def compile_placeholder(ast, acc):
 #
 OP_SYMBOLS = {k: ' %s ' % v for k, v in SYMBOLS.items()}
 OP_SYMBOLS[op.attrgetter] = '.'
+
 
 def op_symbol(op):
     return OP_SYMBOLS[op]

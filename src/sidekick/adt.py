@@ -1,6 +1,8 @@
 import operator as op
 
-flip = lambda f: (lambda x, y: f(y, x))
+
+def flip(f):
+    return lambda x, y: f(y, x)
 
 
 # A sugar for creating state instances.
@@ -23,7 +25,7 @@ opt = _Opt()
 class State:
     """
     Represents a state of a union type. This type is used as an intermediate
-    step to construct Union types and to hold meta information about each 
+    step to construct Union types and to hold meta information about each
     state.
 
     State instances are not instantiated in user code after class creation.
@@ -65,10 +67,10 @@ class UnionMeta(type):
     Metaclass for Union types.
     """
 
-    def __new__(meta, name, bases, ns, states=None):
+    def __new__(meta, name, bases, ns, states=None):  # noqa: N804
         union_bases = [base for base in bases if isinstance(base, UnionMeta)]
 
-        # Check if bases are valid. We only accept a single Union base. 
+        # Check if bases are valid. We only accept a single Union base.
         # It is necessary to make an exception to the Union type itself, since
         # it must be created with zero bases.
         if len(union_bases) == 0:
@@ -95,7 +97,7 @@ class UnionMeta(type):
 
         return type.__new__(meta, name, bases, ns)
 
-    def __init__(cls, name, bases, ns, states=None):
+    def __init__(cls, name, bases, ns, states=None):  # noqa: N805
         super().__init__(name, bases, ns)
         states = states or cls._states
 
@@ -106,19 +108,19 @@ class UnionMeta(type):
             new[state.property_name] = _state_checker_factory(id_)
             new[state.args_name] = _state_args_factory(id_)
 
-        # We do apply to the class if they are defined explicitly on the 
+        # We do apply to the class if they are defined explicitly on the
         # namespace
         new = {k: v for k, v in new.items() if k not in ns}
         for k, v in new.items():
             setattr(cls, k, v)
 
-    def __or__(cls, other):
+    def __or__(cls, other):  # noqa: N805
         if other is None or other is ...:
             return cls
         return NotImplemented
 
     @classmethod
-    def _from_states(meta, states):
+    def _from_states(meta, states):  # noqa: N804
         """
         Create a new Union type from a list of states.
         """
@@ -127,9 +129,9 @@ class UnionMeta(type):
         return meta(name, (Union,), meta._namespace(states), states=states)
 
     @classmethod
-    def _namespace(meta, states: tuple):
+    def _namespace(meta, states: tuple):  # noqa: N804
         """
-        Return the class namespace from a list of states. 
+        Return the class namespace from a list of states.
         """
         ns = dict(
             __slots__=(),
@@ -139,17 +141,17 @@ class UnionMeta(type):
         )
         return ns
 
-    def match_fn(cls, **kwargs):
+    def match_fn(cls, **kwargs):  # noqa: N805
         """
         Returns a function that performs pattern matching.
 
         Usage:
 
         >>> func = Maybe.match_fn(
-        ...     nothing=lambda: 
+        ...     nothing=lambda:
         ...         42,
-        ... 
-        ...     just=lambda x: 
+        ...
+        ...     just=lambda x:
         ...         2 * x,
         ... )
 
@@ -190,8 +192,8 @@ def _state_checker_factory(id_):
 
 def _state_args_factory(id_):
     """
-    Return a property that returns the args of a given state. 
-    
+    Return a property that returns the args of a given state.
+
     If object is in a different state, it raises an AttributeError.
     """
 
@@ -320,8 +322,8 @@ class Maybe(opt.Just(object) | opt.Nothing):
     @classmethod
     def call(cls, func, *args, **kwargs):
         """
-        Execute function with all given Just values and return 
-        Just(func(*values, **kwargs)). If any positional argument is a Nothing, 
+        Execute function with all given Just values and return
+        Just(func(*values, **kwargs)). If any positional argument is a Nothing,
         return Nothing.
 
         Examples:
@@ -342,7 +344,7 @@ class Maybe(opt.Just(object) | opt.Nothing):
 
     def then(self, func):
         """
-        Apply function if object is in the Just state and return another Maybe. 
+        Apply function if object is in the Just state and return another Maybe.
         """
 
         if self.just:
@@ -353,7 +355,7 @@ class Maybe(opt.Just(object) | opt.Nothing):
 
     def get(self, default=None):
         """
-        Extract value from the Just state. If object is Nothing, return the 
+        Extract value from the Just state. If object is Nothing, return the
         supplied default or None.
 
         Examples:
@@ -430,7 +432,7 @@ def maybe(obj):
     Coerce argument to a Maybe:
 
         maybe(None)  -> Nothing
-        maybe(obj)   -> Just(obj) 
+        maybe(obj)   -> Just(obj)
 
     Maybe instances:
         maybe(maybe) -> maybe
@@ -493,7 +495,7 @@ class Result(opt.Ok(object) | opt.Err(object)):
     @classmethod
     def apply(cls, func, *args):
         """
-        Execute function with all given Ok values and return Ok(func(*values)). 
+        Execute function with all given Ok values and return Ok(func(*values)).
         If any argument is an Error return the first error.
 
         Examples:
@@ -516,7 +518,7 @@ class Result(opt.Ok(object) | opt.Err(object)):
 
     def then(self, func):
         """
-        Apply function if object is in the Ok state and return another Result. 
+        Apply function if object is in the Ok state and return another Result.
         """
 
         if self.ok:
@@ -537,7 +539,7 @@ class Result(opt.Ok(object) | opt.Err(object)):
 
     def get(self, default=None):
         """
-        Extract value from the Ok state. If object is an error, return the 
+        Extract value from the Ok state. If object is an error, return the
         supplied default or None.
 
         Examples:
@@ -609,13 +611,13 @@ def result(obj):
     Coerce argument to a result:
 
     Objects and exceptions:
-        result(obj)   -> Ok(obj) 
+        result(obj)   -> Ok(obj)
         result(ex)    -> Err(ex)
 
     Result instances:
         result(ok)    -> ok
         result(err)   -> err
-    
+
     Maybe instances:
         result(Just(x)) -> Ok(x)
         result(Nothing) -> Err(None)

@@ -50,14 +50,14 @@ class TestPlaceholder:
         assert fn(_.foo.bar.bit_length())(x) == 6
 
     def test_nested_algebraic_expresions(self):
-        f = fn(_.real + _.imag) 
+        f = fn(_.real + _.imag)
         assert f(42) == 42
         assert f(21 + 21j) == 42
 
         f = fn(_.real / (_.real + _.imag))
-        assert f(42) == 1.0 
-        assert f(21 + 21j) == 0.5 
+        assert f(42) == 1.0
+        assert f(21 + 21j) == 0.5
 
         f = fn(_.real / (_.real * _.real))
-        assert f(2) == 0.5 
-        assert f(2 + 2j) == 0.5 
+        assert f(2) == 0.5
+        assert f(2 + 2j) == 0.5

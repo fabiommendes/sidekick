@@ -5,7 +5,7 @@ from .placeholder import placeholder
 nullfunc = lambda *args, **kwargs: None
 
 
-class predicate:
+class predicate:  # noqa: N801
     """
     A predicate function.
     """
@@ -38,7 +38,7 @@ class predicate:
         return getattr(self._, attr)
 
 
-class cond:
+class cond:  # noqa: N801
     """
     Conditional pipeline.
 
@@ -118,7 +118,7 @@ def identityof(value):
 
 def anyof(*predicates):
     """
-    Return a new predicate that performs an logic AND to all predicate 
+    Return a new predicate that performs an logic AND to all predicate
     functions.
     """
     return predicate(lambda x: any(f(x) for f in predicates))
@@ -126,7 +126,7 @@ def anyof(*predicates):
 
 def allof(*predicates):
     """
-    Return a new predicate that performs an logic ALL to all predicate 
+    Return a new predicate that performs an logic ALL to all predicate
     functions.
     """
     return predicate(lambda x: all(f(x) for f in predicates))

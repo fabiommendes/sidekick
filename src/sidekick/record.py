@@ -7,7 +7,9 @@ NOT_GIVEN = object()
 #
 # Simple record types for one-of uses.
 #
-class record(SimpleNamespace):
+
+
+class record(SimpleNamespace):  # noqa: N801
     """
     A anonymous record type.
     """
@@ -21,18 +23,18 @@ class record(SimpleNamespace):
 
     def __hash__(self):
         return hash(tuple(self.__dict__.values()))
-    
+
     def __setattribute__(self, attr, value):
         raise TypeError('cannot set attribute: immutable type')
 
 
-namespace = SimpleNamespace    
+namespace = SimpleNamespace
 
 
 #
 # The structured Record type and associated types
 #
-class field:
+class field:  # noqa: N801
     """
     A class that holds information from a field of a record type.
     """
@@ -55,20 +57,20 @@ class RecordMeta(type):
 
     def __new__(cls, name, bases, ns, mutable=False):
         if cls._record_base is None:
-            return super().__new__(cls, name, bases, ns)        
+            return super().__new__(cls, name, bases, ns)
         else:
             bases = tuple(x for x in bases if x is not cls._record_base)
             ns = _update_namespace(cls, ns)
 
             if mutable:
                 del ns['__hash__']
-                
+
             return type(name, bases, ns)
 
-    def __init__(cls, name, bases, ns, mutable=False):
+    def __init__(cls, name, bases, ns, mutable=False):  # noqa: N805
         pass
 
-    def __prepare__(cls, bases, mutable=False):
+    def __prepare__(cls, bases, mutable=False):   # noqa: N805
         return OrderedDict()
 
 
@@ -77,9 +79,9 @@ class Record(metaclass=RecordMeta):
     Base class for Record types.
 
     A records is a lightweight class that have only a fixed number of
-    attributes. It is analogous to a C struct type. 
+    attributes. It is analogous to a C struct type.
 
-    Record types can be used to hold data or as a basis for a no-boilerplate 
+    Record types can be used to hold data or as a basis for a no-boilerplate
     class.
     """
 
@@ -116,7 +118,7 @@ def _update_namespace(cls, ns):
                 ', '.join(
                     repr(getattr(self, x)) for x in self._fields_map
                 )
-            ),
+        ),
         __hash__=lambda self: hash(tuple(self._iter())),
         __eq__=_eq_function_factory(fields),
 
@@ -141,14 +143,14 @@ def _init_function_factory(fields):
         ('%s=%s_default' % (name, name) if f.has_default else name)
         for name, f in fields
     )
-    
+
     # Body of the __init__ function
     body = '\n    '.join(
         'self.%s = %s' % (name, name)
         for name, f in fields
     )
-    
-    # Complete source for the __init__ function 
+
+    # Complete source for the __init__ function
     code = (
         'def __init__(self, {args}):\n'
         '    {body}'
@@ -156,10 +158,10 @@ def _init_function_factory(fields):
 
     # Initialize defaults
     ns = {
-        '%s_default' % name: f.default 
-        for name, f in fields if f.has_default 
+        '%s_default' % name: f.default
+        for name, f in fields if f.has_default
     }
-    
+
     exec(code, ns, ns)
     return ns['__init__']
 
@@ -169,7 +171,7 @@ def _eq_function_factory(fields):
     Create a __eq__ method from a list of (name, field) tuples.
     """
 
-    def __eq__(self, other):
+    def __eq__(self, other):  # noqa: N802
         if isinstance(other, self.__class__):
             return all(
                 x == y for x, y in zip(self._values(), other._values())
@@ -191,4 +193,3 @@ def record_to_dict(record: Record):
     if isinstance(record, SimpleNamespace):
         return dict(record.__dict__)
     return dict(record._items())
-

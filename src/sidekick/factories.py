@@ -8,7 +8,7 @@ class AttrGetterMeta(type):
 
     __attrs__ = property(lambda x: ())
 
-    def _new(cls, *attrs):
+    def _new(cls, *attrs):  # noqa: N805
         self = object.__new__(cls)
         self._attrs = attrs
         self._getter = op.attrgetter('.'.join(attrs))
@@ -16,14 +16,14 @@ class AttrGetterMeta(type):
 
     # When the caller object receives a direct attribute access, we must
     # initialize a new instance with it
-    def __getattr__(cls, attr):
+    def __getattr__(cls, attr):  # noqa: N805
         return cls._new(attr)
 
 
-class attrgetter(metaclass=AttrGetterMeta):
+class attrgetter(metaclass=AttrGetterMeta):  # noqa: N801
     """
     A attribute getter factory. It chains any number of attribute accesses.
-    This method is similar to op.attrgetter, but the resulting object can be 
+    This method is similar to op.attrgetter, but the resulting object can be
     introspected and it has a more convenient syntax.
     """
 
@@ -47,7 +47,7 @@ class CallerMeta(AttrGetterMeta):
     Metaclass for the caller factory.
     """
 
-    def _new(cls, *attrs):
+    def _new(cls, *attrs):  # noqa: N805
         self = object.__new__(cls)
         self._attrs = attrs
         return self
@@ -55,11 +55,11 @@ class CallerMeta(AttrGetterMeta):
     # When the caller object is called directly, it is chained to this method.
     # We want to return a function that calls its unique argument with the
     # passed args and **kwargs
-    def __call__(cls, *args, **kwargs):
+    def __call__(cls, *args, **kwargs):  # noqa: N805
         return lambda x: x(*args, **kwargs)
 
 
-class caller(metaclass=CallerMeta):
+class caller(metaclass=CallerMeta):  # noqa: N801
     """
     Method caller factory. It chains an arbitrary number of arguments and than
     makes a method call.
@@ -67,7 +67,7 @@ class caller(metaclass=CallerMeta):
     Usage:
 
     >>> f = caller.foo.bar.foobar(answer=42)
-    >>> f(x)   # now it will make the call 
+    >>> f(x)   # now it will make the call
     """
 
     __slots__ = ('_attrs')
@@ -90,4 +90,3 @@ class caller(metaclass=CallerMeta):
         return 'caller{attrs}'.format(
             attrs=''.join('.' + attr for attr in self._attrs),
         )
-    

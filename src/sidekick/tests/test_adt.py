@@ -13,7 +13,7 @@ class TestADTMeta:
 
     def test_forbid_multiple_levels_of_inheritance(self):
         ADT = opt.Foo | opt.Bar
-        
+
         class ADT2(ADT):
             pass
 
@@ -25,12 +25,12 @@ class TestADTMeta:
 
     def test_construct_adt_with_more_than_two_states(self):
         ADT = opt.Foo | opt.Bar | opt.Ham
-        
+
         assert issubclass(ADT, Union)
         assert isinstance(ADT.Foo, ADT)
         assert isinstance(ADT.Bar, ADT)
         assert isinstance(ADT.Ham, ADT)
-        
+
     def test_construct_composite_adt_with_more_than_two_states(self):
         ADT = opt.Foo(object) | opt.Bar(object) | opt.Ham(object)
         assert issubclass(ADT, Union)
@@ -40,7 +40,7 @@ class TestADTMeta:
 
     def test_state_numeric_initializer(self):
         assert opt.State(2) == opt.State(object, object)
-        
+
     def test_none_forces_creation_of_union_type(self):
         adt = opt.Foo | None
         assert isinstance(adt, UnionMeta)
@@ -55,7 +55,7 @@ class TestADTMeta:
 
     def test_forbids_multiple_levels_of_inheritance(self):
         class ADT(opt.Foo | opt.Bar):
-                pass
+            pass
 
         with pytest.raises(TypeError):
             class ADTChild(ADT):
@@ -106,12 +106,12 @@ class TestADT:
 
         y = Maybe.Nothing
         assert y.nothing
-        assert not y.just 
+        assert not y.just
 
     def test_match_function(self, Maybe):
         x = Maybe.Just(42)
         y = Maybe.Nothing
-        
+
         res = x.match(
             just=lambda x: x * 2,
             nothing=lambda: 0,
@@ -123,7 +123,7 @@ class TestADT:
             nothing=lambda: 0,
         )
         assert res == 0
-        
+
     def test_match_function_constructor(self, Maybe):
         x = Maybe.Just(42)
         y = Maybe.Nothing
@@ -147,10 +147,10 @@ class TestADT:
         y = Maybe.Nothing
         assert x.just_args == (42,)
         assert y.nothing_args == ()
-        
+
         with pytest.raises(AttributeError):
             assert x.nothing_args
-        
+
         with pytest.raises(AttributeError):
             assert y.just_args
 
@@ -159,14 +159,14 @@ class TestADT:
             Maybe.match_fn(
                 just=lambda x: x,
             )
-        
+
         with pytest.raises(ValueError):
             Maybe.match_fn(
                 just=lambda x: x,
                 nothing=lambda: 0,
                 other=lambda: 0,
             )
-        
+
         with pytest.raises(ValueError):
             Maybe.match_fn(
                 ok=lambda x: x,
@@ -182,8 +182,10 @@ class TestADT:
 
     def test_adt_matches_are_exaustive(self, Maybe):
         err = ValueError
-        f1 = lambda x: x
-        f2 = lambda x: None
+
+        def f1(x): return x
+
+        def f2(x): return None
 
         with pytest.raises(err):
             Maybe.Nothing.match(just=f1)
@@ -210,10 +212,10 @@ class TestMaybe(TestADT):
     def test_then_method(self):
         x = Maybe.Just(1)
         y = x.then(lambda x: x + 1).then(lambda x: x + 1)
-        
+
         assert y.just
         assert y.value == 3
-    
+
     def test_then_method_nothing(self):
         x = Maybe.Nothing
         y = x.then(lambda x: x + 1).then(lambda x: x + 1)

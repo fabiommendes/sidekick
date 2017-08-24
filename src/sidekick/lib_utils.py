@@ -7,7 +7,7 @@ from .predicate import predicate
 try:
     import cytoolz as toolz
 except ImportError:
-    import toolz
+    import toolz  # noqa: F401
 
 
 NOT_GIVEN = object()
@@ -58,7 +58,7 @@ def as_predicate_func(f):
 # Specialized fn classes. These classes provide better speed and static
 # guarantees for fn() functions on non-function callables.
 #
-class fn2_predicate(fn):
+class fn2_predicate(fn):  # noqa: N801
     "Specialized fn for functions that take a predicate and another argument"
 
     def __call__(self, f, x=NOT_GIVEN):
@@ -69,7 +69,7 @@ class fn2_predicate(fn):
         return func(f, x)
 
 
-class fn2_function(fn):
+class fn2_function(fn):  # noqa: N801
     "Specialized fn for functions that take a function and another argument"
 
     def __call__(self, f, x=NOT_GIVEN):
@@ -80,7 +80,7 @@ class fn2_function(fn):
         return func(f, x)
 
 
-class fn2_key(fn):
+class fn2_key(fn):  # noqa: N801
     "Specialized fn for functions that take a function and another argument"
 
     def __call__(self, f, x=NOT_GIVEN):
@@ -91,14 +91,14 @@ class fn2_key(fn):
         return func(f, x)
 
 
-class fn1(fn):
+class fn1(fn):  # noqa: N801
     "Specialized fn for single argument functions"
 
     def __call__(self, x):
         return self._(x)
 
 
-class fn2(fn):
+class fn2(fn):  # noqa: N801
     "Specialized fn for double argument curried functions"
 
     def __call__(self, a, b=NOT_GIVEN):
@@ -108,7 +108,7 @@ class fn2(fn):
         return func(a, b)
 
 
-class fn2_opt(fn):
+class fn2_opt(fn):  # noqa: N801
     """
     Specialized fn for double argument curried functions with optional
     arguments.
@@ -121,7 +121,7 @@ class fn2_opt(fn):
         return func(a, b, *args, **kwargs)
 
 
-class fn3(fn):
+class fn3(fn):  # noqa: N801
     "Specialized fn for triple argument curried functions"
 
     def __call__(self, a, b=NOT_GIVEN, c=NOT_GIVEN):
@@ -133,7 +133,7 @@ class fn3(fn):
         return func(a, b, c)
 
 
-class fn3_opt(fn):
+class fn3_opt(fn):  # noqa: N801
     """
     Specialized fn for triple argument curried functions with optional
     parameters.

@@ -22,8 +22,8 @@ class TestFn:
 
     def test_fn_function_filter_notation(self, fn_double):
         res = (
-            2 | fn_double 
-              | fn_double
+            2 | fn_double
+            | fn_double
         )
         assert res == 8
 
@@ -69,12 +69,12 @@ class TestFn:
         assert fn[g, 1](2, 3) == (1, 2, 3)
         assert fn[g, 1, 2](3) == (1, 2, 3)
         assert fn[g, 1, 2, 3]() == (1, 2, 3)
-        
+
     def test_fn_partial_application_with_placehlder(self, g):
         assert fn[g, _, 2, 3](1) == (1, 2, 3)
         assert fn[g, 1, _, 3](2) == (1, 2, 3)
         assert fn[g, 1, 2, _](3) == (1, 2, 3)
-        
+
         assert fn[g, _, _, 2](1) == (1, 1, 2)
         assert fn[g, 1, _, _](2) == (1, 2, 2)
         assert fn[g, _, 2, _](1) == (1, 2, 1)
@@ -106,4 +106,3 @@ class TestFn:
         g = fn(foo)
         assert g.__name__ == 'foo'
         assert g.attr == 'foo'
-    
