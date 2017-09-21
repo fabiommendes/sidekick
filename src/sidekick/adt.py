@@ -8,6 +8,8 @@ def flip(f):
 # A sugar for creating state instances.
 # This is the default entry point for constructing Union types
 class _Opt:
+    _state = None
+
     def __getattr__(self, name):
         if name.startswith('_'):
             raise AttributeError(name)
@@ -16,7 +18,8 @@ class _Opt:
             raise TypeError(
                 'Union state names must be CamelCase, got: %s' % name
             )
-        return State(name)
+        state = self._state or State
+        return state(name)
 
 
 opt = _Opt()
@@ -31,6 +34,7 @@ class State:
     State instances are not instantiated in user code after class creation.
     """
 
+    _default_bases = None
     property_name = property(lambda x: x.name.lower())
     args_name = property(lambda x: x.name.lower() + '_args')
 
@@ -50,15 +54,18 @@ class State:
         return NotImplemented
 
     def __or__(self, other):
+        bases = self._default_bases
         if isinstance(other, State):
-            return UnionMeta._from_states([self, other])
+            return UnionMeta._from_states([self, other], bases)
         elif other is None or other is ...:
-            return UnionMeta._from_states([self])
+            return UnionMeta._from_states([self], bases)
         return NotImplemented
 
     def __ror__(self, other):
+        bases = self._default_bases
+        
         if isinstance(other, UnionMeta):
-            return UnionMeta._from_states(list(other._states) + [self])
+            return UnionMeta._from_states(list(other._states) + [self], bases)
         return NotImplemented
 
 
@@ -120,13 +127,14 @@ class UnionMeta(type):
         return NotImplemented
 
     @classmethod
-    def _from_states(meta, states):  # noqa: N804
+    def _from_states(meta, states, bases=None):  # noqa: N804
         """
         Create a new Union type from a list of states.
         """
         states = tuple(states)
+        bases = (Union,) if bases is None else tuple(bases)
         name = 'Union(%s)' % ('|'.join(state.name for state in states))
-        return meta(name, (Union,), meta._namespace(states), states=states)
+        return meta(name, bases, meta._namespace(states), states=states)
 
     @classmethod
     def _namespace(meta, states: tuple):  # noqa: N804
