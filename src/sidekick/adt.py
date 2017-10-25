@@ -149,6 +149,13 @@ class UnionMeta(type):
         )
         return ns
 
+    def from_states(cls, states, bases=()):
+        """
+        Create a new Union subclass from a list of states.
+        """
+        bases = tuple(bases) + (cls,)
+        return cls._from_states(states, bases=bases)
+
     def match_fn(cls, **kwargs):  # noqa: N805
         """
         Returns a function that performs pattern matching.
