@@ -14,7 +14,7 @@ class Opts(collections.OrderedDict):
         return 'Opts({%s})' % data
 
 
-def opt(*args, **kwargs):
+def opt(*args, **kwargs):  # noqa: C901
     """
     Declare argument types and names for case classes. Return an ordered
     mapping from names to types.
@@ -77,9 +77,6 @@ def opt(*args, **kwargs):
     return Opts(args)
 
 
-
-
-
 #
 # Auxiliary methods for maybes and just metaclasses
 #
@@ -117,4 +114,3 @@ def result_bin_op(op):
             return NotImplemented
 
     return binop
-

@@ -4,6 +4,8 @@ import itertools
 
 from .union import Union, opt
 
+flip = (lambda f: lambda x, y: f(y, x))
+
 
 class List(Union, collections.Sequence):
     """
@@ -23,18 +25,18 @@ class List(Union, collections.Sequence):
             result = x + result
         return result
 
-    def __iter__(lst):
+    def __iter__(lst):  # noqa: N805
         while lst is not Nil:
             x, lst = lst.args
             yield x
 
-    def __len__(lst):
+    def __len__(lst):  # noqa: N805
         size = 0
         while lst is not Nil:
             _, lst = lst.args
             size += 1
 
-    def __getitem__(lst, i):
+    def __getitem__(lst, i):  # noqa: N805
         if i < 0:
             raise IndexError('negative indexes not supported')
         for idx in range(i + 1):
@@ -65,7 +67,7 @@ class List(Union, collections.Sequence):
         if isinstance(other, List):
             cons = Cons
             for x in reversed(list(self)):
-                other = Cons(x, other)
+                other = cons(x, other)
             return other
         return NotImplemented
 
@@ -115,7 +117,7 @@ class List(Union, collections.Sequence):
         """
         return Cons(x, self)
 
-    def take(lst, n):
+    def take(lst, n):  # noqa: N805
         """
         Return a list with at most the first n elements of list.
         """
@@ -130,7 +132,7 @@ class List(Union, collections.Sequence):
                 result = result.cons(x)
         return result
 
-    def drop(lst, n):
+    def drop(lst, n):  # noqa: N805
         """
         Return a list that removes at most the first n elements of list.
         """
@@ -159,7 +161,7 @@ class List(Union, collections.Sequence):
     #
     # Reorganizing the list
     #
-    def reverse(lst):
+    def reverse(lst):  # noqa: N805
         """
         Reversed copy of the list.
         """
@@ -312,5 +314,3 @@ def slist(seq):
     for x in reversed(seq):
         xs = cons(x, xs)
     return xs
-
-

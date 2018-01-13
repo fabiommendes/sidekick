@@ -16,7 +16,7 @@ class UnionMeta(type):
     """
 
     @classmethod
-    def __prepare__(meta, name, bases, **kwargs):
+    def __prepare__(meta, name, bases, **kwargs):  # noqa: N804
         namespace = {'__slots__': 'args'}
         new = type.__new__(meta, name, bases, namespace)
         base = new._check_inheritance(bases)
@@ -38,7 +38,7 @@ class UnionMeta(type):
         namespace['this'] = namespace[name] = new
         return collections.OrderedDict(namespace)
 
-    def __new__(meta, name, bases, namespace, **kwargs):
+    def __new__(meta, name, bases, namespace, **kwargs):  # noqa: N804
         # Fetch new from namespace or create a new instance
         new = namespace.pop(name, None)
         namespace.pop('this', None)
@@ -70,7 +70,7 @@ class UnionMeta(type):
         new._init_case_class(name, bases, namespace, **kwargs)
         return new
 
-    def _new_case_class(cls, name, opts):
+    def _new_case_class(cls, name, opts):  # noqa: N805
         """
         Create new clase class from opts.
         """
@@ -78,7 +78,7 @@ class UnionMeta(type):
         ns = UnionMeta.__prepare__(name, bases)
         return UnionMeta(name, bases, ns, args=opts)
 
-    def _init_abstract_class(cls, name, bases, namespace):
+    def _init_abstract_class(cls, name, bases, namespace):  # noqa: N805
         """
         Create new abstract Union type class. Those classes are basis for
         other Union sub-types, e.g., Union, Singleton.
@@ -87,7 +87,8 @@ class UnionMeta(type):
         cls._update_dict(namespace)
         cls._meta = cls._create_meta(is_abstract=True)
 
-    def _init_base_class(cls, name, bases, namespace, disable_singleton=False):
+    def _init_base_class(cls, name, bases, namespace,  # noqa: N805
+                         disable_singleton=False):
         """
         A base class is a Union subclass that have inner case classes.
         """
@@ -109,13 +110,12 @@ class UnionMeta(type):
         cls._contribute_case_methods()
         cls.__is_closed = True
 
-    def _init_case_class(cls, name, bases, namespace, args=None):
+    def _init_case_class(cls, name, bases, namespace, args=None):  # noqa: N805
         """
         Concrete Union classes.
         """
 
-        def mk_property(i):
-            return property(lambda x: x.args[i])
+        mk_property = (lambda i: property(lambda x: x.args[i]))
 
         if args is None and 'args' in namespace:
             args = opt(namespace.pop('args'))
@@ -146,7 +146,8 @@ class UnionMeta(type):
         if base.__is_closed:
             base._register_case_class(cls, name, base._meta.disable_singleton)
 
-    def _register_case_class(cls, subclass, name=None, disable_singleton=False):
+    def _register_case_class(cls, subclass, name=None,  # noqa: N805
+                             disable_singleton=False):
         """
         Register a case subclass to the base class.
         """
@@ -170,7 +171,7 @@ class UnionMeta(type):
             raise TypeError(msg)
         setattr(cls, query_attr_name, False)
 
-    def __instancecheck__(cls, value):
+    def __instancecheck__(cls, value):  # noqa: N805
         # This tweak makes it possible for singleton values to be at the same
         # time instances and subclasses of Union types.
         result = super().__instancecheck__(value)
@@ -178,7 +179,7 @@ class UnionMeta(type):
             return cls is Union or cls is value.__bases__[0]
         return result
 
-    def _create_meta(cls, **kwargs):
+    def _create_meta(cls, **kwargs):  # noqa: N805
         kwargs.setdefault('is_abstract', False)
         kwargs.setdefault('is_case', False)
         kwargs.setdefault('is_base', False)
@@ -199,7 +200,7 @@ class UnionMeta(type):
 
         return meta
 
-    def _update_dict(cls, data=(), **kwargs):
+    def _update_dict(cls, data=(), **kwargs):  # noqa: N805
         class_dict = cls.__dict__
         for k, v in dict(data, **kwargs).items():
             if k not in class_dict:
@@ -208,7 +209,7 @@ class UnionMeta(type):
     #
     # Basic checks and factories
     #
-    def _check_inheritance(cls, bases):
+    def _check_inheritance(cls, bases):  # noqa: N805
         bases = tuple(base for base in bases if isinstance(base, UnionMeta))
 
         # Cannot inherit from more than one Union subclass
@@ -231,7 +232,7 @@ class UnionMeta(type):
             return base
         return cls
 
-    def _check_case_args(cls, opts):
+    def _check_case_args(cls, opts):  # noqa: N805
         blacklist = {
             # Sideckick specific
             'args',
@@ -245,75 +246,92 @@ class UnionMeta(type):
             msg = 'case classe cannot have an %r attribute.'
             raise TypeError(msg % name)
 
-    def _contribute_case_init(cls, use_kwargs=False):
+    def _contribute_case_init(cls, use_kwargs=False):  # noqa: N805
         """
         Concrete init method for case classes.
         """
 
         types = list(cls._meta.args.values())
-        names = list(cls._meta.args.keys())
-
-        def __init__(self, *args):
-            if len(args) != len(types):
-                n = len(args)
-                m = len(types)
-                raise TypeError('expected %s arguments, got %s' % (m, n))
-
-            for n, (x, tt) in enumerate(zip(args, types)):
-                if not isinstance(x, tt):
-                    msg = '({base}.{case}) invalid type for arg {n}: got ' \
-                          '{tt}, expect {tt_expected}'
-                    raise TypeError(
-                        msg.format(base=cls._meta.base_class.__name__,
-                                   case=cls.__name__, n=n,
-                                   tt=type(x).__name__,
-                                   tt_expected=tt.__name__))
-
-            self.args = args
-
-        def __init_kwds__(self, *args, **kwargs):
-            if kwargs:
-                extra = []
-                for name in names[len(args):]:
-                    extra.append(kwargs[name])
-                args = args + tuple(extra)
-
-            __init__(self, *args)
-
         if use_kwargs:
-            cls.__init__ = __init_kwds__
+            names = list(cls._meta.args.keys())
+            cls.__init__ = make_init_kwargs(cls, types, names)
         else:
-            cls.__init__ = __init__
+            cls.__init__ = make_init_args(cls, types)
 
-    def _contribute_case_methods(cls):
+    def _contribute_case_methods(cls):  # noqa: N805
         """
         Distribute the implementation of all methods implemented as a
         CaseFn.method instance.
         """
 
-        def register_case_method(name, method):
-            from .case_syntax import casedispatch
-
-            # Delayed creation for non-closed types
-            if method.dispatch is ...:
-                try:
-                    closed = cls.__is_closed
-                    cls.__is_closed = True
-
-                    if method.base != cls:
-                        raise TypeError('case dispatch for a different class.')
-                    method = casedispatch.from_namespace(cls, method.namespace)
-                finally:
-                    cls.__is_closed = closed
-
-            for case_name, case_cls in cls._meta.cases.items():
-                impl = method.dispatch(case_cls)
-                setattr(case_cls, case_name, impl)
-            setattr(cls, name, method)
-
         for k, v in cls.__dict__.items():
             if hasattr(v, 'dispatch'):
-                register_case_method(k, v)
+                cls._register_case_method(k, v)
+
+    def _register_case_method(cls, name, method):
+        from .case_syntax import casedispatch
+
+        # Delayed creation for non-closed types
+        if method.dispatch is ...:
+            try:
+                closed = cls.__is_closed
+                cls.__is_closed = True
+
+                if method.base != cls:
+                    raise TypeError('case dispatch for a different class.')
+                method = casedispatch.from_namespace(cls, method.namespace)
+            finally:
+                cls.__is_closed = closed
+
+        for case_name, case_cls in cls._meta.cases.items():
+            impl = method.dispatch(case_cls)
+            setattr(case_cls, case_name, impl)
+        setattr(cls, name, method)
+
+
+def make_init_args(cls, types):
+    """
+    Make init function for case class. Only accept positional arguments.
+    """
+
+    def init_args(self, *args):
+        if len(args) != len(types):
+            n = len(args)
+            m = len(types)
+            raise TypeError('expected %s arguments, got %s' % (m, n))
+
+        for n, (x, tt) in enumerate(zip(args, types)):
+            if not isinstance(x, tt):
+                msg = '({base}.{case}) invalid type for arg {n}: got ' \
+                      '{tt}, expect {tt_expected}'
+                raise TypeError(
+                    msg.format(base=cls._meta.base_class.__name__,
+                               case=cls.__name__, n=n,
+                               tt=type(x).__name__,
+                               tt_expected=tt.__name__))
+
+        self.args = args
+
+    return init_args
+
+
+def make_init_kwargs(cls, types, names):
+    """
+    Make init function for case class. Accepts positional and keyword arguments.
+    """
+
+    init_args = make_init_args(cls, types)
+
+    def init_kwargs(self, *args, **kwargs):
+        if kwargs:
+            extra = []
+            for name in names[len(args):]:
+                extra.append(kwargs[name])
+            args = args + tuple(extra)
+
+        init_args(self, *args)
+
+    return init_kwargs
 
 
 #
@@ -337,7 +355,7 @@ class Union(metaclass=UnionMeta, is_abstract=True):
     def __repr__(self):
         try:
             data = '(%s)' % (', '.join(map(repr, self.args)))
-        except:
+        except Exception:
             data = '(...)'
         return type(self).__name__ + data
 
@@ -368,9 +386,9 @@ class SingletonMixin:
     def __init__(self):
         pass
 
-    def __instancecheck__(cls, value):
+    def __instancecheck__(self, value):
         # The only instance of a Singleton class is the cls itself!
-        return cls is value
+        return self is value
 
     def __eq__(self, other):
         if type(self) is type(other):
