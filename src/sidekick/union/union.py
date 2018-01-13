@@ -70,6 +70,9 @@ class UnionMeta(type):
         new._init_case_class(name, bases, namespace, **kwargs)
         return new
 
+    def __init__(cls, *args, **kwargs):  # noqa: N805
+        pass
+
     def _new_case_class(cls, name, opts):  # noqa: N805
         """
         Create new clase class from opts.
