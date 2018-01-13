@@ -6,8 +6,10 @@ from .predicate import predicate
 
 try:
     import cytoolz as toolz
+    import cytoolz.curried as ctoolz
 except ImportError:
     import toolz  # noqa: F401
+    import toolz.curried as ctoolz
 
 
 NOT_GIVEN = object()

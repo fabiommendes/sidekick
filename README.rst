@@ -16,10 +16,10 @@
 Sidekick
 ========
 
-Sidekick is a helpful library that gives you functional superpowers.
-It implements a few utility functions and types that make functional programming 
-more pleasant in Python. It is designed to be self-contained and it wraps most
-of the functionality in the toolz library. Of course you can also use it in
+Sidekick is a library that gives you functional superpowers. It implements a
+few utility functions and types that make functional programming
+more pleasant in Python. It is designed be self-contained and it wraps most
+functionality in the toolz library. Of course you can also use it in
 conjunction with other functional programming libraries such as funcy, fn.py and
 Pyrsistent.
 
@@ -31,7 +31,7 @@ If you are lazy, simply import everything and start to play ;)
 Function composition
 ====================
 
-Heavily functional in Python code quickly becomes an unholy mess:
+Heavily functional idioms in Python quickly escalates to an unholy mess:
 
 >>> import os
 >>> print(
@@ -109,18 +109,8 @@ self-contained example:
 2.0
 
 In the code above, the argument is passed first to the abs() function and then 
-is redirected it to the sqrt(). The order the operators appear is the same 
-order in which the functions are applied.
-
-The pipeline can also be constructed backwards, reading right to left:
-
->>> safe_sqrt = sqrt << abs  
->>> safe_sqrt(-4)
-2.0
-
-In either case, the argument flows in the same direction that the pipeline 
-operator points to. Read it as an arrow that tells the direction information
-flows.
+is redirected it to the sqrt(). The arguments flow in the same direction that
+the flow operators ('>>' and '<<') points to.
 
 
 **Filter operator**
@@ -163,7 +153,7 @@ Let us recap. Remember the code we started with:
 ...         >> '\n'.join
 ... )
 
-This should not be a foreign language anymore. This line of code reads the current 
+This should not be so foreign anymore. This line of code reads the current
 working dir returned by os.getcwd() than passes it through a series of 
 transformations:
 
@@ -185,8 +175,8 @@ Compare it to a more idiomatic Python code::
     print('\n'.join(lines))
 
 It all comes to personal taste, but one cannot deny the functional version 
-is more compact since it do not require the noise of all those temporary 
-variable definitions.
+is more compact since it do not require all those temporary variable
+definitions.
 
 
 Partial application
@@ -294,12 +284,12 @@ and curring.
 >>> filtered = filter(_.startswith('f'), names)
 
 The result is a filter object, which we convert to a list using the magic ``| L``
-filter notation:
+pipe notation:
 
 >>> filtered | L
 ['foo']
 
-In sidekick we can expliclty tell that a quick lambda or a function is a
+In sidekick we can explicitly tell that a quick lambda or a function is a
 predicate by wrapping it with the predicate function:
 
 >>> startswith_f = predicate(_.startswith('f'))
@@ -313,163 +303,3 @@ create complex predicates instead of relying on awkward lambda functions:
 >>> startswith_b = predicate(_.startswith('b'))
 >>> filter(startswith_f | startswith_b, names) | L
 ['foo', 'bar']
-
-
-Record types
-============
-
-Classes are often used as a heavy-weight solution to types that behave 
-essentially as a bag of values. Python do not have very good builtin solutions 
-to this problem: literal string keys of dictionaries are ugly to read and a 
-pain to type. ``namedtuples`` have an awkward API and can bring some unwanted 
-tuple/sequence semantics in surprising places. Finally, SimpleNamespace fail in 
-subtle ways such as not implementing the hash protocol.
-
-Sidekick provides two lightweight functions for creating on-the-fly record 
-types: :cls:`record` and :cls:`namespace` that resemble the SimpleNamespace 
-type.
-
-Just call ``record()`` with a few named arguments to create a new immutable
-value
-
->>> pt = record(x=1, y=2)
-
-This defines a new record with .x and .y attributes
-
->>> pt.x, pt.y
-(1, 2)
-
-Records are immutable and should be favored when mutability is not strictly 
-required. If you need a mutable bag of values, use :cls:`namespace`. It behaves 
-similarly to :cls:`record`, but it allows mutation:
-
->>> pt = namespace(x=1, y=2)
-
-
-Custom record types
--------------------
-
-While record() and namespace() types can be useful, it is often more prudent to
-define the structure of a record type explicitly since it is easy to miss a few
-parameters, or to make a typo. In most cases, you should favor custom record
-types created deriving from the Record class:
-
->>> class Point2D(Record):
-...     x = field()
-...     y = field()
-
-(Of course we could include a few methods, but lets forget about it now).
-
-This is a little bit more work, but it will surely save you from a few bugs
-later on. Point2D instances expect to have exactly two attributes named x and y,
-and you cannot skip one of them or set a third z coordinate.
-Another subtle but useful advantage is that Point2D constructor also accepts
-positional arguments, so ``Point2D(1, 2)`` is also a valid way to construct 
-an instance.
-   
-Even if you do not plan to diverge much from OO, Record is a nice starting point 
-to defining your own classes. They already implement a few useful methods that
-Python does not provide useful default implementations: no need to override
-__init__, __repr__, __eq__ and __hash__. Also Record subclasses are immutable
-by default. Python classes do not provide a good way for doing this, and with
-records you can always opt-out if mutability is required:
-
->>> class Point2D(Record, mutable=True):
-...     x = field()
-...     y = field()
-
-Record fields can declare default values and in the future we plan to support
-additional features such as type-checking and validation.
-
->>> class Point2D(Record):
-...     x = field()
-...     y = field()
-...     origin = field(default=(0, 0))
-
-
-Union types
-===========
-
-Union types represent types that can be in one of a series of different states. 
-Most functional languages implement Union types (a.k.a. abstract data types), 
-as one of the basic ways to create composite types. 
-
-
-Usage
------
-    
-A new Union types is declared using the pipe sintax. We define each state by 
-invoking an attribute from the ``opt`` special object: 
-
->>> Maybe = opt.Just(object) | opt.Nothing
-
-The Maybe type represents values that can either exist in the "Just" state or
-be Nothing. Notice that Nothing is a singleton that accepts no argument, while
-Just requires a single argument which corresponds to the value held by the
-Maybe instance.
-
-We create instances by calling the Just(...) or the Nothing constructors
-
->>> x = Maybe.Just(42)
->>> y = Maybe.Nothing   # ok, that is technically not calling a constructor...
-
-Maybe types is a functional response to the infamous null pointer. Instead of
-having the null value lurking around in every corner, we explicitly model 
-nullable objects as instances of the Maybe type. 
-
-Using a maybe almost always requires some sort of pattern matching. This is the 
-closest we can get in Python::
-
-    if x.just:
-        print('value is:', x.value)
-    elif x.nothing:
-        print('x is empty')
-    
-The other possibility is to use the match method::
-
-    # Poor man's version of Haskell's pattern matching
-    is_the_answer = x.case_of(
-        just=lambda x:
-            x == 42,
-
-        nothing=lambda:
-            False,
-    )
-
-Finally, if an specific pattern matching is used repeatedly, we can define a 
-type matching function with the notation::
-
-    is_the_answer_fn = Maybe.case_fn(
-       just=lambda x:
-            x == 42,
-
-        nothing=lambda:
-            False,
-    )
-    is_the_answer = is_the_answer_fn(x)
-
-This is equivalent to the prior method, but it should be faster if the case 
-function is called lots of times.
-
-
-The Maybe type
---------------
-
-While in real functional languages the Maybe type is usually defined just as 
-we shown above, Python is an OO language and it might be more useful to define 
-it as a class with a few extra methods. Sidekick's Maybe implements a few 
-extra goodies besides the plain definition.
-
-
-The Result type
----------------
-
-The result type (sans extensions) is defined as::
-
-    Result = opt.Ok(object) | opt.Err(object)
-
-Hence it has two states: Ok and Err that both can hold additional data. Result
-is a functional way to represent a computation that may fail. It is used where
-in Python one would normally use an exception.
-
-##TODO: specific documentation 

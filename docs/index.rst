@@ -1,15 +1,19 @@
-================================================================================
+====================================
 Welcome to Sidekick's documentation!
-================================================================================
+====================================
 
 .. include:: warning.rst
 
-.. include:: ../README.rst
+Table of contents
+=================
 
 .. toctree::
    :maxdepth: 2
 
+   Overview <overview.rst>
    Installation instructions <install.rst>
+   Records <records.rst>
+   Union types <union.rst>
    API documentation <apidoc.rst>
    Frequently asked questions <faq.rst>
    License <license.rst>

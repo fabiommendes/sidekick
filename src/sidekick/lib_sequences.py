@@ -175,7 +175,7 @@ def distinct(seq, key=None):
     """
     Returns the given sequence with duplicates removed.
 
-    Preserves order. If key is supplied then distinguishes values by comparing
+    Preserves order. If key is supplied map distinguishes values by comparing
     their keys.
 
     Note:

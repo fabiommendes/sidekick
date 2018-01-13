@@ -2,7 +2,7 @@ from copy import copy
 
 import pytest
 
-from sidekick import Record, field, record, record_to_dict
+from sidekick import Record, field, record, record_to_dict, make_record
 
 
 class TestAnonymousRecord:
@@ -24,6 +24,9 @@ class TestAnonymousRecord:
 
         with pytest.raises(AttributeError):
             pt.z = 3
+
+    def test_conversion(self, pt):
+        assert record_to_dict(pt) == {'x': 1, 'y': 2}
 
 
 class TestRecord:
@@ -56,3 +59,37 @@ class TestRecord:
 
     def test_record_to_dict(self, pt):
         assert record_to_dict(pt) == {'x': 1, 'y': 2}
+
+
+class TestRecordView:
+    Point = TestRecord.Point
+    pt = TestRecord.pt
+
+    def test_anonymous_record_view(self):
+        assert list(record(x=1, y=2)._view) == ['x', 'y']
+        assert len(record(x=1, y=2)._view) == 2
+        assert record(x=1, y=2)._view['x'] == 1
+
+    def test_record_view_emit_key_error(self, pt):
+        assert pt._view['x'] == 1
+
+        with pytest.raises(KeyError):
+            res = pt._view['foo']
+
+        with pytest.raises(KeyError):
+            res = pt._view['_foo']
+
+        with pytest.raises(KeyError):
+            res = pt._view[0]
+
+
+class TestRecordWithInvalidNames:
+    def test_do_not_make_record_with_invalid_names(self):
+        with pytest.raises(ValueError):
+            make_record('IfBlock', ['if', 'else'])
+
+    def test_make_record_with_invalid_names(self):
+        Rec = make_record('IfBlock', ['if', 'else'], invalid_names=True)
+        rec = Rec(1, 2)
+        assert dict(rec) == {'if': 1, 'else': 2}
+        assert getattr(rec, 'if') == 1

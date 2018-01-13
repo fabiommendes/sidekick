@@ -1,30 +1,37 @@
-from sidekick import Maybe, Just, Nothing, Union, opt, maybe, Ok, Err, Result
-from sidekick.adt import UnionMeta
 import pytest
 
+from sidekick import Maybe, Nothing, Union, opt, maybe, Ok, Err, Result
+from sidekick import case, case_fn
 
-class TestADTMeta:
-    def test_adt_name(self):
-        class ADT(opt.Foo | opt.Bar):
-            pass
+UnionMeta = type(Union)
 
-        assert (opt.Foo | opt.Bar).__name__ == 'Union(Foo|Bar)'
+
+class TestCreateUnionType:
+    def test_union_type_hierarchy(self):
+        class ADT(Union):
+            Foo = opt()
+            Bar = opt(1)
+
         assert ADT.__name__ == 'ADT'
+        assert ADT._meta.is_base
+        assert not ADT._meta.is_abstract
+        assert not ADT._meta.is_case
 
-    def test_forbid_multiple_levels_of_inheritance(self):
-        ADT = opt.Foo | opt.Bar
+        # Non singleton
+        assert issubclass(ADT.Bar, ADT)
+        assert isinstance(ADT.Bar(42), ADT)
+        assert isinstance(ADT.Bar(42), ADT.Bar)
 
-        class ADT2(ADT):
-            pass
-
+        # Singleton
+        assert issubclass(type(ADT.Foo), ADT)
         assert isinstance(ADT.Foo, ADT)
-        assert isinstance(ADT2.Foo, ADT2)
-        assert not isinstance(ADT2.Foo, ADT)
-        assert not isinstance(ADT.Foo, ADT2)
-        assert not issubclass(ADT2, ADT)
+        assert isinstance(ADT.Foo, ADT.Foo)
 
     def test_construct_adt_with_more_than_two_states(self):
-        ADT = opt.Foo | opt.Bar | opt.Ham
+        class ADT(Union):
+            Foo = opt()
+            Bar = opt()
+            Ham = opt()
 
         assert issubclass(ADT, Union)
         assert isinstance(ADT.Foo, ADT)
@@ -32,44 +39,59 @@ class TestADTMeta:
         assert isinstance(ADT.Ham, ADT)
 
     def test_construct_composite_adt_with_more_than_two_states(self):
-        ADT = opt.Foo(object) | opt.Bar(object) | opt.Ham(object)
+        class ADT(Union):
+            Foo = opt(1)
+            Bar = opt(1)
+            Ham = opt(1)
+
         assert issubclass(ADT, Union)
         assert isinstance(ADT.Foo(1), ADT)
         assert isinstance(ADT.Bar(2), ADT)
         assert isinstance(ADT.Ham(3), ADT)
 
-    def test_state_numeric_initializer(self):
-        assert opt.State(2) == opt.State(object, object)
-
-    def test_none_forces_creation_of_union_type(self):
-        adt = opt.Foo | None
-        assert isinstance(adt, UnionMeta)
-        assert (
-            (opt.Foo | opt.Bar)._states == (opt.Foo | opt.Bar | None)._states
-        )
-
     def test_forbids_multiple_adt_inheritance(self):
+        class FooBar(Union):
+            Foo = opt()
+            Bar = opt()
+
+        class HamSpam(Union):
+            Ham = opt()
+            Spam = opt()
+
         with pytest.raises(TypeError):
-            class ADT(opt.Foo | opt.Bar, opt.Ham | opt.Spam):
+            class ADT(FooBar, HamSpam):
                 pass
 
     def test_forbids_multiple_levels_of_inheritance(self):
-        class ADT(opt.Foo | opt.Bar):
-            pass
+        class ADT(Union):
+            Foo = opt()
+            Bar = opt()
+
+        ADT.__module__ = 'not_the_same_module_as_child'
 
         with pytest.raises(TypeError):
-            class ADTChild(ADT):
+            class Child(ADT):
                 pass
 
-    def test_forbids_lowercase_state_names(self):
-        with pytest.raises(TypeError):
-            opt.foo
+    def test_can_define_case_classes_outside_the_class_body(self):
+        class ADT(Union):
+            Foo = opt()
+            Bar = opt()
+
+        class Child(ADT):
+            args = opt(object)
+
+        assert ADT.Child is Child
 
 
 class TestADT:
     @pytest.fixture
     def Maybe(self):
-        return opt.Just(object) | opt.Nothing
+        class Maybe(Union):
+            Nothing = opt()
+            Just = opt(1)
+
+        return Maybe
 
     @pytest.fixture
     def just(self, Maybe):
@@ -82,8 +104,10 @@ class TestADT:
     def test_adt_has_correct_type(self, Maybe):
         x = Maybe.Just(42)
         y = Maybe.Nothing
-        assert type(x) is Maybe
-        assert type(y) is Maybe
+        assert isinstance(x, Maybe.Just)
+        assert isinstance(y, Maybe.Nothing)
+        assert isinstance(x, Maybe)
+        assert isinstance(y, Maybe)
         assert isinstance(x, Union)
         assert isinstance(y, Union)
         assert issubclass(Maybe, Union)
@@ -101,26 +125,26 @@ class TestADT:
 
     def test_conditionals(self, Maybe):
         x = Maybe.Just(42)
-        assert x.just
-        assert not x.nothing
+        assert x.is_just
+        assert not x.is_nothing
 
         y = Maybe.Nothing
-        assert y.nothing
-        assert not y.just
+        assert y.is_nothing
+        assert not y.is_just
 
     def test_match_function(self, Maybe):
         x = Maybe.Just(42)
         y = Maybe.Nothing
 
-        res = x.match(
-            just=lambda x: x * 2,
-            nothing=lambda: 0,
+        res = case[x](
+            Just=lambda x: x * 2,
+            Nothing=lambda: 0,
         )
         assert res == 84
 
-        res = y.match(
-            just=lambda x: x * 2,
-            nothing=lambda: 0,
+        res = case[y](
+            Just=lambda x: x * 2,
+            Nothing=lambda: 0,
         )
         assert res == 0
 
@@ -128,9 +152,9 @@ class TestADT:
         x = Maybe.Just(42)
         y = Maybe.Nothing
 
-        func = Maybe.match_fn(
-            just=lambda x: x * 2,
-            nothing=lambda: 0,
+        func = case_fn[Maybe](
+            Just=lambda x: x * 2,
+            Nothing=lambda: 0,
         )
         assert func(x) == 84
         assert func(y) == 0
@@ -145,30 +169,26 @@ class TestADT:
     def test_can_access_state_args_attribute(self, Maybe):
         x = Maybe.Just(42)
         y = Maybe.Nothing
-        assert x.just_args == (42,)
-        assert y.nothing_args == ()
-
-        with pytest.raises(AttributeError):
-            assert x.nothing_args
-
-        with pytest.raises(AttributeError):
-            assert y.just_args
+        assert x.args == (42,)
+        assert y.args == ()
 
     def test_match_fn_raises_error_on_non_exaustive_options(self, Maybe):
-        with pytest.raises(ValueError):
-            Maybe.match_fn(
+        err = TypeError
+
+        with pytest.raises(err):
+            case_fn[Maybe](
                 just=lambda x: x,
             )
 
-        with pytest.raises(ValueError):
-            Maybe.match_fn(
+        with pytest.raises(err):
+            case_fn[Maybe](
                 just=lambda x: x,
                 nothing=lambda: 0,
                 other=lambda: 0,
             )
 
-        with pytest.raises(ValueError):
-            Maybe.match_fn(
+        with pytest.raises(err):
+            case_fn[Maybe](
                 ok=lambda x: x,
                 err=lambda: 0,
             )
@@ -177,27 +197,42 @@ class TestADT:
         a = Maybe.Just(42)
         b = Maybe.Nothing
 
-        assert a.match(just=lambda x: x, nothing=lambda: 0) == 42
-        assert b.match(just=lambda x: x, nothing=lambda: 0) == 0
+        assert case[a](Just=lambda x: x, Nothing=lambda: 0) == 42
+        assert case[b](Just=lambda x: x, Nothing=lambda: 0) == 0
 
     def test_adt_matches_are_exaustive(self, Maybe):
-        err = ValueError
+        err = TypeError
 
         def f1(x): return x
 
         def f2(x): return None
 
         with pytest.raises(err):
-            Maybe.Nothing.match(just=f1)
+            case[Maybe.Nothing](just=f1)
 
         with pytest.raises(err):
-            Maybe.Nothing.match(nothing=f1)
+            case[Maybe.Nothing](nothing=f1)
 
         with pytest.raises(err):
-            Maybe.Nothing.match(just=f1, nothing=f2, other=f2)
+            case[Maybe.Nothing](just=f1, nothing=f2, other=f2)
 
     def test_adt_has_hash(self, Maybe):
         assert hash(Maybe.Nothing) != hash(Maybe.Just(1))
+
+
+class TestADTWithExternalDefinition(TestADT):
+    @pytest.fixture
+    def Maybe(self):
+        class Maybe(Union):
+            pass
+
+        class Just(Maybe):
+            args = opt(object)
+
+        class Nothing(Maybe):
+            pass
+
+        return Maybe
 
 
 class TestMaybe(TestADT):
@@ -205,21 +240,24 @@ class TestMaybe(TestADT):
     def Maybe(self):
         return Maybe
 
+    def test_maybe_class_structure(self, Maybe):
+        assert issubclass(Maybe.Just, Maybe)
+        assert issubclass(type(Maybe.Nothing), Maybe)
+
     def test_maybe_type(self, Maybe):
         assert Maybe.__name__ == 'Maybe'
-        assert hasattr(Maybe, 'value')
 
     def test_then_method(self):
         x = Maybe.Just(1)
-        y = x.then(lambda x: x + 1).then(lambda x: x + 1)
+        y = x.map(lambda x: x + 1).map(lambda x: x + 1)
 
-        assert y.just
+        assert y.is_just
         assert y.value == 3
 
     def test_then_method_nothing(self):
         x = Maybe.Nothing
-        y = x.then(lambda x: x + 1).then(lambda x: x + 1)
-        assert y.nothing
+        y = x.map(lambda x: x + 1).map(lambda x: x + 1)
+        assert y.is_nothing
 
     def test_maybe_chaining(self):
         x = (Maybe.Just(42) >> (lambda x: 2 * x)).get()
@@ -230,8 +268,8 @@ class TestMaybe(TestADT):
     def test_call(self):
         x = Maybe.Just(42)
         y = Maybe.Nothing
-        assert Maybe.call(lambda x, y: x + y, x, x) == Maybe.Just(84)
-        assert Maybe.call(lambda x, y: x + y, x, y) == Maybe.Nothing
+        assert Maybe.apply(lambda x, y: x + y, x, x) == Maybe.Just(84)
+        assert Maybe.apply(lambda x, y: x + y, x, y) == Maybe.Nothing
 
     def test_bitwise(self):
         x = Maybe.Just(42)
@@ -240,12 +278,12 @@ class TestMaybe(TestADT):
         assert x | y == x
 
     def test_ok_alias_just(self, just, nothing):
-        assert just.ok is just.just
-        assert nothing.ok is nothing.just
+        assert just.is_ok is just.is_just
+        assert nothing.is_ok is nothing.is_just
 
     def test_convertion_to_result(self, just, nothing):
-        assert just.to_result().ok
-        assert nothing.to_result().err
+        assert just.to_result().is_ok
+        assert nothing.to_result().is_err
 
     def test_thruthness(self, just, nothing):
         assert just
@@ -262,7 +300,7 @@ class TestMaybe(TestADT):
         assert just & None == None & just == nothing
 
     def test_maybe_binops(self, just, nothing):
-        assert (just + just).just
+        assert (just + just).is_just
         assert just + nothing == nothing
 
     def test_maybe_function(self, just, nothing):
@@ -294,8 +332,8 @@ class TestResult:
         assert Result.apply(str, err) == Err('err')
 
     def test_result_then_chaining(self, ok, err):
-        assert ok.then(str) == Ok('42')
-        assert err.then(str) == Err('err')
+        assert ok.map(str) == Ok('42')
+        assert err.map(str) == Err('err')
 
     def test_result_map_error_chaining(self, ok, err):
         assert ok.map_error(str.upper) == Ok(42)

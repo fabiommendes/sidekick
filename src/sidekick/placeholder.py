@@ -1,10 +1,13 @@
 import operator as op
 from functools import partial
 
-from .adt import opt
+from .union import Union, opt, case_fn
 from .operators import (
     UNARY, BINARY, COMPARISON, METHODS, SYMBOLS
 )
+
+this = None
+Callable = object
 
 
 def flip(f):
@@ -14,40 +17,39 @@ def flip(f):
 #
 # AST node types
 #
-class Ast(opt.BinOp(callable, object, object)
-          | opt.SingleOp(callable, object)
-          | opt.Call(object, tuple, dict)
-          | opt.GetAttr(object, str)
-          | opt.Placeholder(int)
-          | opt.Cte(object)):
+class Ast(Union):
     """
     AST node for a placeholder expression.
     """
 
+    BinOp = opt([('op', Callable), ('lhs', object), ('rhs', object)])
+    SingleOp = opt([('op', Callable), ('value', object)])
+    Call = opt([('caller', this), ('arguments', tuple), ('kwargs', dict)])
+    GetAttr = opt([('attr', str), ('value', this)])
+    Placeholder = opt(index=int)
+    Cte = opt(value=object)
+
     def source(self):
         return ast_source(self)
 
-    def __repr__(self):
-        return self.source()
 
-
-ast_source = Ast.match_fn(
-    placeholder=lambda n:
+ast_source = case_fn[Ast](
+    Placeholder=lambda n:
     '_' * n,
 
-    binop=lambda op, lhs, rhs:
+    BinOp=lambda op, lhs, rhs:
     '%s %s %s' % (lhs.source(), op_symbol(op), rhs.source()),
 
-    singleop=lambda op, obj:
+    SingleOp=lambda op, obj:
     '%s %s' % (op_symbol(op), obj.source()),
 
-    call=lambda obj, args, kwargs:
+    Call=lambda obj, args, kwargs:
     '%s(*%s, **%s)' % (obj, args, kwargs),
 
-    getattr=lambda attr, obj:
+    GetAttr=lambda attr, obj:
     '%s.%s' % (obj, attr),
 
-    cte=lambda x:
+    Cte=lambda x:
     repr(x),
 )
 
@@ -172,8 +174,8 @@ class placeholder:  # noqa: N801
 
     def __getattr__(self, attr):
         ast = self._ast
-        if ast.getattr:
-            parent_attr, ast = ast.getattr_args
+        if ast.is_getattr:
+            parent_attr, ast = ast.args
             attr = '%s.%s' % (parent_attr, attr)
         ast = GetAttr(attr, ast)
         acc = op.attrgetter(attr)
@@ -197,7 +199,14 @@ def F(func, *args, **kwargs):  # noqa: N802
     A helper object that can be used to define function calls on a placeholder
     object.
     """
-    ast = Call(func, args, kwargs)
+
+    def to_ast(x):
+        return x._ast if isinstance(x, placeholder) else Cte(x)
+
+    fargs = tuple(to_ast(x) for x in args)
+    fkwargs = {k: to_ast(x) for k, x in kwargs.items()}
+    ast = Call(Cte(func), fargs, fkwargs)
+
     acc = lambda x: \
         func(
             *((e._acc(x) if isinstance(e, placeholder) else e)

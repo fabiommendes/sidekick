@@ -5,7 +5,7 @@ from functools import partial
 
 from .fn import fn
 from .placeholder import placeholder
-from .lib_utils import as_func, toolz
+from .lib_utils import as_func, toolz, ctoolz
 
 
 NOT_GIVEN = object()
@@ -16,7 +16,7 @@ __all__ = [
 ]
 
 compose = toolz.compose
-do = toolz.do
+do = ctoolz.do
 memoize = toolz.memoize
 pipe = toolz.pipe
 partial = partial
@@ -87,6 +87,29 @@ def const(x):
 def curry(func):
     """
     Return the curried version of a function.
+
+    Curried functions return partial applications of the function if called with
+    missing arguments:
+
+    >>> @curry
+    ... def add(x, y):
+    ...     return x + y
+
+    We can call a function two ways:
+
+    >>> add(1, 2) == add(1)(2)
+    True
+
+    This is useful for building simple functions from partial application
+    
+    >>> inc = add(1)
+    >>> inc(2)
+    3
+
+    Sidekick curries most functions where it makes sense. Variadic functions 
+    cannot be curried if the extra arguments can be passed by position. This
+    decorator inspect the decorated function to determine if it can be curried
+    or not. 
     """
 
     spec = inspect.getfullargspec(func)

@@ -22,7 +22,7 @@ def make_manuel_suite(ns):
 
     # Collect documentation files
     cd = os.path.dirname
-    path = cd(cd(cd(cd(__file__))))
+    path = cd(cd(__file__))
     doc_path = os.path.join(path, 'docs')
     readme = os.path.join(path, 'README.rst')
     files = sorted(os.path.join(doc_path, f) for f in os.listdir(doc_path))
