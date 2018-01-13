@@ -192,6 +192,7 @@ Inner classes with annotations
 If you only cares about the latest and shinny Python (3.6+), use type
 annotations for classes instead of opt(). Sidekick understands them just fine:
 
+.. ignore-next-block
 .. code-block:: python
 
     class Maybe(Union):
