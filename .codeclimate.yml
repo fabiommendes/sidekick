@@ -7,6 +7,6 @@ engines:
     enabled: true
 ratings:
   paths:
-  - "**.py"
+  - "src/**.py"
 exclude_paths:
-  - src/sidekick/tests/
+  - tests/
