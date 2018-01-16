@@ -223,6 +223,7 @@ API reference
 
 .. autoclass:: sidekick.Result
     :members:
-
+    :noindex:
 .. autofunction:: sidekick.result
+    :noindex:
 

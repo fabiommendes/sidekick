@@ -19,13 +19,14 @@ _groupby = itertools.groupby
 _map = map
 _filter = filter
 
-
 #
 # Create sequences
 #
 repeat = fn(itertools.repeat)
 count = fn(itertools.count)
-enumerate = fn(enumerate)
+enumerate = fn(enumerate, doc='''
+Iterator for (index, value) pairs of iterable. An fn-enabled version of 
+Python's builtin ``enumerate`` function.''')
 cycle = fn(itertools.cycle)
 iterate = fn2_function(toolz.iterate)
 
@@ -236,7 +237,33 @@ partition = fn2_opt(toolz.partition)
 partitionby = fn2_function(toolz.partitionby)
 partition_all = fn2(toolz.partition_all)
 sliding_window = fn2(toolz.sliding_window)
-reduceby = fn3_opt(toolz.reduceby)
+reduceby = fn3_opt(toolz.reduceby, doc='''
+Perform a simultaneous groupby and reduction.
+
+The computation ``result = reduceby(key, binop, seq, init)`` is equivalent to 
+the following::
+
+    def reduction(group):           
+        return reduce(binop, group, init)
+
+    groups = groupby(key, seq)                                  # doctest: +SKIP
+    result = valmap(reduction, groups)                          # doctest: +SKIP
+
+The former does not build the intermediate groups, allowing it to operate in 
+much less space.  This makes it suitable for larger datasets that do not fit 
+comfortably in memory
+
+The ``init`` keyword argument is the default initialization of the
+reduction.  This can be either a constant value like ``0`` or a callable
+like ``lambda : 0`` as might be used in ``defaultdict``.
+
+Usage:
+
+    >>> from operator import add
+    >>> iseven = (lambda x: x % 2 == 0)
+    >>> reduceby(iseven, add, [1, 2, 3, 4, 5])
+    {False: 9, True: 6}
+''')
 groupby = fn2_key(toolz.groupby)
 
 

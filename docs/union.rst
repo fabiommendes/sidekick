@@ -37,7 +37,9 @@ understand maybes.
 Here is a simple example in Python of a sqrt function that returns a Maybe
 result:
 
-    def sqrt(x: float) -> Maybe[float]:
+.. code-block:: python
+
+    def sqrt(x: float) -> Maybe:
         if x < 0:
             return Nothing
 
@@ -301,7 +303,7 @@ Case expressions have a non-trivial runtime overhead. We can reduce this overhea
 by declaring case functions and reusing them several times. For classes with
 a large number of variants, case functions may be even faster then if statements.
 
-.. invisible-code-block:: python
+.. invisible-code-block: python
 
     Maybe = type(x)._meta.base_class  # we redefined maybe so many times...
 
@@ -566,26 +568,29 @@ Union types
 
 .. autoclass:: sidekick.Union
     :members:
-
+    :noindex:
 .. autofunction:: sidekick.opt
+    :noindex:
 
 
 Case syntax and case dispatch functions
 ---------------------------------------
 
 .. autoclass:: sidekick.case
+    :noindex:
 .. autoclass:: sidekick.case_fn
+    :noindex:
 .. autofunction:: sidekick.casedispatch
-.. autofunction:: sidekick.casedispatch.from_namespace
+    :noindex:
 
 
 See also
 ========
 
-Check the reference for the :class:`sidekick.Maybe`, :sidekick:`Result` and
-:sidekick:`List` for implementations of some classic union types.
+Check the reference for the :class:`sidekick.Maybe`, :class:`sidekick.Result` and
+:class:`sidekick.List` for implementations of some classic union types.
 
-.. toctree:: Classic union types
+.. toctree::
     Maybe <maybe.rst>
     Result <result.rst>
     List <list.rst>

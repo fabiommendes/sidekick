@@ -37,5 +37,6 @@ API reference
 
 .. autoclass:: sidekick.List
     :members:
-
-.. autofunction:: sidekick.slist
+    :noindex:
+.. autofunction:: sidekick.linklist
+    :noindex:

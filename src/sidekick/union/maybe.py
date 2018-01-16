@@ -27,8 +27,8 @@ class Maybe(Union):
     def apply(cls, func, *args, **kwargs):
         """
         Execute function with all given Just values and return
-        Just(func(*values, **kwargs)). If any positional argument is a Nothing,
-        return Nothing.
+        ``Just(func(*values, **kwargs))``. If any positional argument is a
+        Nothing, return Nothing.
 
         Examples:
 

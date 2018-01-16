@@ -66,7 +66,7 @@ class TestRecordView:
     pt = TestRecord.pt
 
     def test_anonymous_record_view(self):
-        assert list(record(x=1, y=2)._view) == ['x', 'y']
+        assert set(record(x=1, y=2)._view) == {'x', 'y'}
         assert len(record(x=1, y=2)._view) == 2
         assert record(x=1, y=2)._view['x'] == 1
 

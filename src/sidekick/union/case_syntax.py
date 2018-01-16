@@ -20,8 +20,22 @@ def casedispatch(typ):
             return x + 1
 
         @incr.register(Maybe.Nothing)
-        def incr():
+        def _():
             return 1
+
+    The cases can also be defined in a class namespace and used in conjunction
+    with the ``@casedispatch.from_namespace`` decorator. This syntax maps the
+    implementation for each case with a method with the of the same name::
+
+        @casedispatch.from_namespace(Maybe)
+        class incr:
+            def Just(x):
+                return x + 1
+
+            def Nothing():
+                return 1
+
+    This return a casedispatch function and discards the class definition.
     """
 
     # Handle singleton types
@@ -132,24 +146,6 @@ def _check_complete_cases(cases, base, has_default):
 
 
 def from_namespace(base, namespace=None):
-    """
-    Create a case function for the given class for the provided namespace.
-
-    It matches the names of attributes to the cases in the base class. This
-    function is curried and if called with a single argument can be used
-    as a class decorator.
-
-    Args:
-        base (type):
-            Base union type to do case dispatch.
-        namespace:
-            A Python object used as a namespace of functions. Can be any object
-            that provide access to members using attributes such as a class,
-            a module or basically any Python object.
-
-    Returns:
-        A casedispatch function.
-    """
     if namespace is None:
         return lambda ns: from_namespace(base, ns)
     if not base._UnionMeta__is_closed:
@@ -211,7 +207,7 @@ class case_fn(metaclass=_CaseFnMeta):
     """
     An anonymous case function associated with a specific Union type.
 
-    It implements the following syntax:
+    It implements the following syntax::
 
         case_fn[UnionSubclass](
             State1=
@@ -278,7 +274,7 @@ class _CaseMeta(type):
 class case(metaclass=_CaseMeta):
     """
     A case expression dispatch execution to some state from a collection of
-    states. The syntax for a case expression is:
+    states. The syntax for a case expression is::
 
         case[value](
             State1=

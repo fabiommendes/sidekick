@@ -45,10 +45,14 @@ class fn(metaclass=fnMeta):  # noqa: N801
     A function wrapper that enable functional programming superpowers.
     """
 
-    def __init__(self, function):
+    def __init__(self, function, doc=None):
         if isinstance(function, placeholder):
             function = function._
         self._ = function
+        if doc is not None:
+            self.__doc__ = doc
+        else:
+            self.__doc__ = getattr(function, '__doc__', None)
 
     def __repr__(self):
         try:
@@ -101,7 +105,6 @@ class fn(metaclass=fnMeta):  # noqa: N801
     __globals__ = prop_delegate('__globals__', dict)
     __kwdefaults__ = prop_delegate('__kwdefaults__', None)
     __module__ = prop_delegate('__module__', '')
-    __doc__ = prop_delegate('__doc__', None)
 
     def __getattr__(self, attr):
         return getattr(self._, attr)

@@ -27,6 +27,7 @@ class AttrGetter:
     def __setattr__(self, attr, value):
         setattr(self._object, attr, value)
 
+
 class MethodGetter:
     __slots__ = '_object'
 
@@ -56,8 +57,9 @@ class Result(Union):
     @classmethod
     def apply(cls, func, *args):
         """
-        Execute function with all given Ok values and return Ok(func(*values)).
-        If any argument is an Error return the first error.
+        Execute function with all given Ok values and return
+        ``Ok(func(*values))``. If any argument is an Error return the first
+        error.
 
         Examples:
 
@@ -218,8 +220,8 @@ class Result(Union):
         else:
             error = self.error
             if (isinstance(error, Exception) or
-                        isinstance(error, type) and
-                        issubclass(error, Exception)):
+                    isinstance(error, type) and
+                    issubclass(error, Exception)):
                 raise error
             else:
                 raise ValueError(error)

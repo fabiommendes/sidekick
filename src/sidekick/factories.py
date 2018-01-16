@@ -31,6 +31,8 @@ class attrgetter(metaclass=AttrGetterMeta):  # noqa: N801
     __attrs__ = property(lambda x: x._attrs)
 
     def __getattr__(self, attr):
+        if attr == '__wrapped__':
+            raise AttributeError('__wrapped__')
         return attrgetter._new(*(self._attrs + (attr,)))
 
     def __repr__(self):
@@ -66,14 +68,18 @@ class caller(metaclass=CallerMeta):  # noqa: N801
 
     Usage:
 
-    >>> f = caller.foo.bar.foobar(answer=42)
-    >>> f(x)   # now it will make the call
+    >>> f = f = caller.real.conjugate()
+    >>> f(42+1j)
+    42
     """
 
     __slots__ = ('_attrs')
     __attrs__ = property(lambda x: x._attrs)
 
     def __getattr__(self, attr):
+        # Make it inspectable for doctests
+        if attr == '__wrapped__':
+            raise AttributeError('__wrapped__')
         return caller._new(*(self._attrs + (attr,)))
 
     def __call__(self, *args, **kwargs):

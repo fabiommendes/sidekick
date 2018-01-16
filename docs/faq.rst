@@ -5,19 +5,22 @@ Frequently asked questions
 Usage
 =====
 
-Why is this file empty?
------------------------
+Why a new functional programming library?
+-----------------------------------------
 
-Because it was created automatically by python-boilerplate__ and the package
-author is too busy coding and did not provide a proper FAQ section ;-)
+Python is a multi-paradigm programming language and has some level of support
+of functional programming. That said, most APIs tend to encourage object
+oriented interfaces since that is what the language encourages and supports
+better. Sidekick aims to make functional programming viable in Python.
 
-..: http://github.com/fabiommendes/python-boilerplate/
+
+
 
 Concepts
 ========
 
-Why do we want an automatic boilerplate?
-----------------------------------------
+Immutable data types
+--------------------
 
 Because time is precious and we don't want to waste it in repetitive tasks. Copy
 and paste can go a long way creating a new project, but is tedious and error

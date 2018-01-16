@@ -4,5 +4,5 @@ API Reference
 
 API documentation for the Sidekick module.
 
-.. automodule:: Sidekick
+.. automodule:: sidekick.union
    :members:

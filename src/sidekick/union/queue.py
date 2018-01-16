@@ -1,7 +1,7 @@
 import collections
 import functools
 
-from .list import List, Nil, slist
+from .list import List, Nil, linklist
 
 
 def on_parts(func):
@@ -147,7 +147,7 @@ class Queue(collections.Sequence):
         """
         Convert queue to list.
         """
-        return slist(iter(self))
+        return linklist(iter(self))
 
     def reversed(self):
         """

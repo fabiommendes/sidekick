@@ -7,7 +7,13 @@ from .union import Union, opt
 flip = (lambda f: lambda x, y: f(y, x))
 
 
-class List(Union, collections.Sequence):
+class ListMeta(type(Union), type(collections.Sequence)):
+    """
+    Metaclass for List type.
+    """
+
+
+class List(Union, collections.Sequence, metaclass=ListMeta):
     """
     An immutable singly-linked list.
     """
@@ -60,7 +66,7 @@ class List(Union, collections.Sequence):
 
     def __repr__(self):
         data = ', '.join(map(str, self))
-        return 'slist([{}])'.format(data)
+        return 'linklist([{}])'.format(data)
 
     # Concatenation
     def __add__(self, other):
@@ -176,7 +182,7 @@ class List(Union, collections.Sequence):
         """
         A sorted version of the list.
         """
-        return slist(sorted(self, **kwargs))
+        return linklist(sorted(self, **kwargs))
 
     def partition(self, predicate):
         """
@@ -199,7 +205,7 @@ class List(Union, collections.Sequence):
         Return a filtered copy with only the items that satisfy the given
         predicate.
         """
-        return slist(x for x in self if predicate(x))
+        return linklist(x for x in self if predicate(x))
 
     def maybe_map(self, func):
         """
@@ -207,13 +213,13 @@ class List(Union, collections.Sequence):
         results.
         """
         results = (func(x) for x in self)
-        return slist(x.value for x in results if x.is_just)
+        return linklist(x.value for x in results if x.is_just)
 
     def index_map(self, func):
         """
         Maps a function that the pair (i, value) for value in position i.
         """
-        return slist(func(i, x) for i, x in enumerate(self))
+        return linklist(func(i, x) for i, x in enumerate(self))
 
     def foldl(self, func, start):
         """
@@ -261,7 +267,7 @@ class List(Union, collections.Sequence):
         """
         Maps function into list.
         """
-        return slist(map(func, self))
+        return linklist(map(func, self))
 
     def map_bound(self, func):
         """
@@ -274,7 +280,7 @@ class List(Union, collections.Sequence):
             for x in self:
                 yield from func(x)
 
-        return slist(iter_all())
+        return linklist(iter_all())
 
 
 class Cons(List):
@@ -304,9 +310,12 @@ class Nil(List):
         return self
 
 
-def slist(seq):
+def linklist(seq):
     """
-    Creates a List object from sequence"
+    Creates a classical singly-linked List object from sequence.
+
+    >>> linklist([1, 2, 3])
+    linklist([1, 2, 3])
     """
 
     cons = Cons

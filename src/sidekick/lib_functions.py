@@ -1,25 +1,24 @@
+import functools
 import inspect
-
 import types
-from functools import partial
 
 from .fn import fn
-from .placeholder import placeholder
 from .lib_utils import as_func, toolz, ctoolz
-
+from .placeholder import placeholder
 
 NOT_GIVEN = object()
 
 __all__ = [
-    'compose', 'do', 'memoize', 'pipe', 'partial', 'rpartial',
-    'force_function', 'identity', 'juxt', 'const', 'curry',
+
 ]
 
 compose = toolz.compose
 do = ctoolz.do
 memoize = toolz.memoize
 pipe = toolz.pipe
-partial = partial
+partial = fn(functools.partial,
+             doc='new function with partial application of the given arguments '
+                 'and keywords')
 
 
 def force_function(func, name=None):
@@ -122,4 +121,5 @@ def curry(func):
             if len(used_args) + len(args) >= arity
             else incomplete_factory(arity, used_args + args)
         )
+
     return incomplete_factory(len(spec.args), ())

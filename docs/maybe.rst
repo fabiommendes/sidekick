@@ -16,6 +16,6 @@ API reference
 =============
 
 .. autoclass:: sidekick.Maybe
-    :members:
-
+    :noindex:
 .. autofunction:: sidekick.maybe
+    :noindex:

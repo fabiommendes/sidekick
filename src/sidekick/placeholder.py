@@ -173,6 +173,8 @@ class placeholder:  # noqa: N801
         return self._ast.source()
 
     def __getattr__(self, attr):
+        if attr == '__wrapped__':
+            raise AttributeError('__wrapped__')
         ast = self._ast
         if ast.is_getattr:
             parent_attr, ast = ast.args
