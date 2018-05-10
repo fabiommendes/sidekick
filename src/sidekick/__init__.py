@@ -1,3 +1,4 @@
+from .__meta__ import __version__, __author__
 from . import deferred
 from . import json
 from . import op
@@ -43,7 +44,5 @@ from .union import (
     List, linklist,
 )
 
-__version__ = '0.2.1'
-__author__ = 'Fábio Macêdo Mendes'
 __all__ = list(x for x in globals().keys() if not x.startswith('_'))
 __all__.extend(['__version__', '__author__', '_'])
