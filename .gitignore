@@ -30,3 +30,4 @@ src/sidekick/__meta__.py
 
 # Testing and temporary files
 .tox/
+.pytest_cache/

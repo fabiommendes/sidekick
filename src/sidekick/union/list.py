@@ -32,23 +32,28 @@ class List(Union, collections.Sequence, metaclass=ListMeta):
         return result
 
     def __iter__(lst):  # noqa: N805
-        while lst is not Nil:
-            x, lst = lst.args
+        while lst.is_cons:
+            x = lst.head
+            lst = lst.tail
             yield x
 
     def __len__(lst):  # noqa: N805
         size = 0
-        while lst is not Nil:
-            _, lst = lst.args
+        while lst.is_cons:
+            lst = lst.tail
             size += 1
+        return size
 
     def __getitem__(lst, i):  # noqa: N805
         if i < 0:
             raise IndexError('negative indexes not supported')
+        if lst.is_nil:
+            raise IndexError(i)
         for idx in range(i + 1):
             try:
-                x, lst = lst.args
-            except IndexError:
+                x = lst.head
+                lst = lst.tail
+            except AttributeError:
                 raise IndexError(i)
         return x
 
@@ -125,7 +130,7 @@ class List(Union, collections.Sequence, metaclass=ListMeta):
 
     def take(lst, n):  # noqa: N805
         """
-        Return a list with at most the first n elements of list.
+        Return a list with at most the first n elements.
         """
 
         result = Nil
@@ -140,7 +145,7 @@ class List(Union, collections.Sequence, metaclass=ListMeta):
 
     def drop(lst, n):  # noqa: N805
         """
-        Return a list that removes at most the first n elements of list.
+        Return a list that removes at most the first n elements.
         """
 
         for i in range(n):
@@ -310,6 +315,10 @@ class Nil(List):
         return self
 
 
+# Fixme: should return a singleton instance
+Nil = List.Nil
+
+
 def linklist(seq):
     """
     Creates a classical singly-linked List object from sequence.
@@ -318,8 +327,27 @@ def linklist(seq):
     linklist([1, 2, 3])
     """
 
+    try:
+        size = len(seq)
+    except TypeError:
+        pass
+    else:
+        if size < 256:
+            ls = _link_list_recur(iter(seq))
+            print(ls)
+            return ls
     cons = Cons
     xs = List.Nil
     for x in reversed(seq):
         xs = cons(x, xs)
     return xs
+
+
+def _link_list_recur(seq):
+    try:
+        x = next(seq)
+        print(x)
+    except StopIteration:
+        return Nil
+    else:
+        return Cons(x, _link_list_recur(seq))
