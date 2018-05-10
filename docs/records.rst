@@ -4,17 +4,17 @@ Records
 
 Records (or struct) is a simple data structure that implements a collection of
 fields. While there are many record-like structures in Python, each of them
-seem to have its own set of quirks. Sidekick aims to make using records more
-effective so users do not have to rely on custom classes to define types for
+seems to have its own set of quirks. Sidekick aims to make using records more
+effective so users can avoid to rely on custom classes to define simple types for
 data aggregation.
 
-A new record type can be created using the :func:`sidekick.make_record`
+A new record type can be created using the :func:`sidekick.Record.define`
 function:
 
 >>> from sidekick import *
->>> Point = make_record('Point', ['x', 'y'])
+>>> Point = Record.define('Point', ['x', 'y'])
 
-As with Python's native namedtuple, the :func:`sidekick.make_record` function
+As with Python's native namedtuple, the :func:`sidekick.Record.define` function
 takes the record type name and a list of field names and return a record type.
 Sidekick takes care of implementing the default constructor and a few useful
 methods:
@@ -32,9 +32,9 @@ operator.
 
 Sidekick distinguishes mutable and immutable records types. In fact, we call
 mutable records "namespaces", and they are appropriately created using
-the :func:`sidekick.make_namespace` function:
+the :func:`sidekick.Record.define_namespace` function:
 
->>> MutablePoint = make_namespace('MutablePoint', ['x', 'y'])
+>>> MutablePoint = Record.define_namespace('MutablePoint', ['x', 'y'])
 >>> w = MutablePoint(x=1, y=1)
 >>> w.y = 2  # this will not raise an error!
 >>> w
@@ -59,8 +59,8 @@ replace dictionaries in many situations:
 >>> artist.name
 'John Lennon'
 
-Anonymous records have a few tweaks over regular records to make it interoperate
-better with dictionaries. They can be created from dictionaries and support
+Anonymous records have a few tweaks over regular records to make it more
+interoperable with dictionaries. Records can be created from dictionaries and support
 the getitem interface:
 
 >>> artist = record({'name': 'John Lennon', 'band': 'Beatles'})
@@ -75,7 +75,7 @@ mappings since that would pollute the API with many dictionary methods such as
 situations. For instance, if ``x = record(items=[1, 2])``, what should
 ``x.items`` do?
 
-That said, records are compatible enough with dictionaries that they can
+That said, records are compatible enough with dictionaries as to be able to
 replace them in a few important use cases. One non-trivial example is loading
 JSON data with Python's builtin :mod:`json` module:
 
@@ -132,7 +132,7 @@ For data aggregation, however, records offer a few advantages
 
 1 Records are safer and cannot introduce silent bugs from typos
 2 The obj.attr syntax reads and writes better than obj['attr']
-3 They are more type safe
+3 Records can be made reasonably type safe
 
 On the other hand,
 

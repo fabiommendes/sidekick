@@ -15,7 +15,7 @@ def prop_delegate(name, default):
     return property(fget)
 
 
-class fnMeta(type):  # noqa: N801
+class FnMeta(type):
     "Metaclass for the fn type"
 
     def __rshift__(self, other):
@@ -40,7 +40,7 @@ class fnMeta(type):  # noqa: N801
         return fn(curry(func))
 
 
-class fn(metaclass=fnMeta):  # noqa: N801
+class fn(metaclass=FnMeta):  # noqa: N801
     """
     A function wrapper that enable functional programming superpowers.
     """

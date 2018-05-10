@@ -1,8 +1,9 @@
 import io
+
 import sidekick as sk
 
-Point = sk.make_record('Point', ['x', 'y'])
-MPoint = sk.make_record('MPoint', ['x', 'y'])
+Point = sk.Record.define('Point', ['x', 'y'])
+MPoint = sk.Record.define_namespace('MPoint', ['x', 'y'])
 
 
 class TestJson:

@@ -50,7 +50,7 @@ class UnionMeta(type):
 
         # Handle abstract base classes such as Union and Singleton. Those
         # classes have no instances and no concrete case sub-classes.
-        # An class must be tagged explicitly as abstract, otherwise it will
+        # A class must be tagged explicitly as abstract, otherwise it will
         # think it is a base class
         is_abstract = kwargs.pop('is_abstract', False)
         if is_abstract:

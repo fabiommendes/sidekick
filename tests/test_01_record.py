@@ -2,7 +2,7 @@ from copy import copy
 
 import pytest
 
-from sidekick import Record, field, record, record_to_dict, make_record
+from sidekick import Record, field, record, record_to_dict
 
 
 class TestAnonymousRecord:
@@ -86,10 +86,10 @@ class TestRecordView:
 class TestRecordWithInvalidNames:
     def test_do_not_make_record_with_invalid_names(self):
         with pytest.raises(ValueError):
-            make_record('IfBlock', ['if', 'else'])
+            Record.define('IfBlock', ['if', 'else'])
 
     def test_make_record_with_invalid_names(self):
-        Rec = make_record('IfBlock', ['if', 'else'], invalid_names=True)
+        Rec = Record.define('IfBlock', ['if', 'else'], invalid_names=True)
         rec = Rec(1, 2)
         assert dict(rec) == {'if': 1, 'else': 2}
         assert getattr(rec, 'if') == 1

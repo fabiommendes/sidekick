@@ -2,8 +2,7 @@ import operator as op
 
 
 def identity(x):
-    "Return its single argument."
-
+    "A function that returns its single argument."
     return x
 
 

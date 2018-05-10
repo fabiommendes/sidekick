@@ -6,14 +6,11 @@ Sidekick is a library that gives you functional superpowers.
 
 .. image:: https://travis-ci.org/fabiommendes/sidekick.svg?branch=master
     :target: https://travis-ci.org/fabiommendes/sidekick
-
-.. image:: https://codecov.io/gh/fabiommendes/sidekick/branch/master/graph/badge.svg
+.. image:: https://codecov.io/gh/fabiommendes/sidekick/branch/master/graph/badge.svg?
     :target: https://codecov.io/gh/fabiommendes/sidekick
-
-.. image:: https://codeclimate.com/github/fabiommendes/sidekick/badges/gpa.svg
+.. image:: https://codeclimate.com/github/fabiommendes/sidekick/badges/gpa.svg?
     :target: https://codeclimate.com/github/fabiommendes/sidekick
-
-.. image:: https://codeclimate.com/github/fabiommendes/sidekick/badges/issue_count.svg
+.. image:: https://codeclimate.com/github/fabiommendes/sidekick/badges/issue_count.svg?
     :target: https://codeclimate.com/github/fabiommendes/sidekick
 
 

@@ -1,8 +1,8 @@
 from collections import Iterator
 
+from .extended_semantics import as_key, as_func, as_predicate_func
+
 from .fn import fn
-from .placeholder import placeholder
-from .predicate import predicate
 
 try:
     import cytoolz as toolz
@@ -13,47 +13,6 @@ except ImportError:
 
 
 NOT_GIVEN = object()
-underscore_to_function = (placeholder, fn, predicate)
-
-
-#
-# Extendend function semantics normalizers
-#
-def as_func(f):
-    "Extended function semantics for callable arguments."
-
-    if isinstance(f, underscore_to_function):
-        return f._
-    elif f is None:
-        return lambda x: x
-    elif callable(f):
-        return f
-    else:
-        raise ValueError('cannot be interpreted as a function: %r' % f)
-
-
-def as_key(f):
-    "Extended function semantics for key arguments."
-
-    if isinstance(f, underscore_to_function):
-        return f._
-    elif f is None:
-        return lambda x: x
-    return f
-
-
-def as_predicate_func(f):
-    """
-    Extended function semantics for argument that is expected to be a
-    predicate.
-    """
-
-    if isinstance(f, underscore_to_function):
-        return f._
-    elif callable(f):
-        return f
-    else:
-        raise ValueError('cannot be interpreted as a predicate: %r' % f)
 
 
 #

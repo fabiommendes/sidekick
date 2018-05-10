@@ -1,7 +1,6 @@
 from .fn import fn
 from .placeholder import placeholder
 
-
 nullfunc = lambda *args, **kwargs: None
 
 
@@ -45,6 +44,16 @@ class cond:  # noqa: N801
     It creates a function that takes a predicate and a true and false
     branches. The resulting function executes either branch depending on the
     value of the predicate.
+
+    Examples:
+        >>> from sidekick import cond, _
+        >>> half = cond(
+        ...     is_even,
+        ...     true=_ // 2,
+        ...     false=(_ + 1) // 2,
+        ... )
+        >>> [half(1), half(2), half(3), half(4)]
+        [1, 1, 2, 2]
     """
 
     def __init__(self, predicate, true=nullfunc, false=nullfunc):
@@ -93,14 +102,15 @@ class cond:  # noqa: N801
 #
 # Predicate factories
 #
-def typeof(cls):
+def type_of(cls):
     """
-    Return a predicate function that checks if argument is an instance of a class.
+    Return a predicate function that checks if argument is an instance of a
+    class.
     """
     return predicate(lambda x: isinstance(x, cls))
 
 
-def valueof(value):
+def value_of(value):
     """
     Return a predicate function that checks if the argument is equal to
     the given value.
@@ -108,7 +118,7 @@ def valueof(value):
     return predicate(lambda x: x == value)
 
 
-def identityof(value):
+def identity_of(value):
     """
     Return a predicate function that checks if the argument has the same
     identity of the given value.
@@ -116,7 +126,7 @@ def identityof(value):
     return predicate(lambda x: x is value)
 
 
-def anyof(*predicates):
+def any_of(*predicates):
     """
     Return a new predicate that performs an logic AND to all predicate
     functions.
@@ -124,7 +134,7 @@ def anyof(*predicates):
     return predicate(lambda x: any(f(x) for f in predicates))
 
 
-def allof(*predicates):
+def all_of(*predicates):
     """
     Return a new predicate that performs an logic ALL to all predicate
     functions.
@@ -135,17 +145,17 @@ def allof(*predicates):
 #
 # Predicate functions
 #
-isnone = identityof(None)
-istrue = identityof(True)
-isfalse = identityof(False)
+is_none = identity_of(None)
+is_true = identity_of(True)
+is_false = identity_of(False)
 
 # Numeric
-isodd = predicate(lambda x: x % 2 == 1)
-iseven = predicate(lambda x: x % 2 == 0)
-ispositive = predicate(lambda x: x >= 0)
-isnegative = predicate(lambda x: x <= 0)
-isnonzero = predicate(lambda x: x != 0)
-iszero = predicate(lambda x: x == 0)
+is_odd = predicate(lambda x: x % 2 == 1)
+is_even = predicate(lambda x: x % 2 == 0)
+is_positive = predicate(lambda x: x >= 0)
+is_negative = predicate(lambda x: x <= 0)
+is_nonzero = predicate(lambda x: x != 0)
+is_zero = predicate(lambda x: x == 0)
 
 
 #

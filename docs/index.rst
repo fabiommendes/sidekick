@@ -14,6 +14,8 @@ Table of contents
    Installation instructions <install.rst>
    Records <records.rst>
    Union types <union.rst>
+   Functions <functions.rst>
+   Lazy programming <lazy.rst>
    API documentation <apidoc.rst>
    Frequently asked questions <faq.rst>
    License <license.rst>

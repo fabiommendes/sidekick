@@ -3,9 +3,9 @@ from collections import deque
 
 from .fn import fn
 from .lib_utils import (
-    toolz, is_seqcont, as_func, as_predicate_func,
-    fn1, fn2, fn2_opt, fn2_key, fn2_predicate, fn2_function, fn3_opt,
+    toolz, is_seqcont, fn1, fn2, fn2_opt, fn2_key, fn2_predicate, fn2_function, fn3_opt,
 )
+from sidekick.extended_semantics import as_func, as_predicate_func
 
 NOT_GIVEN = object()
 
@@ -86,7 +86,6 @@ def consume(seq):
     """
     Consume iterator for its side-effects and return last value or None.
     """
-
     last = None
     for last in seq:
         pass

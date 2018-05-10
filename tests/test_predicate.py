@@ -1,4 +1,4 @@
-from sidekick import predicate, cond, isodd, _
+from sidekick import predicate, cond, is_odd, _
 
 
 class TestPredicate:
@@ -21,7 +21,7 @@ class TestPredicate:
         assert (~p1)(1) is False
 
     def test_cond(self):
-        f = cond(isodd)\
+        f = cond(is_odd)\
             .true((_ - 1) // 2)\
             .false(_ // 2)
 

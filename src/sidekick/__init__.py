@@ -3,6 +3,7 @@ from . import json
 from . import op
 from .factories import attrgetter, caller
 from .fn import fn
+from .lazy import lazy, lazy_shared, property
 from .lib_functions import (
     compose,
     const,
@@ -24,8 +25,6 @@ from .record import (
     Namespace,
     Record,
     field,
-    make_record,
-    make_namespace,
     namespace,
     record,
     record_to_dict,
