@@ -1,4 +1,4 @@
-from sidekick import predicate, cond, is_odd, _
+from sidekick import predicate, cond, is_odd, placeholder
 
 
 class TestPredicate:
@@ -8,12 +8,12 @@ class TestPredicate:
         assert p(1) is False
 
     def test_predicate_accepts_extended_function_semantics(self):
-        assert predicate(_ == 2)(2) is True
-        assert predicate(_ == 2)(3) is False
+        assert predicate(placeholder == 2)(2) is True
+        assert predicate(placeholder == 2)(3) is False
 
     def test_predicate_composes_on_logical_operations(self):
-        p1 = predicate(_ > 0)
-        p2 = predicate(_ < 10)
+        p1 = predicate(placeholder > 0)
+        p2 = predicate(placeholder < 10)
         p3 = p1 & p2
         assert p3(5) is True
         assert p3(11) is False
@@ -22,8 +22,8 @@ class TestPredicate:
 
     def test_cond(self):
         f = cond(is_odd)\
-            .true((_ - 1) // 2)\
-            .false(_ // 2)
+            .true((placeholder - 1) // 2)\
+            .false(placeholder // 2)
 
         assert f(3) == 1
         assert f(4) == 2

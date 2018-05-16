@@ -1,10 +1,10 @@
 import operator as op
 from functools import partial
 
-from .union import Union, opt, case_fn
 from .operators import (
     UNARY, BINARY, COMPARISON, METHODS, SYMBOLS
 )
+from .union import Union, opt, case_fn
 
 this = None
 Callable = object
@@ -12,6 +12,14 @@ Callable = object
 
 def flip(f):
     return lambda x, y: f(y, x)
+
+
+def make_instance(cls):
+    instance = getattr(cls, '_placeholder_instance', None)
+    if type(instance) is not cls:
+        instance = cls(Ast.Placeholder(1), lambda x: x)
+        cls._placeholder_instance = instance
+    return instance
 
 
 #
@@ -64,46 +72,47 @@ Cte = Ast.Cte
 #
 # Operator factories and registration
 #
-
-
-def register_operators(operators):
+def register_operators(rfunc, operators):
     """
     Register a list of operators.
     """
 
     def decorator(cls):
-        for op_ in operators:
-            setattr(cls, op_.__name__, op_)
+        for op in operators:
+            op = rfunc(op, cls)
+            setattr(cls, op.__name__, op)
         return cls
 
     return decorator
 
 
-def unary(op):
+def unary(op, cls):
     name = '__%s__' % op.__name__.rstrip('_')
+    placeholder = make_instance(cls)
 
     def method(self):
-        if self is _:
+        if self is placeholder:
             acc = op
         else:
             f = self._acc
             acc = lambda x: op(f(x))
 
         ast = SingleOp(op, self)
-        return placeholder(ast, acc)
+        return Placeholder(ast, acc)
 
     method.__name__ = name
     return method
 
 
-def binary(op):
+def binary(op, cls):
     name = '__%s__' % op.__name__.rstrip('_')
+    placeholder = make_instance(cls)
 
     def method(self, other):
-        if isinstance(other, placeholder):
-            if self is _ and other is _:
+        if isinstance(other, cls):
+            if self is placeholder and other is placeholder:
                 acc = lambda x: op(x, x)
-            elif self is _:
+            elif self is placeholder:
                 f = other._acc
                 acc = lambda x: op(x, f(x))
             else:
@@ -114,7 +123,7 @@ def binary(op):
             ast = BinOp(op, self._ast, other._ast)
 
         else:
-            if self is _:
+            if self is placeholder:
                 acc = lambda x: op(x, other)
             else:
                 f = self._acc
@@ -122,38 +131,40 @@ def binary(op):
 
             ast = BinOp(op, self._ast, Cte(other))
 
-        return placeholder(ast, acc)
+        return cls(ast, acc)
 
     method.__name__ = name
     return method
 
 
-def rbinary(op):
+def rbinary(op, cls):
     name = '__r%s__' % op.__name__.rstrip('_')
+    placeholder = make_instance(cls)
 
     def method(self, other):
-        if self is _:
+        if self is placeholder:
             acc = partial(op, other)
         else:
             f = self._acc
             acc = lambda x: op(other, f(x))
 
         ast = BinOp(op, Cte(other), self._ast)
-        return placeholder(ast, acc)
+        return Placeholder(ast, acc)
 
     method.__name__ = name
     return method
 
 
-@register_operators(map(unary, UNARY))
-@register_operators(map(binary, BINARY + COMPARISON + METHODS))
-@register_operators(map(rbinary, BINARY))
-class placeholder:  # noqa: N801
+@register_operators(unary, UNARY)
+@register_operators(binary, BINARY + COMPARISON + METHODS)
+@register_operators(rbinary, BINARY)
+class Placeholder:
     """
     Placeholder objects represents a variable or expression on quick lambda.
     """
 
     __slots__ = '_ast', '_acc'
+    _is_descriptor = False
 
     def __init__(self, ast, acc):
         self._ast = ast
@@ -181,19 +192,35 @@ class placeholder:  # noqa: N801
             attr = '%s.%s' % (parent_attr, attr)
         ast = GetAttr(attr, ast)
         acc = op.attrgetter(attr)
-        return placeholder(ast, acc)
+        return Placeholder(ast, acc)
 
     def __call__(self, *args, **kwargs):
         ast = Call(self._ast, args, kwargs)
         func = self._acc
         acc = lambda x: \
             func(x)(
-                *((e._acc(x) if isinstance(e, placeholder) else e)
+                *((e._acc(x) if isinstance(e, Placeholder) else e)
                   for e in args),
-                **{k: (e._acc(x) if isinstance(e, placeholder) else e)
+                **{k: (e._acc(x) if isinstance(e, Placeholder) else e)
                    for k, e in kwargs.items()}
             )
-        return placeholder(ast, acc)
+        return Placeholder(ast, acc)
+
+
+class PlaceholderDescriptor(Placeholder):
+    """
+    A placeholder that also works as a descriptor. The descriptor
+    automatically executes the method as an attribute.
+    """
+
+    _is_descriptor = True
+
+    def __get__(self, instance, owner=None):
+        if instance is None:
+            return owner
+        print(instance, self)
+        return None
+        return self._acc(instance)
 
 
 def F(func, *args, **kwargs):  # noqa: N802
@@ -203,7 +230,7 @@ def F(func, *args, **kwargs):  # noqa: N802
     """
 
     def to_ast(x):
-        return x._ast if isinstance(x, placeholder) else Cte(x)
+        return x._ast if isinstance(x, Placeholder) else Cte(x)
 
     fargs = tuple(to_ast(x) for x in args)
     fkwargs = {k: to_ast(x) for k, x in kwargs.items()}
@@ -211,12 +238,12 @@ def F(func, *args, **kwargs):  # noqa: N802
 
     acc = lambda x: \
         func(
-            *((e._acc(x) if isinstance(e, placeholder) else e)
+            *((e._acc(x) if isinstance(e, Placeholder) else e)
               for e in args),
-            **{k: (e._acc(x) if isinstance(e, placeholder) else e)
+            **{k: (e._acc(x) if isinstance(e, Placeholder) else e)
                for k, e in kwargs.items()}
         )
-    return placeholder(ast, acc)
+    return Placeholder(ast, acc)
 
 
 def compile_placeholder(ast, acc):
@@ -247,4 +274,5 @@ def op_symbol(op):
 #
 # The placeholder symbol
 #
-_ = placeholder(Ast.Placeholder(1), lambda x: x)
+placeholder = _placeholder = Placeholder(Ast.Placeholder(1), lambda x: x)
+this = PlaceholderDescriptor(Ast.Placeholder(1), lambda x: x)

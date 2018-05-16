@@ -1,104 +1,40 @@
+from importlib import import_module
+
 import builtins
 
+from .deferred import Proxy
 from .extended_semantics import as_func
 
 
-#
-# Lazy attributes
-#
-class lazy:
+def lazy(function=None, *, shared=False, name=None):
     """
     Decorator that defines an attribute that is initialized with first usage
-    rather than at instance creation.
+    rather than during instance creation.
 
-    Usage is similar to the ``@property`` decorator, although lazy attributes do
-    not override *setter* and *deleter* methods.
+    Usage is similar to ``@property``, although lazy attributes do not override
+    *setter* and *deleter* methods, allowing instances to write to the
+    attribute.
+
+    Optional Args:
+        shared (bool):
+            A shared attribute behaves as a lazy class variable that is shared
+            among all classes and instances. It differs from a simple class
+            attribute in that it is initialized lazily from a function. This
+            can help to break import cycles and delay expensive computations
+            to when they are required.
+        name (str):
+            By default, a lazy attribute can infer the name of the attribute
+            it refers to. In some exceptional cases (when creating classes
+            dynamically), the inference algorithm might fail and the name
+            attribute must be set explicitly.
     """
+    if function is None:
+        return lambda function: lazy(function, shared=shared, name=name)
 
-    __slots__ = ('_function', '_name')
-
-    def __init__(self, function):
-        self._function = as_func(function)
-
-    def __get__(self, obj, cls=None):
-        if obj is None:
-            return self
-
-        value = self._function(obj)
-        try:
-            name = self._name
-        except AttributeError:
-            function_name = self._function.__name__
-            name = find_descriptor_name(self, cls, hint=function_name)
-        setattr(obj, name, value)
-        return value
-
-    def __set_name__(self, owner, name):
-        self._name = name
-
-
-class lazy_shared(lazy):
-    """
-    A lazy accessor that initializes class variables. The state is computed
-    statically at first access and is injected in the base class namespace.
-    After that, it become a class variable that is shared between all
-    instances.
-
-    Differently from lazy attributes, lazy_shared expect a classmethod as first
-    argument. It can be used to delay expensive computation of class contants
-    or to break dependency cycles between Python modules.
-
-    Usage:
-        To break a dependency cycle. Consider class Foo on foo.py and class Bar
-        on bar.py.
-
-        .. code-block:: python
-
-            # foo.py
-            import sidekick as sk
-
-            class Foo:
-                @sk.lazy_shared
-                def _bar(self):
-                    # We can't import Bar because bar.py imports Foo
-                    # This would create a dependency cycle.
-                    from .bar import Bar
-                    return Bar
-
-                def __init__(self, a):
-                    self.a = a
-
-                def bar(self):
-                    return self._bar(self.a)
-
-        .. code-block:: python
-
-            # bar.py
-            from .foo import Foo
-
-            class Bar:
-                def __init__(self, a):
-                    self.a = a
-
-                def foo(self):
-                    return Foo(self.a)
-    """
-
-    def __get__(self, obj, cls: type=None):
-        try:
-            return self._value
-        except AttributeError:
-            pass
-
-        try:
-            name = self._name
-        except AttributeError:
-            function_name = self._function.__name__
-            name = find_descriptor_name(self, cls, hint=function_name)
-        owner_class = find_descriptor_owner(self, cls, name=name)
-        self._value = self._function(owner_class)
-        setattr(owner_class, name, self._value)
-        return self._value
+    if shared:
+        return SharedLazy(function, name=name)
+    else:
+        return Lazy(function, name=name)
 
 
 class property(builtins.property):
@@ -114,10 +50,7 @@ class property(builtins.property):
         return super(as_func(fget))
 
 
-#
-# Delegation
-#
-class delegate_to(object):
+def delegate_to(attr, *, name=None, read_only=False):
     """
     Delegate access to an inner variable.
 
@@ -136,91 +69,207 @@ class delegate_to(object):
         ``x.upper()`` is now an alias for ``x.data.upper()``.
 
     Args:
-        attribute:
+        attr:
             Name of the inner variable that receives delegation.
-        readonly:
-            If true, makes the the delegate readonly.
-        inner_name:
-            The name of the inner variable. Can be ommited if the name is the
-            same of the attribute.
+        name:
+            The name of the attribute/method of the delegate variable. Can be
+            ommited if the name is the same of the attribute.
+        read_only:
+            If True, makes the the delegation read-only.
     """
-
-    def __init__(self, attribute, name=None, readonly=False, ):
-        self.attribute = attribute
-        self.name = name
-        self.readonly = readonly
-        self._getter = None
-        self._setter = None
-
-    def __get__(self, obj, cls=None):
-        if obj is None:
-            return self
-        owner = getattr(obj, self.attribute)
-        try:
-            attr = self._name
-        except AttributeError:
-            attr = self._name = self._get_name(cls)
-        return getattr(owner, attr)
-
-    def __set__(self, obj, value):
-        if self.readonly:
-            raise AttributeError
-        owner = getattr(obj, self.attribute)
-        try:
-            attr = self._name
-        except AttributeError:
-            attr = self._name = self._get_name(type(obj))
-        setattr(owner, attr, value)
-
-    def __set_name__(self, owner, name):
-        self.name = name
+    if read_only:
+        return ReadOnlyDelegate(attr, name)
+    else:
+        return Delegate(attr, name)
 
 
-class delegate_ro(delegate_to):
-    """
-    A read-only version of delegate_to()
-    """
-
-    def __init__(self, attribute):
-        super().__init__(attribute, readonly=True)
-
-
-class alias(object):
+def alias(attr, *, read_only=False, transform=None, prepare=None):
     """
     An alias to an attribute.
 
     Args:
-        attribute (str):
+        attr (str):
             Name of aliased attribute.
-        readonly (bool):
+        read_only (bool):
             If True, makes the alias read only.
+        transform (callable):
+            If given, transforms the resulting value
     """
+    if transform or prepare:
+        return TransformingAlias(attr, transform, prepare)
+    elif read_only:
+        return ReadOnlyAlias(attr)
+    else:
+        return Alias(attr)
 
-    def __init__(self, attribute, readonly=False):
-        self.attribute = attribute
-        self.readonly = readonly
+
+def import_later(path, package=None):
+    """
+    Lazily import module or object inside a module. Can refer to a module or
+    a symbol exported by that module.
+
+    Args:
+        path:
+            Python path to module or object. Specific objects inside a module
+            are refered as "<module path>:<object name>".
+        package:
+            Package name if path is a relative module path.
+
+    Usage:
+        import_later('numpy.random'):
+            Proxy to the numpy.random module.
+        import_later('numpy.random:uniform'):
+            Proxy to the "uniform" object of the numpy module.
+        import_later('.models', package=__package__):
+            Relative import
+    """
+    if ':' in path:
+        path, _, obj = path.partition(':')
+        return DeferredImport(path, obj, package=package)
+    else:
+        return LazyModule(path, package=package)
+
+
+#
+# Helper classes
+#
+class Lazy:
+    __slots__ = ('function', 'name')
+
+    def __init__(self, function, name=None):
+        self.function = as_func(function)
+        self.name = name
+
+    def __get__(self, obj, cls=None):
+        if obj is None:
+            return self
+
+        name = self.name or self._init_name(cls)
+        value = self.function(obj)
+        setattr(obj, name, value)
+        return value
+
+    def __set_name__(self, owner, name):
+        if self.name is None:
+            self.name = name
+
+    def _init_name(self, cls):
+        function_name = self.function.__name__
+        name = find_descriptor_name(self, cls, hint=function_name)
+        self.name = name
+        return name
+
+
+class SharedLazy(Lazy):
+    __slots__ = ('value',)
+
+    def __get__(self, obj, cls=None):
+        try:
+            return self.value
+        except AttributeError:
+            return self._init_value(cls)
+
+    def _init_value(self, cls):
+        self.value = self.function(cls)
+        return self.value
+
+
+class Delegate:
+    __slots__ = ('attr', 'name')
+    __set_name__ = Lazy.__set_name__
+    _init_name = Lazy._init_name
+
+    def __init__(self, attr, name=None):
+        self.attr = attr
+        self.name = name
+
+    def __get__(self, obj, cls=None):
+        if obj is None:
+            return self
+
+        name = self.name or self._init_name(cls)
+        owner = getattr(obj, self.attr)
+        return getattr(owner, name)
+
+    def __set__(self, obj, value):
+        owner = getattr(obj, self.attr)
+        name = self.name or self._init_name(type(obj))
+        setattr(owner, name, value)
+
+
+class ReadOnlyDelegate(Delegate):
+    __slots__ = ()
+
+    def __set__(self, obj, value):
+        raise AttributeError(self.name or self._init_name(type(obj)))
+
+
+class Alias:
+    __slots__ = ('attr',)
+
+    def __init__(self, attr):
+        self.attr = attr
 
     def __get__(self, obj, cls=None):
         if obj is not None:
-            return getattr(obj, self.attribute)
+            return getattr(obj, self.attr)
         return self
 
     def __set__(self, obj, value):
-        if self.readonly:
-            raise AttributeError(self.attribute)
-
-        setattr(obj, self.attribute, value)
+        setattr(obj, self.attr, value)
 
 
-class readonly(alias):
-    """
-    A read-only alias to an attribute.
-    """
+class ReadOnlyAlias(Alias):
+    __slots__ = ()
 
-    def __init__(self, attribute):
-        super(readonly, self).__init__(attribute, readonly=True)
+    def __set__(self, key, value):
+        raise AttributeError(self.attr)
 
 
+class TransformingAlias(Alias):
+    __slots__ = ('transform', 'prepare')
+
+    def __init__(self, attr, transform=lambda x: x, prepare=None):
+        super().__init__(attr)
+        self.attr = attr
+        self.transform = as_func(transform)
+        self.prepare = None if prepare is None else as_func(prepare)
+
+    def __get__(self, obj, cls=None):
+        if obj is not None:
+            return self.transform(getattr(obj, self.attr))
+        return self
+
+    def __set__(self, obj, value):
+        if self.prepare is None:
+            raise AttributeError(self.attr)
+        else:
+            value = self.prepare(value)
+        setattr(obj, self.attr, value)
+
+
+class LazyModule:
+    __mod = lazy(lambda self: import_module(self.__path, package=self.__package))
+
+    def __init__(self, path, package=None):
+        self.__path = path
+        self.__package = package
+
+    def __getattr__(self, attr):
+        value = getattr(self.__mod, attr)
+        setattr(self.__mod, attr, value)
+        return value
+
+
+class DeferredImport(Proxy):
+    def __init__(self, path, attr, package=None):
+        mod = LazyModule(path, package)
+        super().__init__(lambda: getattr(mod, attr))
+
+
+#
+# Utility functions
+#
 def find_descriptor_name(descriptor, cls: type, hint=None):
     """
     Finds the name of the descriptor in the given class.

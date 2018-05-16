@@ -1,9 +1,10 @@
-from sidekick import _, fn, op, F, record
+import pytest
+
+from sidekick import placeholder as _, this, fn, F, record
 
 
 class TestPlaceholder:
     def test_with_math_operators(self):
-        print(dir(_))
         inc = fn(_ + 1)
         assert inc(1) == 2
         assert inc(2) == 3
@@ -61,3 +62,22 @@ class TestPlaceholder:
         f = fn(_.real / (_.real * _.real))
         assert f(2) == 0.5
         assert f(2 + 2j) == 0.5
+
+
+class TestThisPlaceholder:
+    @pytest.fixture(scope='class')
+    def cls(self):
+        class Cls:
+            sum = this.x + this.y
+
+            def __init__(self, x, y):
+                self.x, self.y = x, y
+
+        return Cls
+
+    @pytest.fixture
+    def instance(self, cls):
+        return cls(1, 2)
+
+    def test_this_descriptor_works(self, instance):
+        assert instance.sum == 3

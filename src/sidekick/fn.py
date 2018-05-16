@@ -1,6 +1,6 @@
 from functools import partial
 
-from .placeholder import placeholder, _
+from .placeholder import Placeholder, placeholder
 
 
 def prop_delegate(name, default):
@@ -46,7 +46,7 @@ class fn(metaclass=FnMeta):  # noqa: N801
     """
 
     def __init__(self, function, doc=None):
-        if isinstance(function, placeholder):
+        if isinstance(function, Placeholder):
             function = function._
         self._ = function
         if doc is not None:
@@ -117,9 +117,9 @@ class fn(metaclass=FnMeta):  # noqa: N801
         """
 
         args_placeholder = \
-            any(isinstance(x, placeholder) for x in args)
+            any(isinstance(x, Placeholder) for x in args)
         kwargs_placeholder = \
-            any(isinstance(x, placeholder) for x in kwargs.values())
+            any(isinstance(x, Placeholder) for x in kwargs.values())
 
         # Simple partial application with no placeholders
         if not (args_placeholder or kwargs_placeholder):
@@ -128,7 +128,7 @@ class fn(metaclass=FnMeta):  # noqa: N801
         elif not kwargs_placeholder:
             func = self._
             return fn(lambda x:
-                      func(*((x if e is _ else e) for e in args), **kwargs)
+                      func(*((x if e is placeholder else e) for e in args), **kwargs)
                       )
 
         elif not args_placeholder:
@@ -136,7 +136,7 @@ class fn(metaclass=FnMeta):  # noqa: N801
             return fn(lambda x:
                       func(
                           *args,
-                          **{k: (x if v is _ else v) for k, v in
+                          **{k: (x if v is placeholder else v) for k, v in
                              kwargs.items()}
                       )
                       )
@@ -145,8 +145,8 @@ class fn(metaclass=FnMeta):  # noqa: N801
             func = self._
             return fn(lambda x:
                       func(
-                          *((x if e is _ else e) for e in args),
-                          **{k: (x if v is _ else v) for k, v in
+                          *((x if e is placeholder else e) for e in args),
+                          **{k: (x if v is placeholder else v) for k, v in
                              kwargs.items()}
                       )
                       )

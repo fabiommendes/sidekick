@@ -6,7 +6,7 @@ from random import Random
 from toolz.utils import raises
 
 from sidekick import *
-from sidekick import _
+from sidekick import placeholder as _
 
 # is comparison will fail between this and no_default
 no_default2 = loads(dumps('__no__default__'))
@@ -141,22 +141,22 @@ class TestToolzSuite:
 
     def test_groupby_non_callable(self):
         assert groupby(0, [(1, 2), (1, 3), (2, 2), (2, 4)]) == \
-            {
-            1: [(1, 2), (1, 3)],
-            2: [(2, 2), (2, 4)]
-        }
+               {
+                   1: [(1, 2), (1, 3)],
+                   2: [(2, 2), (2, 4)]
+               }
 
         assert groupby([0], [(1, 2), (1, 3), (2, 2), (2, 4)]) == \
-            {
-            (1,): [(1, 2), (1, 3)],
-            (2,): [(2, 2), (2, 4)]
-        }
+               {
+                   (1,): [(1, 2), (1, 3)],
+                   (2,): [(2, 2), (2, 4)]
+               }
 
         assert groupby([0, 0], [(1, 2), (1, 3), (2, 2), (2, 4)]) == \
-            {
-            (1, 1): [(1, 2), (1, 3)],
-            (2, 2): [(2, 2), (2, 4)]
-        }
+               {
+                   (1, 1): [(1, 2), (1, 3)],
+                   (2, 2): [(2, 2), (2, 4)]
+               }
 
     def test_merge_sorted(self):
         assert list(merge_sorted([1, 2, 3], [1, 2, 3])) == [1, 1, 2, 2, 3, 3]
@@ -178,16 +178,16 @@ class TestToolzSuite:
         data = [[(1, 2), (0, 4), (3, 6)], [(5, 3), (6, 5), (8, 8)],
                 [(9, 1), (9, 8), (9, 9)]]
         assert list(merge_sorted(*data, key=lambda x: x[1])) == \
-            [(9, 1), (1, 2), (5, 3), (0, 4), (6, 5), (3, 6), (8, 8), (9, 8),
-             (9, 9)]
+               [(9, 1), (1, 2), (5, 3), (0, 4), (6, 5), (3, 6), (8, 8), (9, 8),
+                (9, 9)]
         assert list(merge_sorted()) == []
         assert list(merge_sorted([1, 2, 3])) == [1, 2, 3]
         assert list(merge_sorted([1, 4, 5], [2, 3])) == [1, 2, 3, 4, 5]
         assert list(merge_sorted([1, 4, 5], [2, 3], key=identity)) == \
-            [1, 2, 3, 4, 5]
+               [1, 2, 3, 4, 5]
         assert list(
             merge_sorted([1, 5], [2], [4, 7], [3, 6], key=identity)) == \
-            [1, 2, 3, 4, 5, 6, 7]
+               [1, 2, 3, 4, 5, 6, 7]
 
     def test_interleave(self):
         assert ''.join(interleave(('ABC', '123'))) == 'A1B2C3'
@@ -284,6 +284,7 @@ class TestToolzSuite:
                 list(range(10)))
 
         def inc(i): return i + 1
+
         assert ([4, 5, 6, 7, 8, 9] ==
                 list(mapcat(partial(map, inc), [[3, 4, 5], [6, 7, 8]])))
 
@@ -322,6 +323,7 @@ class TestToolzSuite:
         data = [1, 2, 3, 4, 5]
 
         def iseven(x): return x % 2 == 0
+
         assert reduceby(iseven, add, data, 0) == {False: 9, True: 6}
         assert reduceby(iseven, mul, data, 1) == {False: 15, True: 8}
 
@@ -352,7 +354,7 @@ class TestToolzSuite:
             return s
 
         assert reduceby(iseven, set_add, [1, 2, 3, 4, 1, 2], set) == \
-            {True: {2, 4}, False: {1, 3}}
+               {True: {2, 4}, False: {1, 3}}
 
     def test_iterate(self):
         assert list(itertools.islice(iterate(inc, 0), 0, 5)) == [0, 1, 2, 3, 4]
@@ -451,11 +453,13 @@ class TestToolzSuite:
                  lambda x: x[0], pows))
 
         def get(x): return (x[0], x[1])
+
         assert set(join([0, 1], squares, [0, 1], pows)) == set(
             join(get, squares,
                  get, pows))
 
         def get(x): return (x[0],)
+
         assert set(join([0], squares, [0], pows)) == set(join(get, squares,
                                                               get, pows))
 
@@ -541,13 +545,13 @@ class TestToolzSuite:
 
         assert topk(2, [{'a': 1, 'b': 10}, {'a': 2, 'b': 9},
                         {'a': 10, 'b': 1}, {'a': 9, 'b': 2}], key='a') == \
-            ({'a': 10, 'b': 1}, {'a': 9, 'b': 2})
+               ({'a': 10, 'b': 1}, {'a': 9, 'b': 2})
 
         assert topk(2, [{'a': 1, 'b': 10}, {'a': 2, 'b': 9},
                         {'a': 10, 'b': 1}, {'a': 9, 'b': 2}], key='b') == \
-            ({'a': 1, 'b': 10}, {'a': 2, 'b': 9})
+               ({'a': 1, 'b': 10}, {'a': 2, 'b': 9})
         assert topk(2, [(0, 4), (1, 3), (2, 2), (3, 1), (4, 0)], 0) == \
-            ((4, 0), (3, 1))
+               ((4, 0), (3, 1))
 
     def test_topk_is_stable(self):
         assert topk(4, [5, 9, 2, 1, 5, 3], key=lambda x: 1) == (5, 9, 2, 1)

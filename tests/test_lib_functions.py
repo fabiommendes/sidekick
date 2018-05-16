@@ -1,8 +1,9 @@
 import types
+
 import pytest
 
-from sidekick import _
-from sidekick import *
+from sidekick import placeholder as _, force_function, rpartial, identity, \
+    curry, juxt, const
 
 
 class TestLibFunctions:
@@ -46,6 +47,7 @@ class TestLibFunctions:
 
     def test_curry(self):
         def f(x, y, z): return x + 2 * y + 3 * z
+
         g = curry(f)
         assert g(1, 2, 3) == 14
         assert g(1)(2)(3) == 14

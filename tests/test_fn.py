@@ -1,5 +1,5 @@
 import pytest
-from sidekick import fn, _, curry
+from sidekick import fn, placeholder, curry
 
 
 class TestFn:
@@ -71,13 +71,13 @@ class TestFn:
         assert fn[g, 1, 2, 3]() == (1, 2, 3)
 
     def test_fn_partial_application_with_placehlder(self, g):
-        assert fn[g, _, 2, 3](1) == (1, 2, 3)
-        assert fn[g, 1, _, 3](2) == (1, 2, 3)
-        assert fn[g, 1, 2, _](3) == (1, 2, 3)
+        assert fn[g, placeholder, 2, 3](1) == (1, 2, 3)
+        assert fn[g, 1, placeholder, 3](2) == (1, 2, 3)
+        assert fn[g, 1, 2, placeholder](3) == (1, 2, 3)
 
-        assert fn[g, _, _, 2](1) == (1, 1, 2)
-        assert fn[g, 1, _, _](2) == (1, 2, 2)
-        assert fn[g, _, 2, _](1) == (1, 2, 1)
+        assert fn[g, placeholder, placeholder, 2](1) == (1, 1, 2)
+        assert fn[g, 1, placeholder, placeholder](2) == (1, 2, 2)
+        assert fn[g, placeholder, 2, placeholder](1) == (1, 2, 1)
 
     def test_curry_decorator(self, g):
         g = curry(g)

@@ -5,7 +5,7 @@ import types
 from .fn import fn
 from .lib_utils import toolz, ctoolz
 from sidekick.extended_semantics import as_func
-from .placeholder import placeholder
+from .placeholder import Placeholder
 
 NOT_GIVEN = object()
 
@@ -194,7 +194,7 @@ def force_function(func, name=None):
         if name is not None and func.__name__ == '<lambda>':
             func.__name__ = name
         return func
-    elif isinstance(func, placeholder):
+    elif isinstance(func, Placeholder):
         return force_function(func._, name)
     else:
         def function(*args, **kwargs):

@@ -1,48 +1,32 @@
-===============================
-Lazy properties and descriptors
-===============================
+========================
+Lazy access to resources
+========================
 
-Sidekick encourages the usage of lazy evaluation of code. It has a few
-functions that help avoiding eager evaluation in Python.
-
-Properties
-==========
-
-Sidekick implements its own :cls:`sidekick.property` decorator that accepts
-placeholder expressions and quick lambdas as input functions. This allows
-very terse declarations:
-
-.. code-block:: python
-
-    from sidekick import property, _
-
-    class Vector:
-        ...
-
-        sqr_radius = property(_.x**2 + _.y**2)
+Sidekick encourages lazy evaluation of code and has a few functions that helps
+to implement lazy access to resources and objects.
 
 
-Sidekick's property decorator is a drop-in replacement for Python's builtin
-properties.
+Lazy attributes
+===============
 
+We can mark an attribute as lazy (i.e., it is initialized during first access,
+rather than instance initialization). :func:`sidekick.lazy` can be used as a
+decorator or quick lambda:
 
-Lazy attribute
-==============
+.. code-block::python
 
-The lazy decorator defines an attribute with deferred initialization::
-
-.. code::python
     import math
-    from lazyutils import lazy
+    from sidekick import *
 
     class Vec:
-        def __init__(self, x, y):
-            self.x, self.y = x, y
-
         @lazy
         def magnitude(self):
             print('computing...')
             return math.sqrt(self.x**2 + self.y**2)
+
+        def __init__(self, x, y):
+            self.x, self.y = x, y
+
 
 Now the ``magnitude`` attribute is initialized and cached upon first use:
 
@@ -58,24 +42,21 @@ just like any regular Python attribute.
 >>> v.magnitude
 42
 
-Lazy attributes can be useful either to simplify the implementation of the
-``__init__`` method of objects that initialize a great number or variables or as
-an optimization that delays potentially expensive computations that are not always
-necessary in the object's lifecycle.
+Lazy attributes can be useful either to simplify the implementation of
+``__init__`` or as an optimization technique that delays potentially expensive
+computations that are not always necessary in the object's lifecycle.
 
-.. autoclass:: sidekick.lazy
-   :members:
+.. autofunction:: sidekick.lazy
 
 
 Delegation
 ==========
 
-The delegate_to() function delegates some attribute or method do an inner
-object::
+:func:`sidekick.delegate_to` delegates an attribute or method do an inner
+object. This is useful when the inner object contains the implementation, but
+we want to expose an specific interface in the instance object:
 
-.. code::python
-
-    from lazyutils import delegate_to
+.. code-block::python
 
     class Arrow:
         magnitude = delegate_to('vector')
@@ -84,8 +65,8 @@ object::
             self.vector = vector
             self.start = start
 
-Now, the ``.magnitude`` attribute of ``Arrow`` instances is delegated to
-``.vector.magnitude``. Delegate fields are useful in class composition when one
+Now, ``arrow.magnitude`` delegates to ``arrow.vector.magnitude``. Delegate
+fields are useful in class composition when one
 wants to expose a few selected attributes from the inner objects. delegate_to()
 handles attributes and methods with no distinction.
 
@@ -95,25 +76,123 @@ handles attributes and methods with no distinction.
 computing...
 10.0
 
-
-.. autoclass:: sidekick.lazy
-   :members:
-
-.. autoclass:: sidekick.lazy_shared
-   :members:
+.. autofunction:: sidekick.delegate_to
 
 
 Aliasing
 ========
 
-Aliasing is a very simple form of delegation. We can create simple aliases for
-attributes using the alias() and readonly() functions::
+Aliasing is a very simple form of delegation. Aliases are simple views over
+other attributes in the instance itself:
+
+.. code-block::python
 
     class MyArrow(Arrow):
-        abs_value = readonly('magnitude')
+        abs_value = alias('magnitude', read_only=True)
         origin = alias('start')
 
 This exposes two additional properties: "abs_value" and "origin". The first is
 just a read-only view on the "magnitude" property. The second exposes read and
 write access to the "start" attribute.
 
+
+Properties
+==========
+
+Sidekick's :cls:`sidekick.property` decorator is a drop-in replacement for
+Python's builtin properties. It behaves similarly to Python's builtin, but also
+accepts placeholder expressions and quick lambdas as input functions. This
+allows very terse declarations:
+
+.. code-block:: python
+
+    class Vector:
+        sqr_radius = property(_.x**2 + _.y**2)
+
+
+:cls:`sidekick.lazy` also accepts quick lambdas. The main difference between
+both is that properties are read only and not cached, while lazy attributes
+are cached and writable.
+
+
+
+
+=====================
+Deferred computations
+=====================
+
+Until now, we were concened with the deferred computation of instance
+attributes. Sometimes, we just want to defer some expensive computation or the
+initialization of an entire object.
+
+
+Lazy imports
+============
+
+Sidekick implements a lazy_import object that can be used to delay imports in
+a module. It can lazily import a module or a function inside a module:
+
+.. code-block:: python
+
+    from sidekick import import_later
+
+    np = import_later('numpy')           # a proxy to the numpy module
+    array = import_later('numpy:array')  # proxy to the array function in the module
+
+
+Lazy imports can dramatically decrease the initialization time of your python
+modules, specially when heavy weights such as numpy, and pandas are used.
+
+.. autofunction:: sidekick.import_later
+
+
+Proxy and deferred objects
+==========================
+
+Sidekick also provides two similar kind of deferred objects: :cls:`sidekick.Proxy`
+and :cls:`sidekick.Deferred`. They are both initialized from a callable with
+arbitrary arguments and delay the execution of the callable until some property
+of the result is needed:
+
+>>> class User:
+...     def __init__(self, **kwargs):
+...         for k, v in kwargs.items():
+...             setattr(self, k, v)
+...     def __repr__(self):
+...         data = ('%s: %r' % item for item in self.__dict__.items())
+...         return 'User(%s)' % ', '.join(data)
+>>> p = proxy(User, name='Me', age=42)
+>>> d = deferred(User, name='Me', age=42)
+
+The main difference between proxy and deferred, is that Deferred instances
+assume the type of the result, while proxy objects remain Proxy instances that
+simply mimic the interface of the result.
+
+>>> p
+Proxy(User(name: 'Me', age: 42))
+>>> d
+User(name: 'Me', age: 42)
+
+We can see that proxy instances do not change class, while deferred instances
+do:
+
+>>> type(p), type(d)
+(<class 'sidekick.deferred.Proxy'>, <class 'User'>)
+
+This limitation makes Deferred much more limited. The deferred execution cannot
+return any type that has a different C layout as regular Python objects. This
+excludes all builtin types, C extension classes and even Python classes that
+define __slots__. On the plus side, deferred objects fully assume
+the properties of the delayed result, including its type and can replace them
+in almost any context.
+
+A slightly safer version of Deferred can specify the return type of the object.
+This allows Deferred to work with a few additional types (e.g., types that
+use __slots__) and check if conversion is viable. In order to do so, just use
+the output type as an index:
+
+>>> deferred[record](record, x=1, y=2)
+record(x=1, y=2)
+
+Sidekick records cannot be used as default Deferred objects since they define
+a __slots__ property.

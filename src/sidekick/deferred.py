@@ -1,13 +1,25 @@
-class DeferredMeta(type):
+DEFERRED_CACHE = {}
+DEFERRED_FACTORIES = {}
+
+
+class DeferredBase:
     """
-    Metaclass for deferred objects.
+    Base class for Deferred and Proxy.
     """
+    __slots__ = ()
 
-    def __getitem__(cls, item):
-        return type('Deferred', (cls, item), {})
+    def __init__(self, func, *args, **kwargs):
+        register_factory(self, lambda: func(*args, **kwargs))
+
+    def __del__(self):
+        unregister_factory(self)
+
+    def __getattr__(self, attr):
+        result = exec_deferred(self)
+        return getattr(result, attr)
 
 
-class Deferred(metaclass=DeferredMeta):
+class Deferred:
     """
     A magic deferred/zombie object.
 
@@ -47,84 +59,147 @@ class Deferred(metaclass=DeferredMeta):
         <type Foo>
     """
 
-    def __init__(self, func, *args, **kwargs):
-        self.__func = func
-        self.__args = args
-        self.__kwargs = kwargs
+    _class__ = None
+    __init__ = DeferredBase.__init__
+    __del__ = DeferredBase.__del__
+    __getattr__ = DeferredBase.__getattr__
 
-    # Ugly names that minimizes collisions and do not trigger Python's builtin
-    # name mangling
-    def _convert__(self):
-        obj = self._execute__()
-        self.__dict__.update(obj.__dict__)
-        self.__class__ = type(obj)
 
-    def _execute__(self):
-        # Create proxy object and copy its state back to the Proxy.
-        # Changes the object class to the proxy object class.
-        print(self.__func)
-        obj = self.__func(*self.__args, **self.__kwargs)
+class Proxy(DeferredBase):
 
-        if obj is None:
-            raise ValueError(
-                'constructor returned None: not a valid deferred object'
-            )
-
-        del self.__func
-        del self.__args
-        del self.__kwargs
-        return obj
+    # Ugly names avoid unwanted collisions
+    def _repr__(self):
+        return f'Proxy({repr(self._obj__)})'
 
     def __getattr__(self, attr):
-        self._convert__()
-        return getattr(self, attr)
+        if attr == '_obj__':
+            self._obj__ = run_factory(self)
+            return self._obj__
+        else:
+            return getattr(self._obj__, attr)
 
 
-class Proxy:
+class DeferredFunc:
+    def __call__(self, func, *args, **kwargs):
+        return Deferred(func, *args, **kwargs)
+
+    def __getitem__(self, cls):
+        try:
+            return DEFERRED_CACHE[cls]
+        except KeyError:
+            pass
+
+        ns = {'_class__': self}
+        if hasattr(cls, '__slots__'):
+            ns['__slots__'] = ()
+
+        type_name = 'Deferred[%s]' % cls.__name__
+        self = type(type_name, (DeferredBase, cls), ns)
+        DEFERRED_CACHE[cls] = self
+        return self
+
+
+deferred = DeferredFunc()
+
+
+def proxy(func, *args, **kwargs):
     """
     Similar to Deferred, but safer since it creates a Proxy object.
-    
+
     The proxy delegates all methods to the lazy object. It can break a few
     interfaces since it is never converted to the same value as the proxied
     element.
 
-    Examples:
+    Usage:
+
         >>> from operator import add
         >>> x = Proxy(add, 40, 2)  # add function not called yet
         >>> print(x)               # trigger object construction!
         42
     """
+    return Proxy(func, *args, **kwargs)
 
-    __init__ = Deferred.__init__
-    _execute__ = Deferred._execute__
 
-    def _convert__(self):
-        self.__obj = self._execute__()
+METHODS = [
+    # Arithmetic operators
+    'add', 'radd', 'sub', 'rsub', 'mul', 'rmul', 'truediv', 'rtruediv',
+    'floordiv', 'rfloordiv',
 
-    def __getattr__(self, attr):
-        try:
-            value = self.__obj
-        except AttributeError:
-            self._convert__()
-            value = self.__obj
-        return getattr(value, attr)
+    # Relations
+    'eq', 'ne', 'le', 'lt', 'ge', 'gt',
+
+    # Sequence interface
+    'getitem', 'setitem', 'iter', 'len',
+
+    # Conversions
+    'repr', 'str', 'nonzero', 'bool',
+
+    # Other Python interfaces
+    'call',
+]
 
 
 def _fill_magic_methods(*classes):
-    def method_factory(attr):
+    def deferred_method(attr):
         def method(self, *args, **kwargs):
-            self._convert__()
+            exec_deferred(self)
             return getattr(self, attr)(*args, **kwargs)
 
         return method
 
-    for method_name in ('getitem setitem iter len repr str add radd sub rsub '
-                        'mul rmul truediv rtruediv floordiv rfloordiv eq ne '
-                        'le lt ge gt nonzero bool').split():
+    def proxy_method(attr):
+        def method(self, *args, **kwargs):
+            return getattr(self._obj__, attr)(*args, **kwargs)
+
+        return method
+
+    for method_name in METHODS:
         method_name = '__%s__' % method_name
-        for cls in classes:
-            setattr(cls, method_name, method_factory(method_name))
+        setattr(DeferredBase, method_name, deferred_method(method_name))
+        setattr(Deferred, method_name, deferred_method(method_name))
+        setattr(Proxy, method_name, proxy_method(method_name))
 
 
 # Fill dunder methods
-_fill_magic_methods(Deferred, Proxy)
+_fill_magic_methods()
+Proxy.__repr__ = Proxy._repr__
+
+
+def register_factory(obj, factory):
+    DEFERRED_FACTORIES[id(obj)] = factory
+
+
+def run_factory(obj):
+    factory = DEFERRED_FACTORIES[id(obj)]
+    result = factory()
+    if result is None:
+        raise ValueError(
+            'constructor returned None: not a valid deferred object'
+        )
+    return result
+
+
+def unregister_factory(obj):
+    DEFERRED_FACTORIES.pop(id(obj), None)
+
+
+def exec_deferred(obj):
+    result = run_factory(obj)
+
+    # __dict__ based classes
+    if hasattr(result, '__dict__'):
+        object.__getattribute__(obj, '__dict__').update(result.__dict__)
+
+    # __slots__ based classes
+    if hasattr(result, '__slots__'):
+        for slot in result.__class__.__slots__:
+            try:
+                value = getattr(result, slot)
+            except AttributeError:
+                pass
+            else:
+                setattr(obj, slot, value)
+
+    # Safe version of obj.__class__ = type(result)
+    object.__setattr__(obj, '__class__', type(result))
+    return result

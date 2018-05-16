@@ -1,8 +1,8 @@
 from .fn import fn
-from .placeholder import placeholder
+from .placeholder import Placeholder
 from .predicate import predicate
 
-SK_FUNCTION_TYPES = (placeholder, fn, predicate)
+SK_FUNCTION_TYPES = (Placeholder, fn, predicate)
 
 
 def as_func(f):

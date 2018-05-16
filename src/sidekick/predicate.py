@@ -1,5 +1,5 @@
 from .fn import fn
-from .placeholder import placeholder
+from .placeholder import Placeholder
 
 nullfunc = lambda *args, **kwargs: None
 
@@ -12,7 +12,7 @@ class predicate:  # noqa: N801
     __slots__ = ('_', '__dict__')
 
     def __init__(self, function):
-        if isinstance(function, (fn, placeholder, predicate)):
+        if isinstance(function, (fn, Placeholder, predicate)):
             function = function._
         self._ = function
 
@@ -46,11 +46,11 @@ class cond:  # noqa: N801
     value of the predicate.
 
     Examples:
-        >>> from sidekick import cond, _
+        >>> from sidekick import cond, placeholder
         >>> half = cond(
         ...     is_even,
-        ...     true=_ // 2,
-        ...     false=(_ + 1) // 2,
+        ...     true=placeholder // 2,
+        ...     false=(placeholder + 1) // 2,
         ... )
         >>> [half(1), half(2), half(3), half(4)]
         [1, 1, 2, 2]

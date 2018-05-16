@@ -1,10 +1,9 @@
-from .__meta__ import __version__, __author__
-from . import deferred
 from . import json
 from . import op
+from .deferred import proxy, deferred, Deferred, Proxy
 from .factories import attrgetter, caller
 from .fn import fn
-from .lazy import lazy, lazy_shared, property
+from .lazy import lazy, property, delegate_to, alias, import_later
 from .lib_functions import (
     compose,
     const,
@@ -20,7 +19,7 @@ from .lib_functions import (
 )
 from .lib_sequences import *
 from .listmagic import L
-from .placeholder import _, F
+from .placeholder import placeholder, this, F
 from .predicate import *
 from .record import (
     Namespace,
@@ -44,5 +43,7 @@ from .union import (
     List, linklist,
 )
 
-__all__ = list(x for x in globals().keys() if not x.startswith('_'))
-__all__.extend(['__version__', '__author__', '_'])
+__author__ = 'Fábio Macêdo Mendes'
+__version__ = '0.4.0'
+_ = placeholder
+__all__ = ['_', *(attr for attr in globals() if not attr.startswith('_'))]
