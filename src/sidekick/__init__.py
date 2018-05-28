@@ -44,6 +44,6 @@ from .union import (
 )
 
 __author__ = 'Fábio Macêdo Mendes'
-__version__ = '0.4.0'
+__version__ = '0.4.1'
 _ = placeholder
 __all__ = ['_', *(attr for attr in globals() if not attr.startswith('_'))]
