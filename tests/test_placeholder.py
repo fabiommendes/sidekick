@@ -1,6 +1,6 @@
 import pytest
 
-from sidekick import placeholder as _, this, fn, F, record
+from sidekick import placeholder as _, fn, F, record, lazy
 
 
 class TestPlaceholder:
@@ -68,7 +68,7 @@ class TestThisPlaceholder:
     @pytest.fixture(scope='class')
     def cls(self):
         class Cls:
-            sum = this.x + this.y
+            sum = lazy(_.x + _.y)
 
             def __init__(self, x, y):
                 self.x, self.y = x, y

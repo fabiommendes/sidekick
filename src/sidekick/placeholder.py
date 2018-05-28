@@ -164,7 +164,6 @@ class Placeholder:
     """
 
     __slots__ = '_ast', '_acc'
-    _is_descriptor = False
 
     def __init__(self, ast, acc):
         self._ast = ast
@@ -205,22 +204,6 @@ class Placeholder:
                    for k, e in kwargs.items()}
             )
         return Placeholder(ast, acc)
-
-
-class PlaceholderDescriptor(Placeholder):
-    """
-    A placeholder that also works as a descriptor. The descriptor
-    automatically executes the method as an attribute.
-    """
-
-    _is_descriptor = True
-
-    def __get__(self, instance, owner=None):
-        if instance is None:
-            return owner
-        print(instance, self)
-        return None
-        return self._acc(instance)
 
 
 def F(func, *args, **kwargs):  # noqa: N802
@@ -275,4 +258,3 @@ def op_symbol(op):
 # The placeholder symbol
 #
 placeholder = _placeholder = Placeholder(Ast.Placeholder(1), lambda x: x)
-this = PlaceholderDescriptor(Ast.Placeholder(1), lambda x: x)

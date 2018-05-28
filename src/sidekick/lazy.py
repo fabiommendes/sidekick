@@ -1,8 +1,7 @@
+import builtins
 from importlib import import_module
 
-import builtins
-
-from .deferred import Proxy
+from .deferred import Deferred
 from .extended_semantics import as_func
 
 
@@ -248,20 +247,17 @@ class TransformingAlias(Alias):
         setattr(obj, self.attr, value)
 
 
-class LazyModule:
-    __mod = lazy(lambda self: import_module(self.__path, package=self.__package))
-
+class LazyModule(Deferred):
     def __init__(self, path, package=None):
-        self.__path = path
-        self.__package = package
+        super().__init__(import_module, path, package=package)
 
     def __getattr__(self, attr):
-        value = getattr(self.__mod, attr)
-        setattr(self.__mod, attr, value)
+        value = super().__getattr__(attr)
+        setattr(self, attr, value)
         return value
 
 
-class DeferredImport(Proxy):
+class DeferredImport(Deferred):
     def __init__(self, path, attr, package=None):
         mod = LazyModule(path, package)
         super().__init__(lambda: getattr(mod, attr))

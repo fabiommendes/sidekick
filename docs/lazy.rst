@@ -149,10 +149,10 @@ modules, specially when heavy weights such as numpy, and pandas are used.
 Proxy and deferred objects
 ==========================
 
-Sidekick also provides two similar kind of deferred objects: :cls:`sidekick.Proxy`
-and :cls:`sidekick.Deferred`. They are both initialized from a callable with
-arbitrary arguments and delay the execution of the callable until some property
-of the result is needed:
+Sidekick also provides two similar kind of deferred objects: :cls:`sidekick.Deferred`
+and :cls:`sidekick.Delayed`. They are both initialized from a callable with
+arbitrary arguments and delay the execution of the callable until the result is
+needed:
 
 >>> class User:
 ...     def __init__(self, **kwargs):
@@ -161,38 +161,35 @@ of the result is needed:
 ...     def __repr__(self):
 ...         data = ('%s: %r' % item for item in self.__dict__.items())
 ...         return 'User(%s)' % ', '.join(data)
->>> p = proxy(User, name='Me', age=42)
->>> d = deferred(User, name='Me', age=42)
+>>> a = deferred(User, name='Me', age=42)
+>>> b = delayed(User, name='Me', age=42)
 
-The main difference between proxy and deferred, is that Deferred instances
-assume the type of the result, while proxy objects remain Proxy instances that
+The main difference between deferred and delayed, is that Delayed instances
+assume the type of the result, while deferred objects are proxies that
 simply mimic the interface of the result.
 
->>> p
-Proxy(User(name: 'Me', age: 42))
->>> d
+>>> a
+Deferred(User(name: 'Me', age: 42))
+>>> b
 User(name: 'Me', age: 42)
 
 We can see that proxy instances do not change class, while deferred instances
 do:
 
->>> type(p), type(d)
-(<class 'sidekick.deferred.Proxy'>, <class 'User'>)
+>>> type(a), type(b)
+(<class 'sidekick.deferred.Deferred'>, <class 'User'>)
 
-This limitation makes Deferred much more limited. The deferred execution cannot
+This limitation makes delayed objects much more limited. The delayed execution cannot
 return any type that has a different C layout as regular Python objects. This
 excludes all builtin types, C extension classes and even Python classes that
 define __slots__. On the plus side, deferred objects fully assume
 the properties of the delayed result, including its type and can replace them
 in almost any context.
 
-A slightly safer version of Deferred can specify the return type of the object.
-This allows Deferred to work with a few additional types (e.g., types that
+A slightly safer version of delayed can specify the return type of the object.
+This allows delayed to work with a few additional types (e.g., types that
 use __slots__) and check if conversion is viable. In order to do so, just use
 the output type as an index:
 
->>> deferred[record](record, x=1, y=2)
+>>> delayed[record](record, x=1, y=2)
 record(x=1, y=2)
-
-Sidekick records cannot be used as default Deferred objects since they define
-a __slots__ property.

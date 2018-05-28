@@ -1,6 +1,6 @@
 from . import json
 from . import op
-from .deferred import proxy, deferred, Deferred, Proxy
+from .deferred import deferred, delayed, Delayed, Deferred, Proxy
 from .factories import attrgetter, caller
 from .fn import fn
 from .lazy import lazy, property, delegate_to, alias, import_later
@@ -19,7 +19,7 @@ from .lib_functions import (
 )
 from .lib_sequences import *
 from .listmagic import L
-from .placeholder import placeholder, this, F
+from .placeholder import placeholder, F
 from .predicate import *
 from .record import (
     Namespace,

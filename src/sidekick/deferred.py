@@ -2,7 +2,7 @@ DEFERRED_CACHE = {}
 DEFERRED_FACTORIES = {}
 
 
-class DeferredBase:
+class DelayedBase:
     """
     Base class for Deferred and Proxy.
     """
@@ -19,7 +19,7 @@ class DeferredBase:
         return getattr(result, attr)
 
 
-class Deferred:
+class Delayed:
     """
     A magic deferred/zombie object.
 
@@ -46,7 +46,7 @@ class Deferred:
         ...         return 42
 
         Now create a deferred object
-        >>> x = Deferred(Foo)
+        >>> x = Delayed(Foo)
         >>> type(x)
         <type Deferred>
 
@@ -60,16 +60,44 @@ class Deferred:
     """
 
     _class__ = None
-    __init__ = DeferredBase.__init__
-    __del__ = DeferredBase.__del__
-    __getattr__ = DeferredBase.__getattr__
+    __init__ = DelayedBase.__init__
+    __del__ = DelayedBase.__del__
+    __getattr__ = DelayedBase.__getattr__
 
 
-class Proxy(DeferredBase):
+class Proxy:
+    """
+    Base class for proxy types.
+    """
+    __slots__ = ('_obj__',)
 
-    # Ugly names avoid unwanted collisions
-    def _repr__(self):
-        return f'Proxy({repr(self._obj__)})'
+    def __init__(self, obj):
+        self._obj__ = obj
+
+    def __repr__(self):
+        return f'{type(self).__name__}({repr(self._obj__)})'
+
+    def __getattr__(self, attr):
+        obj = Proxy._obj__.__get__(self, type(self))
+        return getattr(obj, attr)
+
+    __eq__ = (lambda self, other: self._obj__.__eq__(other))
+    __ne__ = (lambda self, other: self._obj__.__ne__(other))
+    __gt__ = (lambda self, other: self._obj__.__gt__(other))
+    __ge__ = (lambda self, other: self._obj__.__ge__(other))
+    __lt__ = (lambda self, other: self._obj__.__lt__(other))
+    __le__ = (lambda self, other: self._obj__.__le__(other))
+    __hash__ = (lambda self: hash(self._obj__))
+
+
+class Deferred(Proxy, DelayedBase):
+    """
+    Like Delayed, but wraps object into a proxy shell.
+    """
+    __slots__ = ()
+
+    def __init__(self, *args, **kwargs):
+        DelayedBase.__init__(self, *args, **kwargs)
 
     def __getattr__(self, attr):
         if attr == '_obj__':
@@ -79,9 +107,9 @@ class Proxy(DeferredBase):
             return getattr(self._obj__, attr)
 
 
-class DeferredFunc:
+class DelayedFunctionType:
     def __call__(self, func, *args, **kwargs):
-        return Deferred(func, *args, **kwargs)
+        return Delayed(func, *args, **kwargs)
 
     def __getitem__(self, cls):
         try:
@@ -94,17 +122,18 @@ class DeferredFunc:
             ns['__slots__'] = ()
 
         type_name = 'Deferred[%s]' % cls.__name__
-        self = type(type_name, (DeferredBase, cls), ns)
+        self = type(type_name, (DelayedBase, cls), ns)
         DEFERRED_CACHE[cls] = self
         return self
 
 
-deferred = DeferredFunc()
+delayed = DelayedFunctionType()
+del DelayedFunctionType
 
 
-def proxy(func, *args, **kwargs):
+def deferred(func, *args, **kwargs):
     """
-    Similar to Deferred, but safer since it creates a Proxy object.
+    Similar to delayed, but safer since it creates a Deferred object.
 
     The proxy delegates all methods to the lazy object. It can break a few
     interfaces since it is never converted to the same value as the proxied
@@ -113,11 +142,11 @@ def proxy(func, *args, **kwargs):
     Usage:
 
         >>> from operator import add
-        >>> x = Proxy(add, 40, 2)  # add function not called yet
-        >>> print(x)               # trigger object construction!
+        >>> x = Deferred(add, 40, 2)  # add function not called yet
+        >>> print(x)                  # trigger object construction!
         42
     """
-    return Proxy(func, *args, **kwargs)
+    return Deferred(func, *args, **kwargs)
 
 
 METHODS = [
@@ -153,16 +182,24 @@ def _fill_magic_methods(*classes):
 
         return method
 
+    def update(cls, attr, value):
+        force_update = {'__call__'}
+        current = getattr(cls, attr, None)
+        obj_value = getattr(object, attr, value)
+        if current is None or current is obj_value or attr in force_update:
+            setattr(cls, attr, value)
+
     for method_name in METHODS:
         method_name = '__%s__' % method_name
-        setattr(DeferredBase, method_name, deferred_method(method_name))
-        setattr(Deferred, method_name, deferred_method(method_name))
-        setattr(Proxy, method_name, proxy_method(method_name))
+        dfunc = deferred_method(method_name)
+        pfunc = proxy_method(method_name)
+        update(DelayedBase, method_name, dfunc)
+        update(Delayed, method_name, dfunc)
+        update(Proxy, method_name, pfunc)
 
 
 # Fill dunder methods
 _fill_magic_methods()
-Proxy.__repr__ = Proxy._repr__
 
 
 def register_factory(obj, factory):

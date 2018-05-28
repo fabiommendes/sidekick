@@ -1,7 +1,7 @@
 import pytest
 
 import sidekick as sk
-from sidekick import deferred, proxy, Deferred, Proxy
+from sidekick import delayed, deferred, Delayed, Deferred
 from sidekick import placeholder as _, record
 from sidekick.lazy import Lazy, find_descriptor_name, find_descriptor_owner, \
     Delegate, lazy
@@ -168,7 +168,7 @@ class TestLazyImport:
         assert sk.import_later('sidekick.predicate:is_zero')(0)
 
 
-class TestDeferred:
+class TestDelayed:
     @pytest.fixture(scope='class')
     def cls(self):
         class Cls:
@@ -177,30 +177,30 @@ class TestDeferred:
 
         return Cls
 
+    def test_delayed_object_is_created_on_touch(self, cls):
+        obj = delayed(cls)
+        assert obj.attr == 42
+        assert isinstance(obj, cls)
+
+    def test_delayed_starts_as_a_different_class(self, cls):
+        obj = delayed(cls)
+        assert isinstance(obj, Delayed)
+        str(obj)
+        assert isinstance(obj, cls)
+
     def test_deferred_object_is_created_on_touch(self, cls):
         obj = deferred(cls)
         assert obj.attr == 42
-        assert isinstance(obj, cls)
 
-    def test_deferred_starts_as_a_different_class(self, cls):
+    def test_deferred_preserves_class(self, cls):
         obj = deferred(cls)
         assert isinstance(obj, Deferred)
         str(obj)
-        assert isinstance(obj, cls)
+        assert isinstance(obj, Deferred)
 
-    def test_proxy_object_is_created_on_touch(self, cls):
-        obj = proxy(cls)
-        assert obj.attr == 42
-
-    def test_proxy_preserves_class(self, cls):
-        obj = proxy(cls)
-        assert isinstance(obj, Proxy)
-        str(obj)
-        assert isinstance(obj, Proxy)
-
-    def test_deferred_with_result_class(self):
-        obj = deferred[record](record, x=1, y=2)
-        assert type(obj) == deferred[record]
-        assert isinstance(obj, deferred[record])
+    def test_delayed_with_result_class(self):
+        obj = delayed[record](record, x=1, y=2)
+        assert type(obj) == delayed[record]
+        assert isinstance(obj, delayed[record])
         assert str(obj) == 'record(x=1, y=2)'
         assert type(obj) == record
