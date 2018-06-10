@@ -1,5 +1,6 @@
-import builtins
 from importlib import import_module
+
+import builtins
 
 from .deferred import Deferred
 from .extended_semantics import as_func
@@ -176,7 +177,6 @@ class SharedLazy(Lazy):
 class Delegate:
     __slots__ = ('attr', 'name')
     __set_name__ = Lazy.__set_name__
-    _init_name = Lazy._init_name
 
     def __init__(self, attr, name=None):
         self.attr = attr
@@ -194,6 +194,9 @@ class Delegate:
         owner = getattr(obj, self.attr)
         name = self.name or self._init_name(type(obj))
         setattr(owner, name, value)
+
+    def _init_name(self, cls):
+        return find_descriptor_name(self, cls)
 
 
 class ReadOnlyDelegate(Delegate):
