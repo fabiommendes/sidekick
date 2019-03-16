@@ -1,6 +1,5 @@
 import inspect
 import threading
-from collections import ChainMap
 from collections.abc import Mapping
 from contextlib import contextmanager
 from functools import lru_cache
@@ -22,7 +21,7 @@ class Effect:
         try:
             return INTENT_CACHE[typ]
         except KeyError:
-            intents = [k for k in dir(self) if not k.startswith('_')]
+            intents = [k for k in dir(self) if not k.startswith("_")]
             INTENT_CACHE[typ] = intents
             return intents
 
@@ -39,6 +38,7 @@ class OverrideEffect(Effect):
 
     def __getattr__(self, attr):
         if attr in self._overrides:
+
             def intent(*args):
                 try:
                     values = self._overrides[attr]
@@ -60,7 +60,7 @@ class CheckedEffect(Effect):
         self._context = context
 
     def __getattr__(self, attr):
-        if attr.startswith('_'):
+        if attr.startswith("_"):
             raise AttributeError(attr)
 
         def intent(*args):
@@ -75,20 +75,22 @@ class CheckedEffect(Effect):
             expected_args = tuple(expected_args)
             if args != expected_args or attr != intent.name:
                 clsname = self._class.__name__
-                expected_args = ', '.join(map(repr, expected_args))
-                args = ', '.join(map(repr, args))
-                msg = '\n'.join([
-                    f'Invalid intent execution',
-                    f'  - expect: {clsname}.{intent.name}({expected_args})',
-                    f'  - got:    {clsname}.{attr}({args})',
-                ])
+                expected_args = ", ".join(map(repr, expected_args))
+                args = ", ".join(map(repr, args))
+                msg = "\n".join(
+                    [
+                        f"Invalid intent execution",
+                        f"  - expect: {clsname}.{intent.name}({expected_args})",
+                        f"  - got:    {clsname}.{attr}({args})",
+                    ]
+                )
                 raise self._context.error(msg)
 
             # Check return type
             if not isinstance(output, intent.restype):
                 expect = self.restype.__name__
                 got = type(output).__name__
-                msg = f'Invalid result type: expect {expect}, got {got}'
+                msg = f"Invalid result type: expect {expect}, got {got}"
                 raise self._context.error(msg)
             return output
 
@@ -142,7 +144,7 @@ class LogEntry:
         self.result = result
 
     def __repr__(self):
-        return f'LogEntry({self.effect!r}, {self.intent!r}, {self.args!r}, {self.result!r})'
+        return f"LogEntry({self.effect!r}, {self.intent!r}, {self.args!r}, {self.result!r})"
 
 
 class Intent:
@@ -157,16 +159,18 @@ class Intent:
         self.num_args = len(argtypes)
 
     def __repr__(self):
-        types = ', '.join(tt.__name__ for tt in self.argtypes)
-        restype = 'None' if self.restype is None else self.restype.__name__
-        return f'Intent({self.name!r}, [{types}], {restype})'
+        types = ", ".join(tt.__name__ for tt in self.argtypes)
+        restype = "None" if self.restype is None else self.restype.__name__
+        return f"Intent({self.name!r}, [{types}], {restype})"
 
 
 @lru_cache(maxsize=256)
 def get_intent(func):
     sig = inspect.Signature.from_callable(func)
     name = func.__name__
-    _, *argtypes = (annotated_type(param.annotation) for param in sig.parameters.values())
+    _, *argtypes = (
+        annotated_type(param.annotation) for param in sig.parameters.values()
+    )
     restype = annotated_type(sig.return_annotation)
     return Intent(name, argtypes, restype)
 
@@ -179,7 +183,7 @@ def annotated_type(x):
     elif isinstance(x, type):
         return x
     else:
-        raise TypeError(f'invalid annotation: {x!r}')
+        raise TypeError(f"invalid annotation: {x!r}")
 
 
 def override(effect, *, _fallback=False, **kwargs):
@@ -206,7 +210,8 @@ class Context(Mapping):
     """
     Represents a context dictionary
     """
-    __slots__ = ('_data', '_raises', '_parent')
+
+    __slots__ = ("_data", "_raises", "_parent")
 
     def __init__(self, mapping=None, raises=False, parent=None):
         self._data = {} if mapping is None else mapping
@@ -273,7 +278,8 @@ class CheckedContext(Context):
     """
     A checked context.
     """
-    __slots__ = ('_intents', '_idx')
+
+    __slots__ = ("_intents", "_idx")
 
     def __init__(self, intents, *args, **kwargs):
         self._intents = list(intents)
@@ -287,7 +293,7 @@ class CheckedContext(Context):
             return CheckedEffect(item, self)
 
     def update(self, map):
-        raises = getattr(self._parent, '_raises', False)
+        raises = getattr(self._parent, "_raises", False)
         return Context(map, raises=raises, parent=self)
 
     def consume_intent(self):
@@ -301,19 +307,18 @@ class CheckedContext(Context):
             return intent, data
 
     def error(self, msg):
-        lines = ['Unexpected effect:\n',
-                 '    intents = [']
+        lines = ["Unexpected effect:\n", "    intents = ["]
         current = max(self._idx - 1, 0)
         for idx, line in enumerate(self._intents):
             method, *rest = line
-            line = ', '.join([method.__qualname__, *map(repr, rest)])
-            line = f'        [{line}],'
+            line = ", ".join([method.__qualname__, *map(repr, rest)])
+            line = f"        [{line}],"
             if idx == current:
-                line = f'\n        ### invalid test case ###\n{line}\n'
+                line = f"\n        ### invalid test case ###\n{line}\n"
             lines.append(line)
 
-        lines.extend(['    ]\n\n', msg])
-        return AssertionError('\n'.join(lines))
+        lines.extend(["    ]\n\n", msg])
+        return AssertionError("\n".join(lines))
 
 
 def get_effect(cls, eff=None):
@@ -338,6 +343,7 @@ def get_effect(cls, eff=None):
             return ctx.setdefault(cls, cls())
     else:
         return eff
+
 
 def get_super(cls):
     ctx = get_context()
@@ -375,6 +381,7 @@ LOCAL_STORE.context = MAIN_CONTEXT
 #
 # Context managers
 #
+
 
 def change_context(func):
     ctx_old = get_context()

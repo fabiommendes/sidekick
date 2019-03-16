@@ -2,7 +2,7 @@ import abc
 from itertools import chain
 from weakref import WeakKeyDictionary
 
-from ..text import snake_case
+from ..lib.text import snake_case
 
 CASE_CLASSES = WeakKeyDictionary()
 
@@ -28,11 +28,12 @@ def create_union(name, cases, inject_bases=None, abstract=True, namespace=None):
 
     def __init__(self, *args, **kwargs):
         raise TypeError(
-            'cannot instantiate base class {}, please instantiate one of the '
-            'concrete case classes'.format(name))
+            "cannot instantiate base class {}, please instantiate one of the "
+            "concrete case classes".format(name)
+        )
 
     new_type = abc.ABCMeta if abstract else type
-    base = new_type(name, (), {'__init__': __init__, **(namespace or {})})
+    base = new_type(name, (), {"__init__": __init__, **(namespace or {})})
     unify_classes(base, cases, inject_bases=inject_bases)
     return base
 
@@ -69,13 +70,13 @@ def unify_classes(base, cases, inject_bases=None):
                 cls.__bases__ = bases
             except AttributeError:
                 if inject_bases is True:
-                    raise TypeError(f'cannot set __bases__ of case class {cls}')
+                    raise TypeError(f"cannot set __bases__ of case class {cls}")
 
     # Check if base unification was successful
     if not all(issubclass(case, base) for case in cases):
         raise TypeError(
-            'could not register all cases as subclasses of the base class. '
-            'Try forcing inject_bases=True to fix this.'
+            "could not register all cases as subclasses of the base class. "
+            "Try forcing inject_bases=True to fix this."
         )
 
     # Unify methods
@@ -91,7 +92,7 @@ def unify_case_queries(classes, extra=()):
     queries, but it will not be used to compute the set of valid queries.
     """
     classes = sequence(classes)
-    query_names = {cls: 'is_' + snake_case(cls.__name__) for cls in classes}
+    query_names = {cls: "is_" + snake_case(cls.__name__) for cls in classes}
 
     for cls in chain(classes, extra):
         for ref, attr in query_names.items():
@@ -131,7 +132,7 @@ def vars_methods(obj):
         value = getattr(obj, attr)
         if isinstance(value, type):
             continue
-        elif hasattr(value, '__get__'):
+        elif hasattr(value, "__get__"):
             yield attr, value
 
 
@@ -158,7 +159,7 @@ def dispatch_method(name):
             method = getattr(self, name)
         except AttributeError:
             cls = type(self)
-            msg = 'cannot access method {} of {} instance'.format(name, cls)
+            msg = "cannot access method {} of {} instance".format(name, cls)
             raise AttributeError(msg)
         else:
             return method(*args, **kwargs)
@@ -181,5 +182,5 @@ def setattr_default(obj, attr, value):
 def check_cases_do_not_participate_in_other_unions(cases):
     for case in cases:
         if case not in CASE_CLASSES:
-            msg = f'{case} is already a case class of {CASE_CLASSES[case]}'
+            msg = f"{case} is already a case class of {CASE_CLASSES[case]}"
             raise TypeError(msg)

@@ -4,7 +4,7 @@ from importlib import import_module
 from .deferred import Deferred
 from ..core import extract_function as extract_func
 
-__all__ = ['lazy', 'property', 'delegate_to', 'alias', 'import_later']
+__all__ = ["lazy", "property", "delegate_to", "alias", "import_later"]
 
 
 def lazy(function=None, *, shared=False, name=None):
@@ -129,8 +129,8 @@ def import_later(path, package=None):
         import_later('.models', package=__package__):
             Relative import
     """
-    if ':' in path:
-        path, _, obj = path.partition(':')
+    if ":" in path:
+        path, _, obj = path.partition(":")
         return DeferredImport(path, obj, package=package)
     else:
         return LazyModule(path, package=package)
@@ -143,7 +143,8 @@ class Lazy:
     """
     Lazy attribute of an object
     """
-    __slots__ = ('function', 'name')
+
+    __slots__ = ("function", "name")
 
     def __init__(self, function, name=None):
         self.function = extract_func(function)
@@ -173,7 +174,8 @@ class SharedLazy(Lazy):
     """
     Lazy attribute of a class and all its instances.
     """
-    __slots__ = ('value',)
+
+    __slots__ = ("value",)
 
     def __get__(self, obj, cls=None):
         try:
@@ -190,7 +192,8 @@ class Delegate:
     """
     Delegate attribute to another attribute.
     """
-    __slots__ = ('attr', 'name')
+
+    __slots__ = ("attr", "name")
     __set_name__ = Lazy.__set_name__
 
     def __init__(self, attr, name=None):
@@ -218,6 +221,7 @@ class ReadOnlyDelegate(Delegate):
     """
     Read only version of Delegate.
     """
+
     __slots__ = ()
 
     def __set__(self, obj, value):
@@ -228,7 +232,8 @@ class Alias:
     """
     Alias to another attribute/method in class.
     """
-    __slots__ = ('attr',)
+
+    __slots__ = ("attr",)
 
     def __init__(self, attr):
         self.attr = attr
@@ -246,6 +251,7 @@ class ReadOnlyAlias(Alias):
     """
     Like alias, but read-only.
     """
+
     __slots__ = ()
 
     def __set__(self, key, value):
@@ -256,7 +262,8 @@ class TransformingAlias(Alias):
     """
     A bijection to another attribute in class.
     """
-    __slots__ = ('transform', 'prepare')
+
+    __slots__ = ("transform", "prepare")
 
     def __init__(self, attr, transform=lambda x: x, prepare=None):
         super().__init__(attr)
@@ -316,7 +323,7 @@ def find_descriptor_name(descriptor, cls: type, hint=None):
         value = getattr(cls, attr, None)
         if value is descriptor:
             return attr
-    raise RuntimeError('%r is not a member of class' % descriptor)
+    raise RuntimeError("%r is not a member of class" % descriptor)
 
 
 def find_descriptor_owner(descriptor, cls: type, name=None):
@@ -331,5 +338,5 @@ def find_descriptor_owner(descriptor, cls: type, name=None):
         if value is descriptor:
             owner = super_class
     if owner is None:
-        raise RuntimeError('%r is not a member of %s' % descriptor)
+        raise RuntimeError("%r is not a member of %s" % descriptor)
     return owner

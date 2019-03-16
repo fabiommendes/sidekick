@@ -25,9 +25,12 @@ _filter = filter
 #
 repeat = fn(itertools.repeat)
 numbers = fn(itertools.count)
-enumerate = fn(enumerate, doc='''
-Iterator for (index, value) pairs of iterable. An fn-enabled version of 
-Python's builtin ``enumerate`` function.''')
+enumerate = fn(
+    enumerate,
+    doc="""
+Iterator for (index, value) pairs of iterable. An fn-enabled version of
+Python's builtin ``enumerate`` function.""",
+)
 cycle = fn(itertools.cycle)
 iterate = Fn2(toolz.iterate)
 
@@ -241,20 +244,22 @@ partition = Fn2_(toolz.partition)
 partition_by = Fn2_(toolz.partitionby)
 partition_all = Fn2(toolz.partition_all)
 sliding_window = Fn2(toolz.sliding_window)
-reduce_by = Fn3_(toolz.reduceby, doc='''
+reduce_by = Fn3_(
+    toolz.reduceby,
+    doc="""
 Perform a simultaneous group_by and reduction.
 
-The computation ``result = reduce_by(key, binop, seq, init)`` is equivalent to 
+The computation ``result = reduce_by(key, binop, seq, init)`` is equivalent to
 the following::
 
-    def reduction(group):           
+    def reduction(group):
         return reduce(binop, group, init)
 
     groups = groupby(key, seq)                                  # doctest: +SKIP
     result = value_map(reduction, groups)                       # doctest: +SKIP
 
-The former does not build the intermediate groups, allowing it to operate in 
-much less space.  This makes it suitable for larger datasets that do not fit 
+The former does not build the intermediate groups, allowing it to operate in
+much less space.  This makes it suitable for larger datasets that do not fit
 comfortably in memory
 
 The ``init`` keyword argument is the default initialization of the
@@ -267,7 +272,8 @@ Usage:
     >>> is_even = (lambda x: x % 2 == 0)
     >>> reduce_by(iseven, add, [1, 2, 3, 4, 5])
     {False: 9, True: 6}
-''')
+""",
+)
 groupby = Fn2(toolz.groupby)
 
 
@@ -505,7 +511,7 @@ def transform_map(funcs, mapping, _as_func=extract_function):
 #
 SEQ_TYPES = (list, tuple, Iterator)
 
-is_seqcont = (lambda x: isinstance(x, SEQ_TYPES))
+is_seqcont = lambda x: isinstance(x, SEQ_TYPES)
 
 
 @fn

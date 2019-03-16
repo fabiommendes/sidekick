@@ -2,7 +2,7 @@ from functools import partial
 
 from .extended_semantics import sk_delegate, extract_function
 
-__all__ = ['fn']
+__all__ = ["fn"]
 
 
 class FnMeta(type):
@@ -26,6 +26,7 @@ class FnMeta(type):
         """
         if cls._curry is None:
             from ..lib import curry
+
             cls._curry = curry
         return fn(cls._curry(func))
 
@@ -35,17 +36,17 @@ class fn(metaclass=FnMeta):  # noqa: N801
     A function wrapper that enable functional programming superpowers.
     """
 
-    __slots__ = '_sk_function_', '_extra'
+    __slots__ = "_sk_function_", "_extra"
 
     def __init__(self, func, **extra):
-        fn._sk_function_.__set__(self, getattr(func, '_sk_function_', func))
+        fn._sk_function_.__set__(self, getattr(func, "_sk_function_", func))
         fn._extra.__set__(self, extra)
 
     def __repr__(self):
         try:
-            return 'fn(%s)' % self._sk_function_.__name__
+            return "fn(%s)" % self._sk_function_.__name__
         except AttributeError:
-            return 'fn(%r)' % self._sk_function_
+            return "fn(%r)" % self._sk_function_
 
     def __call__(self, *args, **kwargs):
         return self._sk_function_(*args, **kwargs)
@@ -77,15 +78,15 @@ class fn(metaclass=FnMeta):  # noqa: N801
             return partial(self._sk_function_, instance)
 
     # Function attributes and introspection
-    __name__ = sk_delegate('__name__', 'lambda', '_extra')
-    __doc__ = sk_delegate('__doc__', None, '_extra')
-    __annotations__ = sk_delegate('__annotations__', dict, '_extra')
-    __closure__ = sk_delegate('__closure__', None, '_extra')
-    __code__ = sk_delegate('__code__', None, '_extra')
-    __defaults__ = sk_delegate('__defaults__', None, '_extra')
-    __globals__ = sk_delegate('__globals__', dict, '_extra')
-    __kwdefaults__ = sk_delegate('__kwdefaults__', None, '_extra')
-    __module__ = sk_delegate('__module__', '', '_extra')
+    __name__ = sk_delegate("__name__", "lambda", "_extra")
+    __doc__ = sk_delegate("__doc__", None, "_extra")
+    __annotations__ = sk_delegate("__annotations__", dict, "_extra")
+    __closure__ = sk_delegate("__closure__", None, "_extra")
+    __code__ = sk_delegate("__code__", None, "_extra")
+    __defaults__ = sk_delegate("__defaults__", None, "_extra")
+    __globals__ = sk_delegate("__globals__", dict, "_extra")
+    __kwdefaults__ = sk_delegate("__kwdefaults__", None, "_extra")
+    __module__ = sk_delegate("__module__", "", "_extra")
 
     def __getattr__(self, attr):
         if attr in self._extra:
@@ -151,7 +152,7 @@ class fn(metaclass=FnMeta):  # noqa: N801
         #                   *((x if e is placeholder else e) for e in args),
         #                   **{k: (x if v is placeholder else v) for k, v in
         #                      kwargs.items()}))
-        raise NotImplementedError
+        ...
 
 
 def as_fn(func):

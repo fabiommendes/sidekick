@@ -1,5 +1,7 @@
 import operator as op
+from collections.abc import Iterator
 
+from sidekick import call
 from .union import Union, opt
 from .utils import maybe_bin_op
 from ..lazy import property
@@ -17,9 +19,10 @@ class Maybe(Union):
         """
         Represents the absence of a value.
         """
+
         value = None
 
-    class Just(this, args=opt('value')):
+    class Just(this, args=opt("value")):
         """
         Represents a computation with a definite value.
         """
@@ -94,7 +97,7 @@ class Maybe(Union):
             try:
                 method = getattr(self.value, method)
             except AttributeError:
-                raise ValueError(f'method {method} does not exist')
+                raise ValueError(f"method {method} does not exist")
             return maybe(method(*args, **kwargs))
         else:
             return self
@@ -119,7 +122,8 @@ class Maybe(Union):
         It returns an empty iterator in the Nothing case.
         """
         if self.is_just:
-            yield from iter(self.value)
+            it: Iterator = self.value
+            yield from iter(it)
 
     # Operators
     __add__ = maybe_bin_op(op.add)
@@ -184,7 +188,7 @@ def mcall(func, *args, **kwargs):
         Nothing
     """
     arg_values = []
-    append = arg_values .append
+    append = arg_values.append
 
     for arg in args:
         if arg is None:
@@ -275,11 +279,13 @@ def mfilter(lst):
             yield value
 
 
-def _mk_maybe(Just, Nothing, type=type):
+@call(Maybe.Just, Maybe.Nothing, type)
+def maybe(just, nothing, type_):
     """
     Define maybe() inside a closure for a small performance gain.
     """
 
+    # noinspection PyShadowingNames
     def maybe(obj):
         """
         Coerce argument to a Maybe:
@@ -288,12 +294,12 @@ def _mk_maybe(Just, Nothing, type=type):
             maybe(maybe_obj) -> maybe_obj
             maybe(x)         -> Just(x)
         """
-        if obj is None or obj is Nothing:
-            return Nothing
-        elif type(obj) is Just:
+        if obj is None or obj is nothing:
+            return nothing
+        elif type_(obj) is just:
             return obj
         else:
-            return Just(obj)
+            return just(obj)
 
     return maybe
 
@@ -307,9 +313,8 @@ Just = Maybe.Just
 Nothing = Maybe.Nothing
 
 # Result
-from .result import Ok, Err
+from .result import Ok, Err  # noqa: E402
 
-maybe = _mk_maybe(Maybe.Just, Maybe.Nothing)
 Maybe.new = staticmethod(maybe)
 Maybe.call = staticmethod(mcall)
 Maybe.compose = staticmethod(mcompose)
@@ -318,4 +323,4 @@ Maybe.filter = staticmethod(mfilter)
 
 # Strict functions
 mpipe.strict = strict_mpipe
-mcompose.strict = (lambda *funcs: lambda obj: strict_mpipe(obj, *funcs))
+mcompose.strict = lambda *funcs: lambda obj: strict_mpipe(obj, *funcs)

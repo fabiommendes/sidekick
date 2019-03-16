@@ -9,15 +9,23 @@ from ..core import extract_function, fn, Placeholder
 from ..core.fn import Fn2_
 
 NOT_GIVEN = object()
-T = TypeVar('T')
-S = TypeVar('S')
+T = TypeVar("T")
+S = TypeVar("S")
 
 __all__ = [
-    'partial', 'rpartial', 'curry',  # partial application
-    'compose', 'pipe',  # composition
-    'const', 'identity',  # combinators
-    'call', 'map_call', 'do', 'juxt',  # calling functions
-    'memoize', 'force_function',  # misc
+    "partial",
+    "rpartial",
+    "curry",  # partial application
+    "compose",
+    "pipe",  # composition
+    "const",
+    "identity",  # combinators
+    "call",
+    "map_call",
+    "do",
+    "juxt",  # calling functions
+    "memoize",
+    "force_function",  # misc
 ]
 
 
@@ -83,7 +91,7 @@ def curry(func: Callable) -> fn:
 
     spec = inspect.getfullargspec(func)
     if spec.varargs or spec.varkw or spec.kwonlyargs:
-        raise TypeError('cannot curry a variadic function')
+        raise TypeError("cannot curry a variadic function")
 
     def incomplete_factory(arity, used_args):
         return lambda *args: (
@@ -201,8 +209,9 @@ def map_call(*args, **kwargs):
     """
     args = tuple(map(extract_function, args))
     kwargs = transform(extract_function, kwargs)
-    return lambda *args_, **kwargs_: \
-        lambda f: f(*transform(args, args_), **transform_map(kwargs, kwargs_))
+    return lambda *args_, **kwargs_: lambda f: f(
+        *transform(args, args_), **transform_map(kwargs, kwargs_)
+    )
 
 
 @Fn2_
@@ -282,12 +291,13 @@ def force_function(func, name=None) -> Callable:
     """
 
     if isinstance(func, types.FunctionType):
-        if name is not None and func.__name__ == '<lambda>':
+        if name is not None and func.__name__ == "<lambda>":
             func.__name__ = name
         return func
     elif isinstance(func, Placeholder):
         return force_function(func._sk_function_, name)
     else:
+
         def function(*args, **kwargs):
             return func(*args, **kwargs)
 
@@ -295,6 +305,6 @@ def force_function(func, name=None) -> Callable:
             function.__name__ = name
         else:
             function.__name__ = getattr(
-                func, '__name__',
-                getattr(func.__class__, '__name__', 'function'))
+                func, "__name__", getattr(func.__class__, "__name__", "function")
+            )
         return function

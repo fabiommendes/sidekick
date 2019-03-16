@@ -4,6 +4,7 @@ fn-aware functions from the builtin operator module.
 import operator as op
 from .core import fn
 
+# noinspection PyShadowingBuiltins
 abs = fn(op.abs)
 add = fn(op.add)
 and_ = fn(op.and_)
@@ -48,6 +49,7 @@ neg = fn(op.neg)
 not_ = fn(op.not_)
 or_ = fn(op.or_)
 pos = fn(op.pos)
+# noinspection PyShadowingBuiltins
 pow = fn(op.pow)
 rshift = fn(op.rshift)
 setitem = fn(op.setitem)
@@ -57,11 +59,11 @@ truth = fn(op.truth)
 xor = fn(op.xor)
 
 # Methods for Python 3.5+
-if hasattr(op, 'matmul'):
+if hasattr(op, "matmul"):
     matmul = fn(op.matmul)
     imatmul = fn(op.imatmul)
 
-if hasattr(op, 'length_hint'):
+if hasattr(op, "length_hint"):
     length_hint = fn(op.length_hint)
 
 del fn, op

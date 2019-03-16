@@ -16,31 +16,32 @@ class UnionMeta(type):
 
     @classmethod
     def __prepare__(mcs, name, bases, **kwargs):  # noqa: N804
-        namespace = {'__slots__': 'args'}
+        namespace = {"__slots__": "args"}
         new: UnionMeta = type.__new__(mcs, name, bases, namespace)
         base = new._check_inheritance(bases)
 
         # Save initial meta information regarding the role of the class
         # in the Union type  hierarchy: abstract, base or case class
         meta_info = {
-            'is_abstract': kwargs.get('is_abstract', False),
-            'is_case': False, 'is_base': False
+            "is_abstract": kwargs.get("is_abstract", False),
+            "is_case": False,
+            "is_base": False,
         }
-        if not meta_info['is_abstract']:
-            meta_info['is_base'] = base._meta.is_abstract
-            meta_info['is_case'] = base._meta.is_base
+        if not meta_info["is_abstract"]:
+            meta_info["is_base"] = base._meta.is_abstract
+            meta_info["is_case"] = base._meta.is_base
         new._meta = new._create_meta(**meta_info)
         new.__is_closed = False
 
         # Save all attributes to namespace and inject the class the metaclass
         # name and as a 'this' alias.
-        namespace['this'] = namespace[name] = new
+        namespace["this"] = namespace[name] = new
         return collections.OrderedDict(namespace)
 
     def __new__(mcs, name, bases, namespace, **kwargs):  # noqa: N804
         # Fetch new from namespace or create a new instance
         new: UnionMeta = namespace.pop(name, None)
-        namespace.pop('this', None)
+        namespace.pop("this", None)
         if new is None:
             new = type.__new__(mcs, name, bases, namespace)
             new._check_inheritance(bases)
@@ -51,7 +52,7 @@ class UnionMeta(type):
         # classes have no instances and no concrete case sub-classes.
         # A class must be tagged explicitly as abstract, otherwise it will
         # think it is a base class
-        is_abstract = kwargs.pop('is_abstract', False)
+        is_abstract = kwargs.pop("is_abstract", False)
         if is_abstract:
             new._init_abstract_class(name, bases, namespace, **kwargs)
             return new
@@ -89,8 +90,9 @@ class UnionMeta(type):
         cls._update_dict(namespace)
         cls._meta = cls._create_meta(is_abstract=True)
 
-    def _init_base_class(cls, name, bases, namespace,  # noqa: N805
-                         disable_singleton=False):
+    def _init_base_class(
+        cls, name, bases, namespace, disable_singleton=False  # noqa: N805
+    ):
         """
         A base class is a Union subclass that have inner case classes.
         """
@@ -117,23 +119,23 @@ class UnionMeta(type):
         Concrete Union classes.
         """
 
-        mk_property = (lambda i: property(lambda x: x.args[i]))
+        mk_property = lambda i: property(lambda x: x.args[i])
 
-        if args is None and 'args' in namespace:
-            args = opt(namespace.pop('args'))
+        if args is None and "args" in namespace:
+            args = opt(namespace.pop("args"))
         elif args is None:
-            args = opt(namespace.get('__annotations__', ()))
-        if 'args' in namespace:
-            raise TypeError('cannot define an args attribute for class')
+            args = opt(namespace.get("__annotations__", ()))
+        if "args" in namespace:
+            raise TypeError("cannot define an args attribute for class")
 
         # Add all value getter properties
         for i, (attr, argtype) in enumerate(args.items()):
             namespace.setdefault(attr, mk_property(i))
 
         # Sets the is_<name> attribute to True
-        query_attr_name = 'is_' + name.lower()
+        query_attr_name = "is_" + name.lower()
         if namespace.get(query_attr_name, True) is not True:
-            raise TypeError('%r must be set to True' % query_attr_name)
+            raise TypeError("%r must be set to True" % query_attr_name)
         namespace.setdefault(query_attr_name, True)
 
         # End registration
@@ -148,8 +150,9 @@ class UnionMeta(type):
         if base.__is_closed:
             base._register_case_class(cls, name, base._meta.disable_singleton)
 
-    def _register_case_class(cls, subclass, name=None,  # noqa: N805
-                             disable_singleton=False):
+    def _register_case_class(
+        cls, subclass, name=None, disable_singleton=False  # noqa: N805
+    ):
         """
         Register a case subclass to the base class.
         """
@@ -167,9 +170,9 @@ class UnionMeta(type):
             setattr(cls, name, subclass)
 
         # Contribute the is_<name> = False attribute for the base class
-        query_attr_name = 'is_' + name.lower()
+        query_attr_name = "is_" + name.lower()
         if getattr(cls, query_attr_name, False) is not False:
-            msg = '%r must be set to False on base class' % query_attr_name
+            msg = "%r must be set to False on base class" % query_attr_name
             raise TypeError(msg)
         setattr(cls, query_attr_name, False)
 
@@ -182,13 +185,13 @@ class UnionMeta(type):
         return result
 
     def _create_meta(cls, **kwargs):  # noqa: N805
-        kwargs.setdefault('is_abstract', False)
-        kwargs.setdefault('is_case', False)
-        kwargs.setdefault('is_base', False)
-        kwargs.setdefault('cases', None)
-        kwargs.setdefault('args', None)
-        kwargs.setdefault('base_class', None)
-        kwargs.setdefault('disable_singleton', False)
+        kwargs.setdefault("is_abstract", False)
+        kwargs.setdefault("is_case", False)
+        kwargs.setdefault("is_base", False)
+        kwargs.setdefault("cases", None)
+        kwargs.setdefault("args", None)
+        kwargs.setdefault("base_class", None)
+        kwargs.setdefault("disable_singleton", False)
         meta = SimpleNamespace(**kwargs)
         meta.is_singleton = meta.is_case and not meta.args
 
@@ -196,9 +199,9 @@ class UnionMeta(type):
             meta.base_class = cls
             meta.cases = meta.cases or {}
         elif meta.is_case:
-            meta.base_class, = (base
-                                for base in cls.__bases__
-                                if isinstance(base, UnionMeta))
+            meta.base_class, = (
+                base for base in cls.__bases__ if isinstance(base, UnionMeta)
+            )
 
         return meta
 
@@ -216,7 +219,7 @@ class UnionMeta(type):
 
         # Cannot inherit from more than one Union subclass
         if len(bases) >= 2:
-            msg = 'Multiple inheritance of Union types is not allowed'
+            msg = "Multiple inheritance of Union types is not allowed"
             raise TypeError(msg)
 
         elif len(bases) == 1:
@@ -224,12 +227,12 @@ class UnionMeta(type):
 
             # Case classes
             if base._meta.is_case:
-                msg = 'Cannot inherit from case classes'
+                msg = "Cannot inherit from case classes"
                 raise TypeError(msg)
 
             # Closed classes
             if base.__is_closed and base.__module__ != cls.__module__:
-                raise TypeError('cannot inherit from %s' % base)
+                raise TypeError("cannot inherit from %s" % base)
 
             return base
         return cls
@@ -237,15 +240,16 @@ class UnionMeta(type):
     def _check_case_args(cls, opts):  # noqa: N805
         blacklist = {
             # Sideckick specific
-            'args',
-
+            "args",
             # Python keywords that might not be present on the keyword module
-            'async', 'await', 'nonlocal',
+            "async",
+            "await",
+            "nonlocal",
         }
         blacklist.update(keyword.kwlist)
 
         for name in blacklist.intersection(opts):
-            msg = 'case classe cannot have an %r attribute.'
+            msg = "case classe cannot have an %r attribute."
             raise TypeError(msg % name)
 
     def _contribute_case_init(cls, use_kwargs=False):  # noqa: N805
@@ -267,7 +271,7 @@ class UnionMeta(type):
         """
 
         for k, v in cls.__dict__.items():
-            if hasattr(v, 'dispatch'):
+            if hasattr(v, "dispatch"):
                 cls._register_case_method(k, v)
 
     def _register_case_method(cls, name, method):
@@ -280,7 +284,7 @@ class UnionMeta(type):
                 cls.__is_closed = True
 
                 if method.base != cls:
-                    raise TypeError('case dispatch for a different class.')
+                    raise TypeError("case dispatch for a different class.")
                 method = casedispatch.from_namespace(cls, method.namespace)
             finally:
                 cls.__is_closed = closed
@@ -300,17 +304,23 @@ def make_init_args(cls, types):
         if len(args) != len(types):
             n = len(args)
             m = len(types)
-            raise TypeError('expected %s arguments, got %s' % (m, n))
+            raise TypeError("expected %s arguments, got %s" % (m, n))
 
         for n, (x, tt) in enumerate(zip(args, types)):
             if not isinstance(x, tt):
-                msg = '({base}.{case}) invalid type for arg {n}: got ' \
-                      '{tt}, expect {tt_expected}'
+                msg = (
+                    "({base}.{case}) invalid type for arg {n}: got "
+                    "{tt}, expect {tt_expected}"
+                )
                 raise TypeError(
-                    msg.format(base=cls._meta.base_class.__name__,
-                               case=cls.__name__, n=n,
-                               tt=type(x).__name__,
-                               tt_expected=tt.__name__))
+                    msg.format(
+                        base=cls._meta.base_class.__name__,
+                        case=cls.__name__,
+                        n=n,
+                        tt=type(x).__name__,
+                        tt_expected=tt.__name__,
+                    )
+                )
 
         self.args = args
 
@@ -343,23 +353,24 @@ class Union(metaclass=UnionMeta, is_abstract=True):
     """
     Base class for all union types.
     """
-    __slots__ = 'args'
-    __qualname__ = 'Union'
-    __module__ = 'sidekick'
+
+    __slots__ = "args"
+    __qualname__ = "Union"
+    __module__ = "sidekick"
 
     def __init__(self, *args, **kwargs):
         cls = self._meta.base_class
         if type(self) is cls:
-            msg = 'cannot instantiate a %s directly, choose an specific case'
+            msg = "cannot instantiate a %s directly, choose an specific case"
             raise TypeError(msg % cls.__name__)
         self.args = args
 
     def __repr__(self):
         # noinspection PyBroadException
         try:
-            data = '(%s)' % (', '.join(map(repr, self.args)))
+            data = "(%s)" % (", ".join(map(repr, self.args)))
         except Exception:
-            data = '(...)'
+            data = "(...)"
         return type(self).__name__ + data
 
     def __eq__(self, other):
@@ -379,11 +390,11 @@ class SingletonMixin:
     __slots__ = ()
     args = ()
 
-    _instance: 'SingletonMixin' = None
+    _instance: "SingletonMixin" = None
 
     def __new__(cls):
         if cls._instance is None:
-            setattr(cls, '_instance', super().__new__(cls))
+            setattr(cls, "_instance", super().__new__(cls))
         return cls._instance
 
     def __init__(self):

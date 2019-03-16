@@ -13,40 +13,6 @@ flip = lambda f: lambda x, y: f(y, x)
 this = None
 
 
-class AttrGetter:
-    __slots__ = '_object'
-
-    def __init__(self, obj):
-        AttrGetter._object.__set__(self, obj)
-
-    def __getattr__(self, attr):
-        obj = self._object
-        if obj.is_err:
-            return obj
-        return Ok(getattr(self._object, attr))
-
-    def __setattr__(self, attr, value):
-        setattr(self._object, attr, value)
-
-
-class MethodGetter:
-    __slots__ = '_object'
-
-    def __init__(self, obj):
-        MethodGetter._object.__set__(self, obj)
-
-    def __getattr__(self, attr):
-        obj = self._object
-        if obj.is_err:
-            return lambda *args, **kwargs: obj
-
-        func = obj.call(op.attrgetter, attr)
-        return lambda *args, **kwargs: Ok()
-
-    def __setattr__(self, attr, value):
-        setattr(self._object, attr, value)
-
-
 class Result(Union):
     """
     Represents a result with an Ok and an Err state.
@@ -56,16 +22,16 @@ class Result(Union):
     value: None
     error: None
 
-    class Err(this, args=opt('error')):
+    class Err(this, args=opt("error")):
         """
         Represents an error state.
         """
 
         @property
         def value(self):
-            raise AttributeError('value')
+            raise AttributeError("value")
 
-    class Ok(this, args=opt('value')):
+    class Ok(this, args=opt("value")):
         """
         Represents a success state of a computation.
         """
@@ -138,14 +104,16 @@ class Result(Union):
         if self.is_ok:
             return
         error = self.error
-        if (isinstance(error, Exception) or
-                isinstance(error, type) and
-                issubclass(error, Exception)):
+        if (
+                isinstance(error, Exception)
+                or isinstance(error, type)
+                and issubclass(error, Exception)
+        ):
             raise error
         else:
             raise ValueError(error)
 
-    def to_maybe(self) -> 'Maybe':
+    def to_maybe(self) -> "Maybe":
         """
         Convert result object into a Maybe.
         """
@@ -338,14 +306,14 @@ def safe_module(mod, private=False):
     if isinstance(mod, str):
         mod = importlib.import_module(mod)
     for name, value in vars(mod).items():
-        if name.startswith('_') and not private:
+        if name.startswith("_") and not private:
             continue
         if isinstance(value, types.FunctionType):
             try:
                 with_safe(value)
             except Exception:
-                func_name = '%s.%s' % (mod.__name__, name)
-                warnings.warn('could not create safe version of %s' % func_name)
+                func_name = "%s.%s" % (mod.__name__, name)
+                warnings.warn("could not create safe version of %s" % func_name)
 
 
 def rcompose(*funcs):
@@ -441,4 +409,4 @@ class safe_block(AbstractContextManager):
             return True
 
 
-from .maybe import Maybe, Just, Nothing
+from .maybe import Maybe, Just, Nothing  # noqa: E402

@@ -11,7 +11,7 @@ class AttrGetterMeta(type):
     def _new(cls, *attrs):  # noqa: N805
         self = object.__new__(cls)
         self._attrs = attrs
-        self._getter = op.attrgetter('.'.join(attrs))
+        self._getter = op.attrgetter(".".join(attrs))
         return self
 
     # When the caller object receives a direct attribute access, we must
@@ -27,17 +27,17 @@ class attrgetter(metaclass=AttrGetterMeta):  # noqa: N801
     introspected and it has a more convenient syntax.
     """
 
-    __slots__ = ('_attrs', '_getter')
+    __slots__ = ("_attrs", "_getter")
     __attrs__ = property(lambda self: self._attrs)
 
     def __getattr__(self, attr):
-        if attr == '__wrapped__':
-            raise AttributeError('__wrapped__')
+        if attr == "__wrapped__":
+            raise AttributeError("__wrapped__")
         return attrgetter._new(*(self._attrs + (attr,)))
 
     def __repr__(self):
-        return 'attrgetter{attrs}'.format(
-            attrs=''.join('.' + attr for attr in self._attrs),
+        return "attrgetter{attrs}".format(
+            attrs="".join("." + attr for attr in self._attrs)
         )
 
     def __call__(self, x):
@@ -73,13 +73,13 @@ class caller(metaclass=CallerMeta):  # noqa: N801
     42
     """
 
-    __slots__ = ('_attrs')
+    __slots__ = "_attrs"
     __attrs__ = property(lambda self: self._attrs)
 
     def __getattr__(self, attr):
         # Make it inspectable for doctests
-        if attr == '__wrapped__':
-            raise AttributeError('__wrapped__')
+        if attr == "__wrapped__":
+            raise AttributeError("__wrapped__")
         return caller._new(*(self._attrs + (attr,)))
 
     def __call__(self, *args, **kwargs):
@@ -89,10 +89,8 @@ class caller(metaclass=CallerMeta):  # noqa: N801
         if len(attrs) == 1:
             return methodcaller
         else:
-            getter = op.attrgetter('.'.join(attrs[:-1]))
+            getter = op.attrgetter(".".join(attrs[:-1]))
             return lambda x: methodcaller(getter(x))
 
     def __repr__(self):
-        return 'caller{attrs}'.format(
-            attrs=''.join('.' + attr for attr in self._attrs),
-        )
+        return "caller{attrs}".format(attrs="".join("." + attr for attr in self._attrs))

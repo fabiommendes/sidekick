@@ -11,25 +11,25 @@ class Shout:
 
 
 def say_hello():
-    name = io.input('Name: ')
-    age = int(io.input('Age: '))
-    io.print(f'Hello {name}! Congrats for your {age} years.')
+    name = io.input("Name: ")
+    age = int(io.input("Age: "))
+    io.print(f"Hello {name}! Congrats for your {age} years.")
 
 
 write = io.TermIO.write
 read = io.TermIO.readline
 
 intents = [
-    [write, 'Name: '],
-    [read, 'John'],
-    [write, 'Age: '],
-    [read, '42'],
-    [write, 'Hello John! Congrats for your 42 years.\n']
+    [write, "Name: "],
+    [read, "John"],
+    [write, "Age: "],
+    [read, "42"],
+    [write, "Hello John! Congrats for your 42 years.\n"],
 ]
 
 with eff.assert_intents(intents):
     with eff.handle({io.TermIO: Shout()}):
         say_hello()
 
-with io.with_inputs(['john', '42'], echo=True, handlers={io.TermIO: Shout()}):
+with io.with_inputs(["john", "42"], echo=True, handlers={io.TermIO: Shout()}):
     say_hello()

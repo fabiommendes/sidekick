@@ -1,5 +1,5 @@
-__author__ = 'Fábio Macêdo Mendes'
-__version__ = '0.4.1'
+__author__ = "Fábio Macêdo Mendes"
+__version__ = "0.4.1"
 
 try:
     import cytoolz as toolz
@@ -22,9 +22,10 @@ from .union import *
 def _fix():
     # Add sidekick.json to sys.modules
     import sys
-    sys.modules['sidekick.json'] = json
+
+    sys.modules["sidekick.json"] = json
     return None
 
 
 _ = placeholder
-__all__ = ['_', *(attr for attr in globals() if not attr.startswith('_'))]
+__all__ = ["_", *(attr for attr in globals() if not attr.startswith("_"))]

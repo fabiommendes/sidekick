@@ -1,12 +1,13 @@
 DEFERRED_CACHE = {}
 DEFERRED_FACTORIES = {}
-__all__ = ['Deferred', 'Delayed', 'Proxy', 'delayed', 'deferred']
+__all__ = ["Deferred", "Delayed", "Proxy", "delayed", "deferred"]
 
 
 class DelayedBase:
     """
     Base class for Deferred and Proxy.
     """
+
     __slots__ = ()
 
     def __init__(self, func, *args, **kwargs):
@@ -70,38 +71,40 @@ class Proxy:
     """
     Base class for proxy types.
     """
-    __slots__ = ('_obj__',)
+
+    __slots__ = ("_obj__",)
 
     def __init__(self, obj):
         self._obj__ = obj
 
     def __repr__(self):
-        return f'{type(self).__name__}({repr(self._obj__)})'
+        return f"{type(self).__name__}({repr(self._obj__)})"
 
     def __getattr__(self, attr):
         obj = Proxy._obj__.__get__(self, type(self))
         return getattr(obj, attr)
 
-    __eq__ = (lambda self, other: self._obj__.__eq__(other))
-    __ne__ = (lambda self, other: self._obj__.__ne__(other))
-    __gt__ = (lambda self, other: self._obj__.__gt__(other))
-    __ge__ = (lambda self, other: self._obj__.__ge__(other))
-    __lt__ = (lambda self, other: self._obj__.__lt__(other))
-    __le__ = (lambda self, other: self._obj__.__le__(other))
-    __hash__ = (lambda self: hash(self._obj__))
+    __eq__ = lambda self, other: self._obj__.__eq__(other)
+    __ne__ = lambda self, other: self._obj__.__ne__(other)
+    __gt__ = lambda self, other: self._obj__.__gt__(other)
+    __ge__ = lambda self, other: self._obj__.__ge__(other)
+    __lt__ = lambda self, other: self._obj__.__lt__(other)
+    __le__ = lambda self, other: self._obj__.__le__(other)
+    __hash__ = lambda self: hash(self._obj__)
 
 
 class Deferred(Proxy, DelayedBase):
     """
     Like Delayed, but wraps object into a proxy shell.
     """
+
     __slots__ = ()
 
     def __init__(self, *args, **kwargs):
         DelayedBase.__init__(self, *args, **kwargs)
 
     def __getattr__(self, attr):
-        if attr == '_obj__':
+        if attr == "_obj__":
             self._obj__ = run_factory(self)
             return self._obj__
         else:
@@ -118,11 +121,12 @@ class DelayedFunctionType:
         except KeyError:
             pass
 
-        ns = {'_class__': self}
-        if hasattr(cls, '__slots__'):
-            ns['__slots__'] = ()
+        ns = {"_class__": self}
+        if hasattr(cls, "__slots__"):
+            ns["__slots__"] = ()
 
-        type_name = 'Deferred[%s]' % cls.__name__
+        type_name = "Deferred[%s]" % cls.__name__
+        # noinspection PyMethodFirstArgAssignment
         self = type(type_name, (DelayedBase, cls), ns)
         DEFERRED_CACHE[cls] = self
         return self
@@ -152,20 +156,35 @@ def deferred(func, *args, **kwargs):
 
 METHODS = [
     # Arithmetic operators
-    'add', 'radd', 'sub', 'rsub', 'mul', 'rmul', 'truediv', 'rtruediv',
-    'floordiv', 'rfloordiv',
-
+    "add",
+    "radd",
+    "sub",
+    "rsub",
+    "mul",
+    "rmul",
+    "truediv",
+    "rtruediv",
+    "floordiv",
+    "rfloordiv",
     # Relations
-    'eq', 'ne', 'le', 'lt', 'ge', 'gt',
-
+    "eq",
+    "ne",
+    "le",
+    "lt",
+    "ge",
+    "gt",
     # Sequence interface
-    'getitem', 'setitem', 'iter', 'len',
-
+    "getitem",
+    "setitem",
+    "iter",
+    "len",
     # Conversions
-    'repr', 'str', 'nonzero', 'bool',
-
+    "repr",
+    "str",
+    "nonzero",
+    "bool",
     # Other Python interfaces
-    'call',
+    "call",
 ]
 
 
@@ -184,14 +203,14 @@ def _fill_magic_methods(*classes):
         return method
 
     def update(cls, attr, value):
-        force_update = {'__call__'}
+        force_update = {"__call__"}
         current = getattr(cls, attr, None)
         obj_value = getattr(object, attr, value)
         if current is None or current is obj_value or attr in force_update:
             setattr(cls, attr, value)
 
     for method_name in METHODS:
-        method_name = '__%s__' % method_name
+        method_name = "__%s__" % method_name
         dfunc = deferred_method(method_name)
         pfunc = proxy_method(method_name)
         update(DelayedBase, method_name, dfunc)
@@ -211,9 +230,7 @@ def run_factory(obj):
     factory = DEFERRED_FACTORIES[id(obj)]
     result = factory()
     if result is None:
-        raise ValueError(
-            'constructor returned None: not a valid deferred object'
-        )
+        raise ValueError("constructor returned None: not a valid deferred object")
     return result
 
 
@@ -225,11 +242,11 @@ def exec_deferred(obj):
     result = run_factory(obj)
 
     # __dict__ based classes
-    if hasattr(result, '__dict__'):
-        object.__getattribute__(obj, '__dict__').update(result.__dict__)
+    if hasattr(result, "__dict__"):
+        object.__getattribute__(obj, "__dict__").update(result.__dict__)
 
     # __slots__ based classes
-    if hasattr(result, '__slots__'):
+    if hasattr(result, "__slots__"):
         for slot in result.__class__.__slots__:
             try:
                 value = getattr(result, slot)
@@ -239,5 +256,5 @@ def exec_deferred(obj):
                 setattr(obj, slot, value)
 
     # Safe version of obj.__class__ = type(result)
-    object.__setattr__(obj, '__class__', type(result))
+    object.__setattr__(obj, "__class__", type(result))
     return result

@@ -1,10 +1,10 @@
 from types import FunctionType, MethodType, BuiltinFunctionType, BuiltinMethodType
 
 FUNCTION_TYPES = FunctionType, MethodType, BuiltinFunctionType, BuiltinMethodType
-identity = (lambda x: x)
-true = (lambda *args, **kwargs: True)
-false = (lambda *args, **kwargs: False)
-__all__ = ['extract_function', 'extract_predicate_function']
+identity = lambda x: x
+true = lambda *args, **kwargs: True
+false = lambda *args, **kwargs: False
+__all__ = ["extract_function", "extract_predicate_function"]
 
 
 def extract_function(f):
@@ -30,7 +30,7 @@ def extract_function(f):
         elif callable(f):
             return f
         else:
-            raise ValueError('cannot be interpreted as a function: %r' % f)
+            raise ValueError("cannot be interpreted as a function: %r" % f)
 
 
 def extract_predicate_function(f):
@@ -56,7 +56,7 @@ def extract_predicate_function(f):
         elif callable(f):
             return f
         else:
-            raise ValueError('cannot be interpreted as a predicate function: %r' % f)
+            raise ValueError("cannot be interpreted as a predicate function: %r" % f)
 
 
 def sk_delegate(name, default, extra=None):
@@ -70,6 +70,7 @@ def sk_delegate(name, default, extra=None):
     """
 
     if callable(default) and extra:
+
         def fget(self):
             names = getattr(self, extra)
             try:
@@ -78,10 +79,12 @@ def sk_delegate(name, default, extra=None):
                 return getattr(self._sk_function_, name, default())
 
     elif callable(default):
+
         def fget(self):
             return getattr(self._sk_function_, name, default())
 
     elif extra:
+
         def fget(self):
             names = getattr(self, extra)
             try:
@@ -90,6 +93,7 @@ def sk_delegate(name, default, extra=None):
                 return getattr(self._sk_function_, name, default)
 
     else:
+
         def fget(self):
             return getattr(self._sk_function_, name, default)
 

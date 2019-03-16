@@ -21,10 +21,10 @@ class SType:
         return lambda seq: chain(seq, [x])
 
     def clear(self):
-        raise TypeError('clear() function is not implemented in list magic types')
+        raise TypeError("clear() function is not implemented in list magic types")
 
     def copy(self):
-        raise TypeError('copy() function is not implemented in list magic types')
+        raise TypeError("copy() function is not implemented in list magic types")
 
     def count(self, value):
         def count(seq):
@@ -57,7 +57,7 @@ class SType:
             return lambda seq: chain(islice(seq, 0, index), [obj], islice(seq, index))
 
     def pop(self, index=None):
-        raise TypeError('pop() function is not implemented in list magic types')
+        raise TypeError("pop() function is not implemented in list magic types")
 
     def remove(self, value):
         def removing(seq):
@@ -67,7 +67,7 @@ class SType:
                 else:
                     break
             else:
-                raise ValueError('item not found in sequence')
+                raise ValueError("item not found in sequence")
             yield from seq
 
         return removing

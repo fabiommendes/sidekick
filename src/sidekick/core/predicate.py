@@ -2,12 +2,24 @@ from .extended_semantics import extract_predicate_function
 
 nullfunc = lambda *args, **kwargs: None
 __all__ = [
-    'predicate', 'cond', 'any_of', 'all_of', 'is_equal', 'is_identical', 'is_instance_of',
-    'is_false', 'is_true', 'is_none',
-    'is_even', 'is_odd',
-    'is_negative', 'is_positive',
-    'is_strictly_negative', 'is_strictly_positive',
-    'is_zero', 'is_nonzero',
+    "predicate",
+    "cond",
+    "any_of",
+    "all_of",
+    "is_equal",
+    "is_identical",
+    "is_instance_of",
+    "is_false",
+    "is_true",
+    "is_none",
+    "is_even",
+    "is_odd",
+    "is_negative",
+    "is_positive",
+    "is_strictly_negative",
+    "is_strictly_positive",
+    "is_zero",
+    "is_nonzero",
 ]
 
 
@@ -73,19 +85,11 @@ class cond:  # noqa: N801
 
     def __rshift__(self, other):
         true, false = self.if_true, self.if_false
-        return cond(
-            self.predicate,
-            lambda x: other(true(x)),
-            lambda x: other(false(x)),
-        )
+        return cond(self.predicate, lambda x: other(true(x)), lambda x: other(false(x)))
 
     def __rrshift__(self, other):
         true, false = self.if_true, self.if_false
-        return cond(
-            self.predicate,
-            lambda x: true(other(x)),
-            lambda x: false(other(x)),
-        )
+        return cond(self.predicate, lambda x: true(other(x)), lambda x: false(other(x)))
 
     def __ror__(self, other):
         return self.__call__(other)
@@ -170,4 +174,4 @@ is_zero = predicate(lambda x: x == 0)
 def _other_pred(x):
     if isinstance(x, predicate):
         return x._sk_function_
-    raise TypeError('can only compose with other predicate functions')
+    raise TypeError("can only compose with other predicate functions")

@@ -10,12 +10,12 @@ from ..core.fn import fn, Fn1, Fn2, Fn3, Fn1_, Fn2_, Fn3_
 NOT_GIVEN = object()
 PredOrBool = typ.Union[predicate, bool]
 
-_fn1 = (lambda func: Fn1(lambda st: func(st)))
-_fn2 = (lambda func: Fn2(lambda x, st: func(st, x)))
-_fn3 = (lambda func: Fn3(lambda x, y, st: func(st, x, y)))
-_fopt1 = (lambda func: Fn1_(lambda st, **kwargs: func(st, **kwargs)))
-_fopt2 = (lambda func: Fn2_(lambda x, st, **kwargs: func(st, x, **kwargs)))
-_fopt3 = (lambda func: Fn3_(lambda x, y, st, **kwargs: func(st, x, y, **kwargs)))
+_fn1 = lambda func: Fn1(lambda st: func(st))
+_fn2 = lambda func: Fn2(lambda x, st: func(st, x))
+_fn3 = lambda func: Fn3(lambda x, y, st: func(st, x, y))
+_fopt1 = lambda func: Fn1_(lambda st, **kwargs: func(st, **kwargs))
+_fopt2 = lambda func: Fn2_(lambda x, st, **kwargs: func(st, x, **kwargs))
+_fopt3 = lambda func: Fn3_(lambda x, y, st, **kwargs: func(st, x, y, **kwargs))
 
 #
 # Case control
@@ -39,11 +39,11 @@ def dash_case(name):
     """
     letters = []
     for c in name:
-        if c.isupper() and letters and letters[-1] != '-':
-            letters.append('-' + c.lower())
+        if c.isupper() and letters and letters[-1] != "-":
+            letters.append("-" + c.lower())
         else:
             letters.append(c.lower())
-    return ''.join(letters)
+    return "".join(letters)
 
 
 @fn
@@ -51,7 +51,7 @@ def snake_case(name):
     """
     Convert camel case to snake case.
     """
-    return dash_case(name).replace('-', '_')
+    return dash_case(name).replace("-", "_")
 
 
 #
@@ -59,7 +59,7 @@ def snake_case(name):
 #
 is_alnum = _fn1(str.isalnum)
 is_alpha = _fn1(str.isalpha)
-is_ascii = _fn1(getattr(str, 'isascii', None))
+is_ascii = _fn1(getattr(str, "isascii", None))
 is_decimal = _fn1(str.isdecimal)
 is_digit = _fn1(str.isdigit)
 is_identifier = _fn1(str.isidentifier)
@@ -134,23 +134,29 @@ def _mk(func, doc=None, name=None):
     return Fn2_(function)
 
 
-count = _mk(str.count, doc='Count the number of occurrences of sub in st.')
-index = _mk(str.index, doc="""
+count = _mk(str.count, doc="Count the number of occurrences of sub in st.")
+index = _mk(
+    str.index,
+    doc="""
 Return the lowest index in S where substring sub is found,
 such that sub is contained within S[start:end].  Optional
 arguments start and end are interpreted as in slice notation.
 
 Raises ValueError when the substring is not found.
-""")
-rindex = _mk(str.rindex, doc="""
+""",
+)
+rindex = _mk(
+    str.rindex,
+    doc="""
 Return the highest index in S where substring sub is found,
 such that sub is contained within S[start:end].  Optional
 arguments start and end are interpreted as in slice notation.
 
 Raises ValueError when the substring is not found.
-""")
-find = _mk(str.find, doc='Like index, but return -1, if string is not found.')
-rfind = _mk(str.rfind, doc='Like rindex, but return -1, if string is not found.')
+""",
+)
+find = _mk(str.find, doc="Like index, but return -1, if string is not found.")
+rfind = _mk(str.rfind, doc="Like rindex, but return -1, if string is not found.")
 
 #
 # Transformations
@@ -187,7 +193,7 @@ def format_c(*args, **kwargs):
     """
     if args:
         if kwargs:
-            msg = 'cannot declare positional and keyword arguments at the same time.'
+            msg = "cannot declare positional and keyword arguments at the same time."
             raise TypeError(msg)
         return fn(lambda st: st % args)
     else:
@@ -236,27 +242,28 @@ re_escape = _fn1(re.escape)
 # Deprecated functions
 # ------------------------------------------------------------------------------
 
+
 def deprecated(name, **reasons):
     k, v = reasons.popitem()
-    if k == 'alias_of':
-        fname = getattr(v, '__name__', '<lambda>')
-        msg = f'Function {name} was replaced by {fname}.'
+    if k == "alias_of":
+        fname = getattr(v, "__name__", "<lambda>")
+        msg = f"Function {name} was replaced by {fname}."
         return lambda *args, **kwargs: warn(msg) and v(*args, **kwargs)
     else:
         raise TypeError
 
 
-isalnum = deprecated('isalnum', alias_of=is_alnum)
-isalpha = deprecated('isalpha', alias_of=is_alpha)
-isascii = deprecated('isascii', alias_of=is_ascii)
-isdecimal = deprecated('isdecimal', alias_of=is_decimal)
-isdigit = deprecated('isdigit', alias_of=is_digit)
-isidentifier = deprecated('isidentifier', alias_of=is_identifier)
-islower = deprecated('islower', alias_of=is_lower)
-isnumeric = deprecated('isnumeric', alias_of=is_numeric)
-isprintable = deprecated('isprintable', alias_of=is_printable)
-isspace = deprecated('isspace', alias_of=is_space)
-istitle = deprecated('istitle', alias_of=is_title)
-isupper = deprecated('isupper', alias_of=is_upper)
-splitlines = deprecated('splitlines', alias_of=split_lines)
-swapcase = deprecated('swapcase', alias_of=swap_case)
+isalnum = deprecated("isalnum", alias_of=is_alnum)
+isalpha = deprecated("isalpha", alias_of=is_alpha)
+isascii = deprecated("isascii", alias_of=is_ascii)
+isdecimal = deprecated("isdecimal", alias_of=is_decimal)
+isdigit = deprecated("isdigit", alias_of=is_digit)
+isidentifier = deprecated("isidentifier", alias_of=is_identifier)
+islower = deprecated("islower", alias_of=is_lower)
+isnumeric = deprecated("isnumeric", alias_of=is_numeric)
+isprintable = deprecated("isprintable", alias_of=is_printable)
+isspace = deprecated("isspace", alias_of=is_space)
+istitle = deprecated("istitle", alias_of=is_title)
+isupper = deprecated("isupper", alias_of=is_upper)
+splitlines = deprecated("splitlines", alias_of=split_lines)
+swapcase = deprecated("swapcase", alias_of=swap_case)

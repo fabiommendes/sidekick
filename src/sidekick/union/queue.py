@@ -1,4 +1,4 @@
-import collections
+import collections.abc
 import functools
 
 from .linked_list import List, Nil, linklist
@@ -32,7 +32,7 @@ def as_list(func):
     return method
 
 
-class Queue(collections.Sequence):
+class Queue(collections.abc.Sequence):
     """
     A queue is a particular kind of collection in which the entities in the
     collection are kept in order and the principal operations on the collection
@@ -51,7 +51,7 @@ class Queue(collections.Sequence):
     "Purely Functional Data Structures"
 
     Usage:
-    >>> from fn.immutable import Queue
+    >>> from sidekick import Queue
     >>> q = Queue()
     >>> q1 = q.push_right(10)
     >>> q2 = q1.push_right(20)
@@ -69,6 +69,8 @@ class Queue(collections.Sequence):
     """
 
     __slots__ = ("_left", "_right")
+    _left: List
+    _right: List
 
     def __init__(self, left=Nil, right=Nil):
         self._left = List(left)
@@ -101,7 +103,7 @@ class Queue(collections.Sequence):
         Puts element in the end of queue and return a new queue.
         """
         if len(self._left) >= len(self._right):
-            return self.__class__(self._left, self._right.push_left(value))
+            return self.__class__(self._left, self._right.cons(value))
 
         left = self.to_list()
         right = List.cons(value, Nil)
@@ -111,7 +113,7 @@ class Queue(collections.Sequence):
         """
         Puts element in the begining of queue and return a new queue.
         """
-        return self.__class__(self._left.push_left(value), self._right)
+        return self.__class__(self._left.cons(value), self._right)
 
     def pop_left(self):
         """
@@ -120,13 +122,14 @@ class Queue(collections.Sequence):
         If queue is empty, raises ValueError.
         """
         if self._left is not Nil:
-            value, left = self._left.pop_left()
+            value, left = self._left.parts
             right = self._right
         elif self._right is not Nil:
-            value, left = self._right.reversed().pop_pair()
+            value, left = self._right.reversed().parts
             right = Nil
         else:
             raise ValueError("Queue is empty")
+        return value, Queue(left, right)
 
     def pop_right(self):
         """
@@ -135,13 +138,14 @@ class Queue(collections.Sequence):
         If queue is empty, raises ValueError.
         """
         if self._right is not Nil:
-            value, right = self._right.pop_left()
+            value, right = self._right.parts
             left = self._left
         elif self._left is not Nil:
-            value, right = self._left.reversed().pop_pair()
+            value, right = self._left.reversed().parts
             left = Nil
         else:
             raise ValueError("Queue is empty")
+        return value, Queue(left, right)
 
     def to_list(self):
         """

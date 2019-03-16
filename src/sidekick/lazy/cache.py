@@ -6,11 +6,12 @@ from sidekick import record
 _NOT_GIVEN = object()
 
 
-def single_cache(maxsize=256, mode='lru'):
+def single_cache(maxsize=256, mode="lru"):
     def decorator(func):
         cache = {}
 
-        if mode == 'lrc':
+        if mode == "lrc":
+
             @wraps(func)
             def decorated(x):
                 try:
@@ -20,6 +21,7 @@ def single_cache(maxsize=256, mode='lru'):
                     if len(cache) > maxsize:
                         del cache[next(iter(cache))]
                     return result
+
         else:
             last = [_NOT_GIVEN, _NOT_GIVEN, _NOT_GIVEN]
             first = _NOT_GIVEN

@@ -41,10 +41,10 @@ def casedispatch(typ):
         typ = type(typ)
 
     if not isinstance(typ, type) or not issubclass(typ, Union):
-        raise TypeError('must dispatch to a Union subclasss')
+        raise TypeError("must dispatch to a Union subclasss")
 
     if typ._meta.is_abstract:
-        raise TypeError('cannot dispatch over abstract union classes')
+        raise TypeError("cannot dispatch over abstract union classes")
 
     base = typ._meta.base_class
 
@@ -65,7 +65,7 @@ def _casedispatch(base, default_method=None):
     cache = {}
 
     def error(cls):
-        msg = 'invalid type: 1st argument should be a %s, got %s'
+        msg = "invalid type: 1st argument should be a %s, got %s"
         return TypeError(msg % (base.__name__, cls.__name__))
 
     def dispatch(cls):
@@ -99,9 +99,9 @@ def _casedispatch(base, default_method=None):
         if not isinstance(cls, type) and cls._meta.is_singleton:
             cls = type(cls)
         if cls is base:
-            raise TypeError('cannot register base class twice.')
+            raise TypeError("cannot register base class twice.")
         elif not issubclass(cls, base):
-            raise TypeError('must be a %s subclass.' % base.__name__)
+            raise TypeError("must be a %s subclass." % base.__name__)
 
         registry[cls] = wrap_case(cls, func)
         cache.clear()
@@ -130,17 +130,17 @@ def _check_complete_cases(cases, base, has_default):
 
     def error(msg, cases):
         bad_cases = {bad.__name__ for bad in cases}
-        data = ', '.join(bad_cases)
+        data = ", ".join(bad_cases)
         type_name = base.__name__
         return TypeError(msg % (type_name, data))
 
     # Defined spurious cases
     if cases - required:
-        raise error('invalid cases for %r: %s', cases - required)
+        raise error("invalid cases for %r: %s", cases - required)
 
     # Missing cases
     if required - cases and not has_default:
-        raise error('missing required cases for %r: %s', required - cases)
+        raise error("missing required cases for %r: %s", required - cases)
 
 
 def from_namespace(base, namespace=None):
@@ -152,22 +152,24 @@ def from_namespace(base, namespace=None):
     # We gather enough information to create a casedispatch method
     # and return it
     if not (issubclass(base, Union) and base._meta.is_base):
-        raise TypeError('expect a union type base class')
+        raise TypeError("expect a union type base class")
 
     # Extract all methods, but remove values inherited from object
-    ns_map = {k: getattr(namespace, k)
-              for k in dir(namespace)
-              if getattr(namespace, k) != getattr(object, k, None)}
+    ns_map = {
+        k: getattr(namespace, k)
+        for k in dir(namespace)
+        if getattr(namespace, k) != getattr(object, k, None)
+    }
 
     cases_map = base._meta.cases
     cases = {case for name, case in cases_map.items() if name in ns_map}
-    _check_complete_cases(cases, base, has_default='else_' in ns_map)
+    _check_complete_cases(cases, base, has_default="else_" in ns_map)
 
     # Create the return casedispatch method
-    func = _casedispatch(base, ns_map.pop('else_', None))
-    func.__doc__ = ns_map.pop('__doc__', '')
-    func.__name__ = ns_map.pop('__doc__', 'case_fn')
-    blacklist = {'__class__', '__weakref__', '__dict__'}
+    func = _casedispatch(base, ns_map.pop("else_", None))
+    func.__doc__ = ns_map.pop("__doc__", "")
+    func.__name__ = ns_map.pop("__doc__", "case_fn")
+    blacklist = {"__class__", "__weakref__", "__dict__"}
 
     # Register methods
     for name, impl in ns_map.items():
@@ -176,12 +178,12 @@ def from_namespace(base, namespace=None):
                 impl = impl.__func__
             cls = cases_map[name]
             func.register(cls, impl)
-        elif name.startswith('_'):
+        elif name.startswith("_"):
             if name not in blacklist:
                 setattr(func, name, impl)
         else:
             base_name = base.__name__
-            raise TypeError('unknown case for %s: %r' % (base_name, name))
+            raise TypeError("unknown case for %s: %r" % (base_name, name))
 
     return func
 
@@ -196,7 +198,7 @@ class _CaseFnMeta(type):
     def __getitem__(cls, item):
         new = object.__new__(cls)
         if not (issubclass(item, Union) and item._meta.is_base):
-            raise TypeError('expect a union base type, got %s.' % item)
+            raise TypeError("expect a union base type, got %s." % item)
         new.type = item
         return new
 
@@ -223,24 +225,25 @@ class case_fn(metaclass=_CaseFnMeta):
 
     The case function constructor checks if the
     """
-    __slots__ = 'type', 'extra_args'
+
+    __slots__ = "type", "extra_args"
 
     def __new__(cls, **kwargs):
         return object.__new__(cls)
 
     def __init__(self, *args, **kwargs):
         raise RuntimeError(
-            'You must first pass an union type for the case function using the '
-            'following syntax:\n'
-            '\n'
-            '    case_fn[Type](\n'
-            '       Case1=\n'
-            '           lambda a, b: ...,\n'
-            '       Case2=\n'
-            '           lambda a: ...,\n'
-            '       else_=\n'
-            '           lambda x: ...,\n'
-            '    )'
+            "You must first pass an union type for the case function using the "
+            "following syntax:\n"
+            "\n"
+            "    case_fn[Type](\n"
+            "       Case1=\n"
+            "           lambda a, b: ...,\n"
+            "       Case2=\n"
+            "           lambda a: ...,\n"
+            "       else_=\n"
+            "           lambda x: ...,\n"
+            "    )"
         )
 
     def __call__(self, *args, **kwargs):
@@ -248,8 +251,8 @@ class case_fn(metaclass=_CaseFnMeta):
         # argument
         if args and kwargs:
             raise TypeError(
-                'case function accepts either a single positional '
-                'argument or a series of arguments'
+                "case function accepts either a single positional "
+                "argument or a series of arguments"
             )
         if args:
             kwargs, = args
@@ -288,20 +291,22 @@ class case(metaclass=_CaseMeta):
                 lambda obj: ...,
         )
     """
-    __slots__ = 'data'
+
+    __slots__ = "data"
 
     def __call__(self, **kwargs):
         data = self.data
         branch = kwargs.get(data._name)
         if branch is None:
             try:
-                else_branch = kwargs['else_']
+                else_branch = kwargs["else_"]
             except KeyError:
                 expect = set(data._meta.base_class._meta.cases)
                 got = set(kwargs)
                 raise TypeError(
-                    'case expression is not exhaustive. Expect to have %s,\n'
-                    'but got %s' % (expect, got))
+                    "case expression is not exhaustive. Expect to have %s,\n"
+                    "but got %s" % (expect, got)
+                )
             else:
                 return else_branch(data)
         return branch(*data.args)

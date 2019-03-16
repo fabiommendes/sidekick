@@ -3,7 +3,7 @@ import keyword
 from types import SimpleNamespace
 
 NOT_GIVEN = object()
-__all__ = ['Record', 'Namespace', 'record', 'record_to_dict', 'namespace', 'field']
+__all__ = ["Record", "Namespace", "record", "record_to_dict", "namespace", "field"]
 
 
 #
@@ -74,7 +74,6 @@ class RecordMeta(type):
         return new_record_type(name, fields, bases, ns, use_invalid, is_mutable=True)
 
 
-
 def extract_fields(ns):
     """
     Extract a list of field values from a namespace dictionary.
@@ -88,8 +87,9 @@ def extract_fields(ns):
     return fields
 
 
-def new_record_type(name: str, fields: list, bases: tuple, ns: dict,
-                    use_invalid=False, is_mutable=False):
+def new_record_type(
+    name: str, fields: list, bases: tuple, ns: dict, use_invalid=False, is_mutable=False
+):
     """
     Worker function for Record.declare and Record.declare_namespace.
     """
@@ -98,25 +98,25 @@ def new_record_type(name: str, fields: list, bases: tuple, ns: dict,
         if isinstance(f, str):
             f = field(f, object)
         elif not isinstance(f, field):
-            msg = 'fields must be strings or field instances, got: %r'
+            msg = "fields must be strings or field instances, got: %r"
             raise TypeError(msg % f.__class__.__name__)
 
         if f.name is None:
-            raise TypeError('must use named fields: %s' % f)
+            raise TypeError("must use named fields: %s" % f)
         clean_fields.append(f)
     meta_info = Meta(clean_fields)
 
     bases = tuple(x for x in bases if x is not RecordMeta._record_base)
     base_ns = make_record_namespace(meta_info, use_invalid, is_mutable)
     ns = dict(base_ns, **ns)
-    ns['_meta'] = meta_info
+    ns["_meta"] = meta_info
 
     # Create class and update the init method
     cls: RecordMeta = type.__new__(RecordMeta, name, bases, ns)
     init = make_init_function(cls)
-    if not hasattr(cls, '_init'):
+    if not hasattr(cls, "_init"):
         cls._init = init
-    if not '__init__' in ns:
+    if "__init__" not in ns:
         cls.__init__ = init
     return cls
 
@@ -128,13 +128,13 @@ def make_record_namespace(meta_info, use_invalid=False, is_mutable=False):
     if not use_invalid:
         for name in fields:
             if keyword.iskeyword(name):
-                raise ValueError('%s is an invalid field name' % name)
+                raise ValueError("%s is an invalid field name" % name)
 
     ns = dict(__slots__=tuple(fields), **RECORD_NAMESPACE)
     if not is_mutable:
-        hash_function = (lambda self: hash(tuple(self)))
-        ns['__hash__'] = hash_function
-        ns['__setattr__'] = record.__setattr__
+        hash_function = lambda self: hash(tuple(self))
+        ns["__hash__"] = hash_function
+        ns["__setattr__"] = record.__setattr__
     return ns
 
 
@@ -155,16 +155,16 @@ class Record(metaclass=RecordMeta):
     _meta = None
 
     def __repr__(self):
-        return '%s(%s)' % (
+        return "%s(%s)" % (
             self.__class__.__name__,
-            ', '.join(repr(getattr(self, x)) for x in self._meta.fields)
+            ", ".join(repr(getattr(self, x)) for x in self._meta.fields),
         )
 
     def __eq__(self, other):
         if isinstance(other, (type(self), record, namespace)):
-            return len(self) == len(other) and \
-                   all(getattr(self, k) == getattr(other, k)
-                       for k in self._meta.fields)
+            return len(self) == len(other) and all(
+                getattr(self, k) == getattr(other, k) for k in self._meta.fields
+            )
         return NotImplemented
 
     def __getstate__(self):
@@ -197,9 +197,9 @@ class Namespace(metaclass=RecordMeta, is_mutable=True):
 
 
 RECORD_NAMESPACE = dict(Record.__dict__.items())
-del RECORD_NAMESPACE['__module__']
-del RECORD_NAMESPACE['__slots__']
-del RECORD_NAMESPACE['__doc__']
+del RECORD_NAMESPACE["__module__"]
+del RECORD_NAMESPACE["__slots__"]
+del RECORD_NAMESPACE["__doc__"]
 
 RecordMeta._record_base = Record
 
@@ -233,26 +233,28 @@ class record(BaseSimpleNamespace):  # noqa: N801
     """
     A anonymous record type.
     """
+
     __slots__ = ()
 
     def __repr__(self):
         items = sorted(self.__dict__.items(), key=lambda x: x[0])
-        return '%s(%s)' % (
+        return "%s(%s)" % (
             self.__class__.__name__,
-            ', '.join('%s=%r' % item for item in items)
+            ", ".join("%s=%r" % item for item in items),
         )
 
     def __hash__(self):
         return hash(tuple(self.__dict__.values()))
 
     def __setattr__(self, attr, value):
-        raise AttributeError('cannot set attribute: immutable type')
+        raise AttributeError("cannot set attribute: immutable type")
 
 
 class namespace(BaseSimpleNamespace):
     """
     A mutable record type.
     """
+
     __slots__ = ()
 
 
@@ -270,7 +272,7 @@ class field:  # noqa: N801
     def __init__(self, *args, default=NOT_GIVEN):
         if len(args) == 3:
             if default is not NOT_GIVEN:
-                msg = 'cannot pass default as positional and keyword argument'
+                msg = "cannot pass default as positional and keyword argument"
                 raise TypeError(msg)
             name, tt, default = args
         elif len(args) == 2:
@@ -283,7 +285,7 @@ class field:  # noqa: N801
                 name, tt = None, arg
         elif len(args) > 3:
             n = len(args)
-            msg = 'field accept at most 3 positional arguments, %s given' % n
+            msg = "field accept at most 3 positional arguments, %s given" % n
             raise TypeError(msg)
         else:
             name, tt = None, object
@@ -294,14 +296,14 @@ class field:  # noqa: N801
 
     def __repr__(self):
         if self.type is object:
-            tt = ''
+            tt = ""
         else:
             tt = self.type.__name__
         if self.default is NOT_GIVEN:
-            default = ''
+            default = ""
         else:
-            default = ', ' + repr(self.default)
-        return 'field(%s%s)' % (tt, default)
+            default = ", " + repr(self.default)
+        return "field(%s%s)" % (tt, default)
 
 
 class Meta:
@@ -311,7 +313,7 @@ class Meta:
         self.defaults = {}
         for f in fields:
             if f.name is None:
-                raise TypeError('cannot create class with anonymous fields')
+                raise TypeError("cannot create class with anonymous fields")
             self.fields.append(f.name)
             self.types.append(f.type)
 
@@ -352,7 +354,7 @@ class View(collections.abc.Mapping):
         return iter(self._data._meta.fields)
 
     def __getitem__(self, key):
-        if not (isinstance(key, str) and not key.startswith('_')):
+        if not (isinstance(key, str) and not key.startswith("_")):
             raise KeyError(key)
         try:
             return getattr(self._data, key)
@@ -410,47 +412,46 @@ def make_init_function(cls):
     # Mapping from names to safe names
     safe_names = {}
     for name in fields:
-        safe_names[name] = name + '_' if keyword.iskeyword(name) else name
+        safe_names[name] = name + "_" if keyword.iskeyword(name) else name
     if len(safe_names) != len(set(safe_names.values())):
-        msg = 'collision between escaped field names and given field names'
-        raise ValueError(msg + ': %s' % fields)
+        msg = "collision between escaped field names and given field names"
+        raise ValueError(msg + ": %s" % fields)
 
     # Create argument list
     args = []
     for name in fields:
         safe_name = safe_names[name]
         if name in defaults:
-            args.append('%s=_%s_default' % (safe_name, safe_name))
+            args.append("%s=_%s_default" % (safe_name, safe_name))
         else:
             args.append(safe_name)
-    args = ', '.join(args)
+    args = ", ".join(args)
 
     # Body of the __init__ function
     body = []
     for name in fields:
         safe_name = safe_names[name]
-        slot_name = '_%s_setter' % safe_name
-        body.append('%s(self, %s)' % (slot_name, safe_name))
-    body = '\n    '.join(body)
+        slot_name = "_%s_setter" % safe_name
+        body.append("%s(self, %s)" % (slot_name, safe_name))
+    body = "\n    ".join(body)
 
     # Complete source for the __init__ function
-    code = (
-        'def __init__(self, {args}):\n'
-        '    {body}'
-    ).format(args=args, body=body or 'pass')
+    code = ("def __init__(self, {args}):\n" "    {body}").format(
+        args=args, body=body or "pass"
+    )
 
     # Initialize defaults
     ns = {}
     for name, value in defaults.items():
         safe_name = safe_names[name]
-        ns['_%s_default' % safe_name] = value
+        ns["_%s_default" % safe_name] = value
     for name, slot in slots.items():
         safe_name = safe_names[name]
-        ns['_%s_getter' % safe_name] = slot.__get__
-        ns['_%s_setter' % safe_name] = slot.__set__
+        ns["_%s_getter" % safe_name] = slot.__get__
+        ns["_%s_setter" % safe_name] = slot.__set__
 
     exec(code, ns, ns)
-    return ns['__init__']
+    return ns["__init__"]
 
 
 def make_eq_function(fields):
@@ -460,9 +461,7 @@ def make_eq_function(fields):
 
     def __eq__(self, other):  # noqa: N802
         if isinstance(other, self.__class__):
-            return all(
-                getattr(self, f) == getattr(other, f) for f in fields
-            )
+            return all(getattr(self, f) == getattr(other, f) for f in fields)
         return NotImplemented
 
     return __eq__

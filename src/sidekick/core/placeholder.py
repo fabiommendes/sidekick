@@ -5,8 +5,8 @@ from functools import singledispatch
 from .operators import UNARY, BINARY, COMPARISON, METHODS, SYMBOLS
 
 flip = lambda f: lambda x, y: f(y, x)
-named = lambda name, obj: setattr(obj, '__name__', name) or obj
-__all__ = ['placeholder', 'Placeholder', 'F']
+named = lambda name, obj: setattr(obj, "__name__", name) or obj
+__all__ = ["placeholder", "Placeholder", "F"]
 
 
 #
@@ -27,18 +27,23 @@ def register_operators(rfunc, operators):
 
 
 def unary(op, cls):
-    return named('__%s__' % op.__name__.rstrip('_'),
-                 lambda self: cls(UnaryOp(op, self._ast)))
+    return named(
+        "__%s__" % op.__name__.rstrip("_"), lambda self: cls(UnaryOp(op, self._ast))
+    )
 
 
 def binary(op, cls):
-    return named('__%s__' % op.__name__.rstrip('_'),
-                 lambda self, other: cls(BinOp(op, self._ast, to_ast(other))))
+    return named(
+        "__%s__" % op.__name__.rstrip("_"),
+        lambda self, other: cls(BinOp(op, self._ast, to_ast(other))),
+    )
 
 
 def rbinary(op, cls):
-    return named('__r%s__' % op.__name__.rstrip('_'),
-                 lambda self, other: cls(BinOp(op, to_ast(other), self._ast)))
+    return named(
+        "__r%s__" % op.__name__.rstrip("_"),
+        lambda self, other: cls(BinOp(op, to_ast(other), self._ast)),
+    )
 
 
 @register_operators(unary, UNARY)
@@ -49,7 +54,7 @@ class Placeholder:
     Placeholder objects represents a variable or expression on quick lambda.
     """
 
-    __slots__ = '_ast', '_cache'
+    __slots__ = "_ast", "_cache"
 
     _name = property(lambda self: self.__repr__())
 
@@ -64,16 +69,16 @@ class Placeholder:
         self._cache = cache
 
     def __repr__(self):
-        return f'{type(self).__name__}({self})'
+        return f"{type(self).__name__}({self})"
 
     def __str__(self):
         if self._ast is None:
-            return '_'
+            return "_"
         return source(self._ast)
 
     def __getattr__(self, attr):
-        if attr == '__wrapped__':
-            raise AttributeError('__wrapped__')
+        if attr == "__wrapped__":
+            raise AttributeError("__wrapped__")
         return Placeholder(GetAttr(attr, self._ast))
 
     def __call__(self, *args, **kwargs):
@@ -98,12 +103,12 @@ def F(func, *args, **kwargs):  # noqa: N802
 # AST node types and representation
 # ------------------------------------------------------------------------------
 
-VarType = type('Var', (), {'__repr__': lambda x: 'Var'})
-BinOp = namedtuple('BinOp', ['op', 'lhs', 'rhs'])
-Call = namedtuple('Call', ['caller', 'arguments', 'kwargs'])
-Cte = namedtuple('Cte', ['value'])
-GetAttr = namedtuple('GetAttr', ['attr', 'value'])
-UnaryOp = namedtuple('SingleOp', ['op', 'value'])
+VarType = type("Var", (), {"__repr__": lambda x: "Var"})
+BinOp = namedtuple("BinOp", ["op", "lhs", "rhs"])
+Call = namedtuple("Call", ["caller", "arguments", "kwargs"])
+Cte = namedtuple("Cte", ["value"])
+GetAttr = namedtuple("GetAttr", ["attr", "value"])
+UnaryOp = namedtuple("SingleOp", ["op", "value"])
 Var = VarType()
 
 
@@ -120,14 +125,14 @@ def to_ast(obj):
 #
 # Rendering ASTs
 #
-OP_SYMBOLS = {k: ' %s ' % v for k, v in SYMBOLS.items()}
-OP_SYMBOLS[operator.attrgetter] = '.'
+OP_SYMBOLS = {k: " %s " % v for k, v in SYMBOLS.items()}
+OP_SYMBOLS[operator.attrgetter] = "."
 
 
 @singledispatch
 def source(obj):
     if obj is Var:
-        return '_'
+        return "_"
     raise ValueError(obj)
 
 
@@ -138,25 +143,25 @@ source.register = source.register
 @source.register(BinOp)
 def _(node):
     op, lhs, rhs = node
-    return '(%s %s %s)' % (source(lhs), op_symbol(op), source(rhs))
+    return "(%s %s %s)" % (source(lhs), op_symbol(op), source(rhs))
 
 
 @source.register(UnaryOp)
 def _(node):
     op, value = node
-    return '(%s %s)' % (op_symbol(op), source(value))
+    return "(%s %s)" % (op_symbol(op), source(value))
 
 
 @source.register(Call)
 def _(node):
     obj, args, kwargs = node
-    return '%s(*%s, **%s)' % (obj, args, kwargs)
+    return "%s(*%s, **%s)" % (obj, args, kwargs)
 
 
 @source.register(GetAttr)
 def _(node):
     attr, obj = node
-    return '%s.%s' % (obj, attr)
+    return "%s.%s" % (obj, attr)
 
 
 @source.register(Cte)
@@ -206,7 +211,6 @@ def compile_ast(ast, simplify=False):
 
         return lambda x: op(lhs(x), rhs(x))
 
-
     # Function calls
     # Optimizations:
     #   *
@@ -215,15 +219,15 @@ def compile_ast(ast, simplify=False):
         caller = compile_ast(caller)
         args = tuple(map(compile_ast, args))
         kwargs = {k: compile_ast(v) for k, v in kwargs.items()}
-        return lambda x: caller(x)(*(f(x) for f in args),
-                                   **{k: v(x) for k, v in kwargs})
+        return lambda x: caller(x)(
+            *(f(x) for f in args), **{k: v(x) for k, v in kwargs}
+        )
 
     # Return constant values
     # Optimizations: None
     elif tt is Cte:
         obj = ast.value
         return lambda x: obj
-
 
     # Attribute getter
     # Optimizations:
@@ -236,7 +240,7 @@ def compile_ast(ast, simplify=False):
         getter = attrgetter(attr)
 
         # After simplification, attr can be given in the dot notation
-        assert not isinstance(value, GetAttr), 'Should have gone after simplification'
+        assert not isinstance(value, GetAttr), "Should have gone after simplification"
 
         if value is Var:
             return getter
@@ -252,7 +256,6 @@ def compile_ast(ast, simplify=False):
         else:
             inner = compile_ast(value)
             return lambda x: getter(inner(x))
-
 
     # Compile expression with SingleOp nodes
     # Optimizations:
@@ -279,10 +282,10 @@ def compile_ast(ast, simplify=False):
             return lambda x: expr(x)
 
     else:
-        raise TypeError(f'invalid AST type: {type(ast).__name__}')
+        raise TypeError(f"invalid AST type: {type(ast).__name__}")
 
 
-var_identity = (lambda x: x)
+var_identity = lambda x: x
 
 
 def simplify_ast(ast):
@@ -298,7 +301,7 @@ def simplify_ast(ast):
                 return Cte(getattr(obj, attr))
 
         elif isinstance(value, GetAttr):
-            return GetAttr(f'{value.attr}.{attr}', value.value)
+            return GetAttr(f"{value.attr}.{attr}", value.value)
 
         elif value is not ast.value:
             return GetAttr(attr, value)

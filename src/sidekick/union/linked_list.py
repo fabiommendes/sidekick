@@ -4,7 +4,7 @@ import itertools
 
 from .union import Union, opt
 
-flip = (lambda f: lambda x, y: f(y, x))
+flip = lambda f: lambda x, y: f(y, x)
 
 
 class ListMeta(type(Union), type(collections.abc.Sequence)):
@@ -22,11 +22,8 @@ class List(Union, collections.abc.Sequence, metaclass=ListMeta):
     is_nil: bool
     is_cons: bool
     head: object
-    tail: 'List'
+    tail: "List"
 
-    #
-    # Class methods
-    #
     @classmethod
     def concat(cls, lists):
         """
@@ -36,6 +33,11 @@ class List(Union, collections.abc.Sequence, metaclass=ListMeta):
         for x in reversed(lists):
             result = x + result
         return result
+
+    @property
+    def parts(self):
+        yield self.head
+        yield self.tail
 
     def __iter__(lst):  # noqa: N805
         while lst is not Nil:
@@ -47,7 +49,7 @@ class List(Union, collections.abc.Sequence, metaclass=ListMeta):
 
     def __getitem__(lst, i):  # noqa: N805
         if i < 0:
-            raise IndexError('negative indexes are not supported')
+            raise IndexError("negative indexes are not supported")
         if lst is Nil:
             raise IndexError(i)
 
@@ -76,8 +78,8 @@ class List(Union, collections.abc.Sequence, metaclass=ListMeta):
         return NotImplemented
 
     def __repr__(self):
-        data = ', '.join(map(str, self))
-        return 'linklist([{}])'.format(data)
+        data = ", ".join(map(str, self))
+        return "linklist([{}])".format(data)
 
     # Concatenation
     def __add__(self, other):
@@ -95,7 +97,7 @@ class List(Union, collections.abc.Sequence, metaclass=ListMeta):
             elif other == 1:
                 return self
             elif other < 0:
-                raise ValueError('negative numbers')
+                raise ValueError("negative numbers")
 
             result = self
             for _ in range(other):
@@ -172,7 +174,7 @@ class List(Union, collections.abc.Sequence, metaclass=ListMeta):
         if self.is_cons:
             cons = Cons
             acc = Nil
-            lst = self.reverse()
+            lst = self.reversed()
             x, lst = lst.args
             while lst.is_cons:
                 acc = cons(value, cons(x, acc))
@@ -184,7 +186,7 @@ class List(Union, collections.abc.Sequence, metaclass=ListMeta):
     #
     # Reorganizing the list
     #
-    def reverse(lst):  # noqa: N805
+    def reversed(lst) -> 'List':  # noqa: N805
         """
         Reversed copy of the list.
         """
@@ -247,7 +249,7 @@ class List(Union, collections.abc.Sequence, metaclass=ListMeta):
         """
         Apply function to reduce a list from the right.
         """
-        return functools.reduce(flip(func), self.reverse(), start)
+        return functools.reduce(flip(func), self.reversed(), start)
 
     def fold(self, func, start):
         """
@@ -271,7 +273,7 @@ class List(Union, collections.abc.Sequence, metaclass=ListMeta):
         cons = Cons
         func = flip(func)
         scan_func = lambda x, y: cons(func(x, y.head), y)
-        return functools.reduce(scan_func, self.reverse(), cons(start, Nil))
+        return functools.reduce(scan_func, self.reversed(), cons(start, Nil))
 
     #
     # Monadic interface
@@ -300,7 +302,7 @@ class Cons(List):
     A link in the linked list.
     """
 
-    args = opt([('head', object), ('tail', List)])
+    args = opt([("head", object), ("tail", List)])
 
     __bool__ = lambda x: True
 
@@ -322,7 +324,7 @@ class Nil(List):
         return self
 
 
-Nil = List.Nil = Nil()
+Nil = Nil()
 List.Cons = Cons
 
 

@@ -10,8 +10,8 @@ class Opts(collections.OrderedDict):
     """
 
     def __repr__(self):
-        data = ', '.join('%r: %r' % (k, v) for k, v in self.items())
-        return 'Opts({%s})' % data
+        data = ", ".join("%r: %r" % (k, v) for k, v in self.items())
+        return "Opts({%s})" % data
 
 
 def opt(*args, **kwargs):  # noqa: C901
@@ -59,18 +59,18 @@ def opt(*args, **kwargs):  # noqa: C901
         if isinstance(arg, str):
             args = [(arg, object)]
         elif isinstance(arg, type):
-            args = [('value', object)]
+            args = [("value", object)]
         elif isinstance(arg, int):
             args = (object,) * arg
             return opt(*args)
         else:
             args = arg
     elif args and kwargs:
-        msg = 'cannot declare positional and keyword arguments simultaneously'
+        msg = "cannot declare positional and keyword arguments simultaneously"
         raise TypeError(msg)
     elif kwargs:
         if len(kwargs) > 1 and sys.version_info < (3, 6):
-            msg = 'Multiple keyword arguments are only supported on Python 3.6+'
+            msg = "Multiple keyword arguments are only supported on Python 3.6+"
             raise TypeError(msg)
         args = kwargs
 

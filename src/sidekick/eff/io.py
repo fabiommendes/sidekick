@@ -18,7 +18,7 @@ class TermIO(Effect):
         return builtins.input()
 
     def write(self, data: str) -> None:
-        builtins.print(data, end='')
+        builtins.print(data, end="")
 
 
 class InputTermIO:
@@ -36,7 +36,7 @@ class InputTermIO:
         try:
             result = self._inputs.popleft()
             if self._echo:
-                self._effect.write(result + '\n')
+                self._effect.write(result + "\n")
             return result
         except IndexError:
             if self._fallback:
@@ -58,11 +58,11 @@ def input(msg=None, term_io=None):
 
     term_io = get_effect(TermIO, term_io)
     if msg:
-        print(msg, end='')
+        print(msg, end="")
     return term_io.readline()
 
 
-def print(*args, sep=' ', end='\n', file=None, term_io=None):
+def print(*args, sep=" ", end="\n", file=None, term_io=None):
     """
     Drop in replacement for Python's print function.
     """
