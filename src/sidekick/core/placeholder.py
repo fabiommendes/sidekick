@@ -61,7 +61,7 @@ class Placeholder:
     @property
     def _sk_function_(self):
         if self._cache is None:
-            self._cache = compile_ast(self._ast, True)
+            self._cache = compile_ast(simplify_ast(self._ast))
         return self._cache
 
     def __init__(self, ast, cache=None):
@@ -179,114 +179,116 @@ def op_symbol(op):
 SIMPLE_TYPES = (int, float, complex, str, bytes, bool, type(None))
 
 
-def compile_ast(ast, simplify=False):
+@singledispatch
+def compile_ast(ast):
     """
     Compile a placeholder expression and return the corresponding anonymous
     function.
     """
-    from operator import attrgetter
-
-    # Var nodes simply pass a well-defined identity function
     if ast is Var:
         return var_identity
+    else:
+        raise TypeError(f"invalid AST type: {type(ast).__name__}")
 
-    if simplify:
-        ast = simplify_ast(ast)
-    tt = type(ast)
 
-    # Binary operations
-    # Optimizations:
-    #   *
-    if tt is BinOp:
-        op, lhs, rhs = ast
-        simple_lhs = simple_rhs = False
+# noinspection PyUnresolvedReferences
+compiler = compile_ast.register
 
-        lhs = compile_ast(lhs)
-        rhs = compile_ast(rhs)
 
-        if simple_lhs:
-            return lambda x: op(lhs, rhs(x))
-        elif simple_rhs:
-            return lambda x: op(lhs(x), rhs)
+@compiler(Cte)
+def _(ast):
+    obj = ast.value
+    return lambda x: obj
 
-        return lambda x: op(lhs(x), rhs(x))
 
-    # Function calls
-    # Optimizations:
-    #   *
-    elif tt is Call:
-        caller, args, kwargs = ast
-        caller = compile_ast(caller)
-        args = tuple(map(compile_ast, args))
-        kwargs = {k: compile_ast(v) for k, v in kwargs.items()}
-        return lambda x: caller(x)(
-            *(f(x) for f in args), **{k: v(x) for k, v in kwargs}
-        )
+@compiler(BinOp)
+def _(ast):
+    op, lhs, rhs = ast
+    simple_lhs = simple_rhs = False
 
-    # Return constant values
-    # Optimizations: None
-    elif tt is Cte:
-        obj = ast.value
-        return lambda x: obj
+    lhs = compile_ast(lhs)
+    rhs = compile_ast(rhs)
 
-    # Attribute getter
+    if simple_lhs:
+        return lambda x: op(lhs, rhs(x))
+    elif simple_rhs:
+        return lambda x: op(lhs(x), rhs)
+
+    return lambda x: op(lhs(x), rhs(x))
+
+
+@compiler(Call)
+def _(ast):
+    caller, args, kwargs = ast
+    caller = compile_ast(caller)
+    args = tuple(map(compile_ast, args))
+    kwargs = {k: compile_ast(v) for k, v in kwargs.items()}
+    return lambda x: caller(x)(
+        *(f(x) for f in args), **{k: v(x) for k, v in kwargs}
+    )
+
+
+@compiler(GetAttr)
+def _(ast):
     # Optimizations:
     #   * Var nodes are handled more efficiently with operator.attrgetter
     #   * Call nodes are handled with operator.methodcaller, when possible
     #   * Chained getattrs are also handled with operator.attrgetter
     #   * Constant propagation for safe objects
-    elif tt is GetAttr:
-        attr, value = ast
-        getter = attrgetter(attr)
+    from operator import attrgetter
+    attr, value = ast
+    getter = attrgetter(attr)
 
-        # After simplification, attr can be given in the dot notation
-        assert not isinstance(value, GetAttr), "Should have gone after simplification"
+    # After simplification, attr can be given in the dot notation
+    assert not isinstance(value, GetAttr), "Should have gone after simplification"
 
-        if value is Var:
-            return getter
+    if value is Var:
+        return getter
 
-        elif isinstance(value, Cte):
-            arg = value.value
-            if isinstance(arg, SIMPLE_TYPES):
-                arg = getter(arg)
-                return lambda x: arg
-            else:
-                return lambda x: getter(arg)
-
+    elif isinstance(value, Cte):
+        arg = value.value
+        if isinstance(arg, SIMPLE_TYPES):
+            arg = getter(arg)
+            return lambda x: arg
         else:
-            inner = compile_ast(value)
-            return lambda x: getter(inner(x))
+            return lambda x: getter(arg)
 
-    # Compile expression with SingleOp nodes
+    else:
+        inner = compile_ast(value)
+        return lambda x: getter(inner(x))
+
+
+@compiler(UnaryOp)
+def _(ast):
     # Optimizations:
     #   * Var nodes are eliminated
     #   * Cte nodes are extracted from node. Performs rudimentary constant
     #     propagation in safe types.
-    elif tt is UnaryOp:
-        op, value = ast
-        value = to_ast(value)
+    op, value = ast
+    value = to_ast(value)
 
-        if value is Var:
-            return op
+    if value is Var:
+        return op
 
-        elif isinstance(value, Cte):
-            arg = value.value
-            if isinstance(arg, SIMPLE_TYPES):
-                arg = op(arg)
-                return lambda x: arg
-            arg = compile_ast(arg)
-            return lambda x: op(arg(x))
-
-        else:
-            expr = compile_ast(value)
-            return lambda x: expr(x)
+    elif isinstance(value, Cte):
+        arg = value.value
+        if isinstance(arg, SIMPLE_TYPES):
+            arg = op(arg)
+            return lambda x: arg
+        arg = compile_ast(arg)
+        return lambda x: op(arg(x))
 
     else:
-        raise TypeError(f"invalid AST type: {type(ast).__name__}")
+        expr = compile_ast(value)
+        return lambda x: expr(x)
 
 
 var_identity = lambda x: x
 
+
+# ------------------------------------------------------------------------------
+# Simplifying AST nodes
+# ------------------------------------------------------------------------------
 
 def simplify_ast(ast):
     """Deep AST simplification"""
