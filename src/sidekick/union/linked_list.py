@@ -1,4 +1,4 @@
-import collections
+import collections.abc
 import functools
 import itertools
 
@@ -7,16 +7,22 @@ from .union import Union, opt
 flip = (lambda f: lambda x, y: f(y, x))
 
 
-class ListMeta(type(Union), type(collections.Sequence)):
+class ListMeta(type(Union), type(collections.abc.Sequence)):
     """
     Metaclass for List type.
     """
 
 
-class List(Union, collections.Sequence, metaclass=ListMeta):
+# noinspection PyMethodParameters,PyMethodFirstArgAssignment
+class List(Union, collections.abc.Sequence, metaclass=ListMeta):
     """
     An immutable singly-linked list.
     """
+
+    is_nil: bool
+    is_cons: bool
+    head: object
+    tail: 'List'
 
     #
     # Class methods
@@ -32,24 +38,22 @@ class List(Union, collections.Sequence, metaclass=ListMeta):
         return result
 
     def __iter__(lst):  # noqa: N805
-        while lst.is_cons:
-            x = lst.head
+        while lst is not Nil:
+            yield lst.head
             lst = lst.tail
-            yield x
 
     def __len__(lst):  # noqa: N805
-        size = 0
-        while lst.is_cons:
-            lst = lst.tail
-            size += 1
-        return size
+        return sum(1 for _ in lst)
 
     def __getitem__(lst, i):  # noqa: N805
         if i < 0:
-            raise IndexError('negative indexes not supported')
-        if lst.is_nil:
+            raise IndexError('negative indexes are not supported')
+        if lst is Nil:
             raise IndexError(i)
-        for idx in range(i + 1):
+
+        x = lst.head
+        lst = lst.tail
+        for idx in range(i):
             try:
                 x = lst.head
                 lst = lst.tail
@@ -58,8 +62,10 @@ class List(Union, collections.Sequence, metaclass=ListMeta):
         return x
 
     def __eq__(self, other):
-        if isinstance(other, List):
-            a, b = self, other
+        a = self
+        b: List = other
+
+        if isinstance(b, List):
             while a is not Nil and b is not Nil:
                 if a is b:
                     return True
@@ -86,6 +92,8 @@ class List(Union, collections.Sequence, metaclass=ListMeta):
         if isinstance(other, int):
             if other == 0:
                 return Nil
+            elif other == 1:
+                return self
             elif other < 0:
                 raise ValueError('negative numbers')
 
@@ -130,7 +138,8 @@ class List(Union, collections.Sequence, metaclass=ListMeta):
 
     def take(lst, n):  # noqa: N805
         """
-        Return a list with at most the first n elements.
+        Return a list with at most n elements taken from the beginning of the
+        list.
         """
 
         result = Nil
@@ -145,7 +154,8 @@ class List(Union, collections.Sequence, metaclass=ListMeta):
 
     def drop(lst, n):  # noqa: N805
         """
-        Return a list that removes at most the first n elements.
+        Return a list that removes at most n elements from the beginning of the
+        list.
         """
 
         for i in range(n):
@@ -155,19 +165,21 @@ class List(Union, collections.Sequence, metaclass=ListMeta):
                 break
         return lst
 
-    def interspace(self, value):
+    def intersperse(self, value):
         """
-        Interspace list elements with value.
+        Intersperse list elements with value.
         """
-
-        cons = Cons
-        acc = Nil
-        lst = self.reverse()
-        x, lst = lst.args
-        while lst.is_cons:
-            acc = cons(value, cons(x, acc))
+        if self.is_cons:
+            cons = Cons
+            acc = Nil
+            lst = self.reverse()
             x, lst = lst.args
-        return cons(x, acc)
+            while lst.is_cons:
+                acc = cons(value, cons(x, acc))
+                x, lst = lst.args
+            return cons(x, acc)
+        else:
+            return self
 
     #
     # Reorganizing the list
@@ -210,21 +222,20 @@ class List(Union, collections.Sequence, metaclass=ListMeta):
         Return a filtered copy with only the items that satisfy the given
         predicate.
         """
-        return linklist(x for x in self if predicate(x))
+        return _link_list(x for x in self if predicate(x))
 
     def maybe_map(self, func):
         """
-        Apply function that returns a Maybe to list and keep only the valid
-        results.
+        Apply function that returns Maybes and keep only the valid results.
         """
         results = (func(x) for x in self)
-        return linklist(x.value for x in results if x.is_just)
+        return _link_list(x.value for x in results if x.is_just)
 
     def index_map(self, func):
         """
         Maps a function that the pair (i, value) for value in position i.
         """
-        return linklist(func(i, x) for i, x in enumerate(self))
+        return _link_list(func(i, x) for i, x in enumerate(self))
 
     def foldl(self, func, start):
         """
@@ -236,15 +247,12 @@ class List(Union, collections.Sequence, metaclass=ListMeta):
         """
         Apply function to reduce a list from the right.
         """
-        return functools.reduce(flip(func), self.reversed(), start)
+        return functools.reduce(flip(func), self.reverse(), start)
 
     def fold(self, func, start):
         """
         Reduce list with the most efficient implementation, which in case of
         a list is foldl.
-
-        This method should only be used if the function application is
-        associative (e.g., func x, y: x * y).
         """
         return self.foldl(func, start)
 
@@ -263,7 +271,7 @@ class List(Union, collections.Sequence, metaclass=ListMeta):
         cons = Cons
         func = flip(func)
         scan_func = lambda x, y: cons(func(x, y.head), y)
-        return functools.reduce(scan_func, self.reversed(), cons(start, Nil))
+        return functools.reduce(scan_func, self.reverse(), cons(start, Nil))
 
     #
     # Monadic interface
@@ -272,20 +280,19 @@ class List(Union, collections.Sequence, metaclass=ListMeta):
         """
         Maps function into list.
         """
-        return linklist(map(func, self))
+        return _link_list(map(func, self))
 
     def map_bound(self, func):
         """
-        Maps a function that returns a list into the list.
-
-        The result is obtained by flatting all intermediate results.
+        Maps a function that return sequences into the list and flatten all
+        intermediate results.
         """
 
         def iter_all():
             for x in self:
                 yield from func(x)
 
-        return linklist(iter_all())
+        return _link_list(iter_all())
 
 
 class Cons(List):
@@ -307,16 +314,16 @@ class Nil(List):
 
     __bool__ = lambda x: False
 
-    # Fasttrack a few methods to Nil instances
+    # Fast-track a few methods to Nil instances
     def __getitem__(self, i):
         raise IndexError(i)
 
-    def interspace(self, value):
+    def intersperse(self, value):
         return self
 
 
-# Fixme: should return a singleton instance
-Nil = List.Nil
+Nil = List.Nil = Nil()
+List.Cons = Cons
 
 
 def linklist(seq):
@@ -333,9 +340,11 @@ def linklist(seq):
         pass
     else:
         if size < 256:
-            ls = _link_list_recur(iter(seq))
-            print(ls)
-            return ls
+            return _link_list_recur(iter(seq))
+    return _link_list(seq)
+
+
+def _link_list(seq):
     cons = Cons
     xs = List.Nil
     for x in reversed(seq):

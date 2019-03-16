@@ -1,8 +1,6 @@
 from functools import update_wrapper
 from types import MappingProxyType, SimpleNamespace
 
-import collections
-
 from .union import Union
 
 
@@ -237,7 +235,7 @@ class case_fn(metaclass=_CaseFnMeta):
             '\n'
             '    case_fn[Type](\n'
             '       Case1=\n'
-            '               lambda a, b: ...,\n'
+            '           lambda a, b: ...,\n'
             '       Case2=\n'
             '           lambda a: ...,\n'
             '       else_=\n'

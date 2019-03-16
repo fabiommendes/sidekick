@@ -6,7 +6,7 @@ class AttrGetterMeta(type):
     Metaclass for the attrgetter factory.
     """
 
-    __attrs__ = property(lambda x: ())
+    __attrs__ = property(lambda self: ())
 
     def _new(cls, *attrs):  # noqa: N805
         self = object.__new__(cls)
@@ -28,7 +28,7 @@ class attrgetter(metaclass=AttrGetterMeta):  # noqa: N801
     """
 
     __slots__ = ('_attrs', '_getter')
-    __attrs__ = property(lambda x: x._attrs)
+    __attrs__ = property(lambda self: self._attrs)
 
     def __getattr__(self, attr):
         if attr == '__wrapped__':
@@ -63,8 +63,8 @@ class CallerMeta(AttrGetterMeta):
 
 class caller(metaclass=CallerMeta):  # noqa: N801
     """
-    Method caller factory. It chains an arbitrary number of arguments and than
-    makes a method call.
+    Method caller factory. It chains an arbitrary number of attribute
+    accesses and than makes a method call.
 
     Usage:
 
@@ -74,7 +74,7 @@ class caller(metaclass=CallerMeta):  # noqa: N801
     """
 
     __slots__ = ('_attrs')
-    __attrs__ = property(lambda x: x._attrs)
+    __attrs__ = property(lambda self: self._attrs)
 
     def __getattr__(self, attr):
         # Make it inspectable for doctests

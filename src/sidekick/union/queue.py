@@ -1,7 +1,7 @@
 import collections
 import functools
 
-from .list import List, Nil, linklist
+from .linked_list import List, Nil, linklist
 
 
 def on_parts(func):

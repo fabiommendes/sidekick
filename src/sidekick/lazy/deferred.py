@@ -1,5 +1,6 @@
 DEFERRED_CACHE = {}
 DEFERRED_FACTORIES = {}
+__all__ = ['Deferred', 'Delayed', 'Proxy', 'delayed', 'deferred']
 
 
 class DelayedBase:
@@ -21,15 +22,15 @@ class DelayedBase:
 
 class Delayed:
     """
-    A magic deferred/zombie object.
+    A magic delayed/zombie object.
 
     It creates a proxy that is converted to the desired object on almost any
     interaction. This only works with pure Python objects with no slots since
-    the Deferred must have the same C level interface as the real object.
+    the Delayed object must have the same C level interface as the real object.
 
-    For a safer version of :class:`sidekick.Deferred`, try the
+    For a safer version of :class:`sidekick.Delayed`, try the
     :class:`sidekick.Proxy` class. One advantage of deferred objects is that,
-    when alive, they transform on objects of the correct class.
+    when alive, they transform to objects of the correct class.
 
     Args:
         func (callable):
@@ -45,13 +46,13 @@ class Delayed:
         ...     def method(self):
         ...         return 42
 
-        Now create a deferred object
+        Now create a delayed object
         >>> x = Delayed(Foo)
         >>> type(x)
-        <type Deferred>
+        <type Delayed>
 
         If we touch any method (even magic methods triggered by operators),
-        it is converted to the result of the function passed to the Deferred
+        it is converted to the result of the function passed to the Delayed
         constructor:
         >>> x.method()
         42

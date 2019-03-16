@@ -2,8 +2,10 @@ import operator as op
 
 from .union import Union, opt
 from .utils import maybe_bin_op
+from ..lazy import property
 
 flip = lambda f: lambda x, y: f(y, x)
+this = None
 
 
 class Maybe(Union):
@@ -11,78 +13,58 @@ class Maybe(Union):
     A Maybe type.
     """
 
-    class Nothing(Maybe):
+    class Nothing(this):
         """
         Represents the absence of a value.
         """
+        value = None
 
-    class Just(Maybe, args=opt('value')):
+    class Just(this, args=opt('value')):
         """
-        Represents a computation with a definite type.
-        """
-
-    is_ok = property(lambda x: x.is_just)
-
-    @classmethod
-    def apply(cls, func, *args, **kwargs):
-        """
-        Execute function with all given Just values and return
-        ``Just(func(*values, **kwargs))``. If any positional argument is a
-        Nothing, return Nothing.
-
-        Examples:
-
-        >>> Maybe.apply(max, Just(1), Just(2), Just(3))
-        Just(3)
-
-        >>> Maybe.apply(max, Nothing, Just(1), Just(2), Just(3))
-        Nothing
+        Represents a computation with a definite value.
         """
 
-        try:
-            args = tuple(x.value for x in args)
-        except AttributeError:
-            return cls.Nothing
-        else:
-            return cls.Just(func(*args, **kwargs))
+    is_ok = property(lambda self: self.is_just)
+    is_just: bool
+    is_nothing: bool
+    value: object
 
     def map(self, func):
         """
         Apply function if object is in the Just state and return another Maybe.
         """
-
         if self.is_just:
-            new_value = func(self.value)
-            return Maybe.Just(new_value)
+            return maybe(func(self.value))
         else:
             return self
 
-    def map_bound(self, func):
+    def map_all(self, *funcs):
+        """
+        Pipe value through all functions.
+        """
         if self.is_just:
-            return func(self.value)
-        return self
+            return mpipe(self.value, *funcs)
+        else:
+            return self
 
-    def get(self, default=None):
+    def get_value(self, default=None):
         """
         Extract value from the Just state. If object is Nothing, return the
         supplied default or None.
 
         Examples:
 
-        >>> x = Maybe.Just(42)
-        >>> x.get()
+        >>> Just(42).get_value(0)
         42
-        >>> x = Maybe.Nothing
-        >>> x.get()
-        None
+        >>> Nothing.get_value(0)
+        0
         """
-
         if self.is_just:
             return self.value
         else:
             return default
 
-    def to_result(self, err=None):
+    def to_result(self, err=Exception()):
         """
         Convert Maybe to Result.
         """
@@ -90,6 +72,54 @@ class Maybe(Union):
             return Err(err)
         else:
             return Ok(self.value)
+
+    def to_maybe(self):
+        """
+        Return itself.
+
+        This function exists so some algorithms can work with both Maybe's and
+        Result's using the same interface.
+        """
+        return self
+
+    def method(self, method, *args, **kwargs):
+        """
+        Call the given method of value and promote result to a Maybe.
+
+        Examples:
+            >>> Just(1 + 2j).method('conjugate')
+            Just(1 - 2j)
+        """
+        if self.is_just:
+            try:
+                method = getattr(self.value, method)
+            except AttributeError:
+                raise ValueError(f'method {method} does not exist')
+            return maybe(method(*args, **kwargs))
+        else:
+            return self
+
+    def attr(self, attr):
+        """
+        Retrieves attribute as a Maybe.
+
+        Examples:
+            >>> Just(1 + 2j).attr('real')
+            Just(1)
+        """
+        if self.is_just:
+            return maybe(getattr(self.value, attr))
+        else:
+            return self
+
+    def iter(self):
+        """
+        Iterates over content.
+
+        It returns an empty iterator in the Nothing case.
+        """
+        if self.is_just:
+            yield from iter(self.value)
 
     # Operators
     __add__ = maybe_bin_op(op.add)
@@ -136,28 +166,156 @@ class Maybe(Union):
             return NotImplemented
 
 
-def maybe(obj):
+#
+# Module functions.
+#
+def mcall(func, *args, **kwargs):
     """
-    Coerce argument to a Maybe:
+    Execute function with all given Maybe values unwrapping all positional
+    arguments and return ``Just(result)`` or ``Nothing`` if result is None.
 
-        maybe(None)  -> Nothing
-        maybe(obj)   -> Just(obj)
+    If any positional argument is a Nothing, returns Nothing. None values and
+    keyword arguments do not propagate the Nothing state.
 
-    Maybe instances:
-        maybe(maybe) -> maybe
+    Examples:
+        >>> mcall(max, Just(1), Just(2), Just(3))
+        Just(3)
+        >>> mcall(max, Nothing, Just(1), Just(2), Just(3))
+        Nothing
+    """
+    arg_values = []
+    append = arg_values .append
 
-    Result instances:
-        maybe(is_ok)    -> Just(is_ok.value)
-        maybe(err)   -> Nothing
+    for arg in args:
+        if arg is None:
+            return Nothing
+        elif isinstance(arg, Just):
+            append(arg.value)
+        else:
+            append(arg)
+    return maybe(func(*args, **kwargs))
+
+
+def mcompose(*funcs):
+    """
+    Compose functions that return maybes.
+
+    If any function returns Nothing or None, the final result will be Nothing.
+
+    Args:
+        *funcs:
+            List of functions in application order.
+
+    Returns:
+        A function that returns Maybes.
+
+    See Also:
+        This is similar to :func:`mpipe`, except that it does not require the
+        initial argument passed to the functions.
+    """
+    return lambda x: mpipe(x, *funcs)
+
+
+def mpipe(obj, *funcs):
+    """
+    Pass argument through functions of (a -> Maybe b). It stops function
+    application after the first Nothing is encountered. It performs implicit
+    conversion to maybes treating None as Nothing and any other value x as
+    Just(x).
+
+    Args:
+        obj:
+            Initial argument passed to all functions.
+        *funcs:
+            List of functions in application order.
+
+    Returns:
+        A Maybe value.
+
+    See Also:
+        :func:`strict_mpipe`
+    """
+    for func in funcs:
+        if obj is None or obj is Nothing:
+            return Nothing
+        elif type(obj) is Just:
+            obj = func(obj.value)
+        else:
+            obj = func(obj)
+    return maybe(obj)
+
+
+def strict_mpipe(obj, *funcs):
+    """
+    A strict version of mpipe: requires a maybe and functions of (a -> M b)
+    and do not perform any implicit conversion. This is safer and slightly
+    faster than :func:`mpipe`.
+
+    It can also be accessed as mpipe.strict(obj, func_a, func_b, ...)
+    """
+    for func in funcs:
+        if obj.is_just:
+            obj = func(obj.value)
+        else:
+            break
+    return obj
+
+
+def mfilter(lst):
+    """
+    Return a sequence of values from a list of Maybes skipping all "Nothing"
+    and "None" states.
+    """
+    for value in lst:
+        if value is None or value is Nothing:
+            continue
+        elif isinstance(value, Just):
+            yield value.value
+        else:
+            yield value
+
+
+def _mk_maybe(Just, Nothing, type=type):
+    """
+    Define maybe() inside a closure for a small performance gain.
     """
 
-    if isinstance(obj, Maybe):
-        return obj
-    elif isinstance(obj, Result):
-        return obj.to_maybe()
-    return Just(obj) if obj is not None else Nothing
+    def maybe(obj):
+        """
+        Coerce argument to a Maybe:
+
+            maybe(None)      -> Nothing
+            maybe(maybe_obj) -> maybe_obj
+            maybe(x)         -> Just(x)
+        """
+        if obj is None or obj is Nothing:
+            return Nothing
+        elif type(obj) is Just:
+            return obj
+        else:
+            return Just(obj)
+
+    return maybe
 
 
+#
+# Save class methods and module constants
+#
+
+# Aliases
 Just = Maybe.Just
 Nothing = Maybe.Nothing
-from .result import Result, Ok, Err
+
+# Result
+from .result import Ok, Err
+
+maybe = _mk_maybe(Maybe.Just, Maybe.Nothing)
+Maybe.new = staticmethod(maybe)
+Maybe.call = staticmethod(mcall)
+Maybe.compose = staticmethod(mcompose)
+Maybe.pipe = staticmethod(mpipe)
+Maybe.filter = staticmethod(mfilter)
+
+# Strict functions
+mpipe.strict = strict_mpipe
+mcompose.strict = (lambda *funcs: lambda obj: strict_mpipe(obj, *funcs))

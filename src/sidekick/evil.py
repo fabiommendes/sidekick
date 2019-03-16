@@ -200,4 +200,4 @@ class Object:
     def not_implemented(self):
         raise NotImplementedError
 
-    __repr__ = __str__ = __rshift__ = __lshift__ = not_implemented
+    __repr__ = __str__ = __rshift__ = __lshift__ =  __ror__ = not_implemented

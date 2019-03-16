@@ -1,13 +1,12 @@
 import collections
 import keyword
-
 from types import SimpleNamespace
 
 from .utils import opt, Opts
 
 
 #
-# Metatype for Union types. Most of the action happens here as the metatype +
+# Metaclass for Union types. Most of the action happens here as the metaclass +
 # auxiliary functions construct a new ADT and each associated case.
 #
 class UnionMeta(type):
@@ -16,9 +15,9 @@ class UnionMeta(type):
     """
 
     @classmethod
-    def __prepare__(meta, name, bases, **kwargs):  # noqa: N804
+    def __prepare__(mcs, name, bases, **kwargs):  # noqa: N804
         namespace = {'__slots__': 'args'}
-        new = type.__new__(meta, name, bases, namespace)
+        new: UnionMeta = type.__new__(mcs, name, bases, namespace)
         base = new._check_inheritance(bases)
 
         # Save initial meta information regarding the role of the class
@@ -38,12 +37,12 @@ class UnionMeta(type):
         namespace['this'] = namespace[name] = new
         return collections.OrderedDict(namespace)
 
-    def __new__(meta, name, bases, namespace, **kwargs):  # noqa: N804
+    def __new__(mcs, name, bases, namespace, **kwargs):  # noqa: N804
         # Fetch new from namespace or create a new instance
-        new = namespace.pop(name, None)
+        new: UnionMeta = namespace.pop(name, None)
         namespace.pop('this', None)
         if new is None:
-            new = type.__new__(meta, name, bases, namespace)
+            new = type.__new__(mcs, name, bases, namespace)
             new._check_inheritance(bases)
         new._name = name
         new.__is_closed = False
@@ -71,7 +70,7 @@ class UnionMeta(type):
         return new
 
     def __init__(cls, *args, **kwargs):  # noqa: N805
-        pass
+        super().__init__(*args)
 
     def _new_case_class(cls, name, opts):  # noqa: N805
         """
@@ -145,7 +144,7 @@ class UnionMeta(type):
         cls.__is_closed = True
 
         # Register to base class
-        base = cls._meta.base_class
+        base: UnionMeta = cls._meta.base_class
         if base.__is_closed:
             base._register_case_class(cls, name, base._meta.disable_singleton)
 
@@ -356,6 +355,7 @@ class Union(metaclass=UnionMeta, is_abstract=True):
         self.args = args
 
     def __repr__(self):
+        # noinspection PyBroadException
         try:
             data = '(%s)' % (', '.join(map(repr, self.args)))
         except Exception:
@@ -379,11 +379,11 @@ class SingletonMixin:
     __slots__ = ()
     args = ()
 
-    _instance = None
+    _instance: 'SingletonMixin' = None
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super().__new__(cls)
+            setattr(cls, '_instance', super().__new__(cls))
         return cls._instance
 
     def __init__(self):

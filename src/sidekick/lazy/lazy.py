@@ -1,9 +1,10 @@
+import builtins
 from importlib import import_module
 
-import builtins
-
 from .deferred import Deferred
-from .extended_semantics import as_func
+from ..core import extract_function as extract_func
+
+__all__ = ['lazy', 'property', 'delegate_to', 'alias', 'import_later']
 
 
 def lazy(function=None, *, shared=False, name=None):
@@ -29,7 +30,7 @@ def lazy(function=None, *, shared=False, name=None):
             attribute must be set explicitly.
     """
     if function is None:
-        return lambda function: lazy(function, shared=shared, name=name)
+        return lambda func: lazy(func, shared=shared, name=name)
 
     if shared:
         return SharedLazy(function, name=name)
@@ -37,6 +38,7 @@ def lazy(function=None, *, shared=False, name=None):
         return Lazy(function, name=name)
 
 
+# noinspection PyShadowingBuiltins
 class property(builtins.property):
     """
     A Sidekick-enabled property descriptor. It behaves just as standard Python
@@ -44,10 +46,13 @@ class property(builtins.property):
     """
 
     def __init__(self, fget=None, fset=None, fdel=None, doc=None):
-        super().__init__(as_func(fget), fset, fdel, doc)
+        super().__init__(extract_func(fget), fset, fdel, doc)
 
     def getter(self, fget):
-        return super(as_func(fget))
+        return super().getter(extract_func(fget))
+
+    def setter(self, fset):
+        return super().setter(extract_func(fset))
 
 
 def delegate_to(attr, *, name=None, read_only=False):
@@ -73,7 +78,7 @@ def delegate_to(attr, *, name=None, read_only=False):
             Name of the inner variable that receives delegation.
         name:
             The name of the attribute/method of the delegate variable. Can be
-            ommited if the name is the same of the attribute.
+            omitted if the name is the same of the attribute.
         read_only:
             If True, makes the the delegation read-only.
     """
@@ -94,6 +99,7 @@ def alias(attr, *, read_only=False, transform=None, prepare=None):
             If True, makes the alias read only.
         transform (callable):
             If given, transforms the resulting value
+        prepare
     """
     if transform or prepare:
         return TransformingAlias(attr, transform, prepare)
@@ -134,10 +140,13 @@ def import_later(path, package=None):
 # Helper classes
 #
 class Lazy:
+    """
+    Lazy attribute of an object
+    """
     __slots__ = ('function', 'name')
 
     def __init__(self, function, name=None):
-        self.function = as_func(function)
+        self.function = extract_func(function)
         self.name = name
 
     def __get__(self, obj, cls=None):
@@ -161,6 +170,9 @@ class Lazy:
 
 
 class SharedLazy(Lazy):
+    """
+    Lazy attribute of a class and all its instances.
+    """
     __slots__ = ('value',)
 
     def __get__(self, obj, cls=None):
@@ -175,6 +187,9 @@ class SharedLazy(Lazy):
 
 
 class Delegate:
+    """
+    Delegate attribute to another attribute.
+    """
     __slots__ = ('attr', 'name')
     __set_name__ = Lazy.__set_name__
 
@@ -200,6 +215,9 @@ class Delegate:
 
 
 class ReadOnlyDelegate(Delegate):
+    """
+    Read only version of Delegate.
+    """
     __slots__ = ()
 
     def __set__(self, obj, value):
@@ -207,6 +225,9 @@ class ReadOnlyDelegate(Delegate):
 
 
 class Alias:
+    """
+    Alias to another attribute/method in class.
+    """
     __slots__ = ('attr',)
 
     def __init__(self, attr):
@@ -222,6 +243,9 @@ class Alias:
 
 
 class ReadOnlyAlias(Alias):
+    """
+    Like alias, but read-only.
+    """
     __slots__ = ()
 
     def __set__(self, key, value):
@@ -229,13 +253,16 @@ class ReadOnlyAlias(Alias):
 
 
 class TransformingAlias(Alias):
+    """
+    A bijection to another attribute in class.
+    """
     __slots__ = ('transform', 'prepare')
 
     def __init__(self, attr, transform=lambda x: x, prepare=None):
         super().__init__(attr)
         self.attr = attr
-        self.transform = as_func(transform)
-        self.prepare = None if prepare is None else as_func(prepare)
+        self.transform = extract_func(transform)
+        self.prepare = None if prepare is None else extract_func(prepare)
 
     def __get__(self, obj, cls=None):
         if obj is not None:
@@ -251,6 +278,10 @@ class TransformingAlias(Alias):
 
 
 class LazyModule(Deferred):
+    """
+    A module that has not been imported yet.
+    """
+
     def __init__(self, path, package=None):
         super().__init__(import_module, path, package=package)
 
@@ -261,6 +292,10 @@ class LazyModule(Deferred):
 
 
 class DeferredImport(Deferred):
+    """
+    An object of a module that has not been imported yet.
+    """
+
     def __init__(self, path, attr, package=None):
         mod = LazyModule(path, package)
         super().__init__(lambda: getattr(mod, attr))
@@ -274,7 +309,7 @@ def find_descriptor_name(descriptor, cls: type, hint=None):
     Finds the name of the descriptor in the given class.
     """
 
-    if hint is not None and getattr(cls, hint) is descriptor:
+    if hint is not None and getattr(cls, hint, None) is descriptor:
         return hint
 
     for attr in dir(cls):

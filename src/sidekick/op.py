@@ -2,7 +2,7 @@
 fn-aware functions from the builtin operator module.
 """
 import operator as op
-from .fn import fn
+from .core import fn
 
 abs = fn(op.abs)
 add = fn(op.add)

@@ -1,8 +1,9 @@
-import collections
+import collections.abc
 import keyword
 from types import SimpleNamespace
 
 NOT_GIVEN = object()
+__all__ = ['Record', 'Namespace', 'record', 'record_to_dict', 'namespace', 'field']
 
 
 #
@@ -14,17 +15,22 @@ class RecordMeta(type):
     """
 
     _record_base = None
+    _meta = None
 
-    def __new__(cls, name, bases, ns, **kwargs):
-        if cls._record_base is None:
-            return super().__new__(cls, name, bases, ns)
+    def __new__(mcs, name, bases, ns, use_invalid=False, **kwargs):
+        if mcs._record_base is None:
+            return super().__new__(mcs, name, bases, ns)
         else:
             fields = extract_fields(ns)
             return new_record_type(name, fields, bases, ns, **kwargs)
 
-    @classmethod
-    def define(cls, name, fields, bases=(), namespace=None,
-               invalid_names=False):
+    def __init__(cls, name, bases, ns, **kwargs):
+        super().__init__(name, bases, ns)
+
+    def __prepare__(cls, bases, **kwargs):
+        return collections.OrderedDict()
+
+    def define(self, name, fields, bases=(), ns=None, use_invalid=False):
         """
         Declare a new record class.
 
@@ -37,17 +43,17 @@ class RecordMeta(type):
             bases:
                 An optional list of base classes for the derived class. By
                 default, it has a single base of :cls:`sidekick.Record`.
-            namespace:
-                An optional dictionary of addictional methods and properties
+            ns:
+                An optional dictionary of additional methods and properties
                 the resulting record class declares.
-            invalid_names:
+            use_invalid:
                 If True, accept invalid Python names as record fields. Those
                 fields are still available from the getattr() and setattr()
                 interfaces but are very inconvenient to use.
 
         Usage:
 
-            >>> Point = Record.declare('Point', ['x', 'y'])
+            >>> Point = Record.define('Point', ['x', 'y'])
             >>> Point(1, 2)
             Point(1, 2)
 
@@ -56,26 +62,17 @@ class RecordMeta(type):
             A new Record subclass.
         """
         bases = (Record,) if bases is None else tuple(bases)
-        return new_record_type(name, fields, bases, namespace=namespace or {},
-                               invalid_names=invalid_names)
+        return new_record_type(name, fields, bases, ns or {}, use_invalid)
 
-    @classmethod
-    def define_namespace(cls, name, fields, bases=(), namespace=None,
-                         invalid_names=False):
+    def namespace(self, name, fields, bases=(), ns=None, use_invalid=False):
         """
         Like meth:`sidekick.Record.define`, but declares a mutable record
         (a.k.a, namespace).
         """
         bases = (Namespace,) if bases is None else tuple(bases)
-        return new_record_type(name, fields, bases, namespace=namespace or {},
-                               is_mutable=True,
-                               invalid_names=invalid_names)
+        ns = ns or {}
+        return new_record_type(name, fields, bases, ns, use_invalid, is_mutable=True)
 
-    def __init__(cls, name, bases, ns, mutable=False):
-        super().__init__(name, bases, ns)
-
-    def __prepare__(cls, bases, **kwargs):
-        return collections.OrderedDict()
 
 
 def extract_fields(ns):
@@ -91,8 +88,8 @@ def extract_fields(ns):
     return fields
 
 
-def new_record_type(name: str, fields: list, bases: tuple,
-                    namespace: dict, **kwargs):
+def new_record_type(name: str, fields: list, bases: tuple, ns: dict,
+                    use_invalid=False, is_mutable=False):
     """
     Worker function for Record.declare and Record.declare_namespace.
     """
@@ -110,35 +107,35 @@ def new_record_type(name: str, fields: list, bases: tuple,
     meta_info = Meta(clean_fields)
 
     bases = tuple(x for x in bases if x is not RecordMeta._record_base)
-    base_ns = make_record_namespace(meta_info, **kwargs)
-    namespace = dict(base_ns, **namespace)
-    namespace['_meta'] = meta_info
+    base_ns = make_record_namespace(meta_info, use_invalid, is_mutable)
+    ns = dict(base_ns, **ns)
+    ns['_meta'] = meta_info
 
     # Create class and update the init method
-    cls = type.__new__(RecordMeta, name, bases, namespace)
+    cls: RecordMeta = type.__new__(RecordMeta, name, bases, ns)
     init = make_init_function(cls)
     if not hasattr(cls, '_init'):
         cls._init = init
-    if not '__init__' in namespace:
+    if not '__init__' in ns:
         cls.__init__ = init
     return cls
 
 
-def make_record_namespace(meta_info, is_mutable=False, invalid_names=False):
+def make_record_namespace(meta_info, use_invalid=False, is_mutable=False):
     fields = meta_info.fields
 
     # Check if any name is invalid
-    if not invalid_names:
+    if not use_invalid:
         for name in fields:
             if keyword.iskeyword(name):
                 raise ValueError('%s is an invalid field name' % name)
 
-    namespace = dict(__slots__=tuple(fields), **RECORD_NAMESPACE)
+    ns = dict(__slots__=tuple(fields), **RECORD_NAMESPACE)
     if not is_mutable:
         hash_function = (lambda self: hash(tuple(self)))
-        namespace['__hash__'] = hash_function
-        namespace['__setattr__'] = record.__setattr__
-    return namespace
+        ns['__hash__'] = hash_function
+        ns['__setattr__'] = record.__setattr__
+    return ns
 
 
 class Record(metaclass=RecordMeta):
@@ -174,6 +171,7 @@ class Record(metaclass=RecordMeta):
         return tuple(self._view.values())
 
     def __setstate__(self, state):
+        # noinspection PyArgumentList
         self.__init__(*state)
 
     def __json__(self):
@@ -187,10 +185,10 @@ class Record(metaclass=RecordMeta):
 
     # Support conversion to dict through iteration in (attr, value) pairs.
     def __iter__(self):
-        return ((field, getattr(self, field)) for field in self._meta.fields)
+        return ((f, getattr(self, f)) for f in self._meta.fields)
 
 
-class Namespace(metaclass=RecordMeta, mutable=True):
+class Namespace(metaclass=RecordMeta, is_mutable=True):
     """
     A mutable record-like type.
     """
@@ -274,36 +272,36 @@ class field:  # noqa: N801
             if default is not NOT_GIVEN:
                 msg = 'cannot pass default as positional and keyword argument'
                 raise TypeError(msg)
-            name, type, default = args
+            name, tt, default = args
         elif len(args) == 2:
-            name, type = args
+            name, tt = args
         elif len(args) == 1:
             arg, = args
             if isinstance(arg, str):
-                name, type = arg, object
+                name, tt = arg, object
             else:
-                name, type = None, arg
+                name, tt = None, arg
         elif len(args) > 3:
             n = len(args)
             msg = 'field accept at most 3 positional arguments, %s given' % n
             raise TypeError(msg)
         else:
-            name, type = None, object
+            name, tt = None, object
 
         self.name = name
         self.default = default
-        self.type = type
+        self.type = tt
 
     def __repr__(self):
         if self.type is object:
-            type = ''
+            tt = ''
         else:
-            type = self.type.__name__
+            tt = self.type.__name__
         if self.default is NOT_GIVEN:
             default = ''
         else:
             default = ', ' + repr(self.default)
-        return 'field(%s%s)' % (type, default)
+        return 'field(%s%s)' % (tt, default)
 
 
 class Meta:
@@ -311,14 +309,14 @@ class Meta:
         self.fields = []
         self.types = []
         self.defaults = {}
-        for field in fields:
-            if field.name is None:
+        for f in fields:
+            if f.name is None:
                 raise TypeError('cannot create class with anonymous fields')
-            self.fields.append(field.name)
-            self.types.append(field.type)
+            self.fields.append(f.name)
+            self.types.append(f.type)
 
-            if field.has_default:
-                self.defaults[field.name] = field.default
+            if f.has_default:
+                self.defaults[f.name] = f.default
 
         self.fields = tuple(self.fields)
         self.types = tuple(self.types)
@@ -342,7 +340,7 @@ class Meta:
         return {(k, getattr(obj, k)) for k in self.fields}
 
 
-class View(collections.Mapping):
+class View(collections.abc.Mapping):
     """
     A dict-like view of a record object.
     """
@@ -382,16 +380,16 @@ class AnonymousRecordView(View):
 #
 # Utility functions
 #
-def record_to_dict(record: Record):
+def record_to_dict(obj: Record):
     """
     Converts a record/namespace to a dictionary.
 
     Notes:
         If you want to convert a dict to a record, simply call ``record(**D)``.
     """
-    if isinstance(record, SimpleNamespace):
-        return dict(record.__dict__)
-    return dict(record._view.items())
+    if isinstance(obj, SimpleNamespace):
+        return dict(obj.__dict__)
+    return dict(obj._view.items())
 
 
 #
@@ -403,10 +401,11 @@ def make_init_function(cls):
     and a dictionary of defaults.
     """
 
-    fields = cls._meta.fields
-    types = cls._meta.types
-    defaults = cls._meta.defaults
-    slots = {field: getattr(cls, field) for field in fields}
+    # noinspection PyProtectedMember
+    meta = cls._meta
+    fields = meta.fields
+    defaults = meta.defaults
+    slots = {f: getattr(cls, f) for f in fields}
 
     # Mapping from names to safe names
     safe_names = {}
@@ -441,17 +440,17 @@ def make_init_function(cls):
     ).format(args=args, body=body or 'pass')
 
     # Initialize defaults
-    namespace = {}
+    ns = {}
     for name, value in defaults.items():
         safe_name = safe_names[name]
-        namespace['_%s_default' % safe_name] = value
+        ns['_%s_default' % safe_name] = value
     for name, slot in slots.items():
         safe_name = safe_names[name]
-        namespace['_%s_getter' % safe_name] = slot.__get__
-        namespace['_%s_setter' % safe_name] = slot.__set__
+        ns['_%s_getter' % safe_name] = slot.__get__
+        ns['_%s_setter' % safe_name] = slot.__set__
 
-    exec(code, namespace, namespace)
-    return namespace['__init__']
+    exec(code, ns, ns)
+    return ns['__init__']
 
 
 def make_eq_function(fields):

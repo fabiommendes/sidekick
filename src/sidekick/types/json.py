@@ -2,6 +2,8 @@ import json as _json
 
 from .record import record
 
+__all__ = ['JSONEncoder', 'dump', 'dumps', 'load', 'loads']
+
 
 class JSONEncoder(_json.JSONEncoder):
     def default(self, o):
