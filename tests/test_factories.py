@@ -1,4 +1,4 @@
-from sidekick import caller, attrgetter
+from sidekick.deprecated import caller, attrgetter
 
 
 class TestCaller:

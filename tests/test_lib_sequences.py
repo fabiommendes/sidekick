@@ -32,13 +32,13 @@ def double(x):
     return 2 * x
 
 
-class TestOwnedFunctions:
+class _TestOwnedFunctions:
     def test_repeatedly(self):
         assert repeatedly(tuple, 2) | L == [(), ()]
 
-    def test_butlast(self):
-        assert butlast(range(5)) | L == [0, 1, 2, 3]
-        assert butlast(range(0)) | L == []
+    def test_but_last(self):
+        assert but_last(range(5)) | L == [0, 1, 2, 3]
+        assert but_last(range(0)) | L == []
 
     def test_consume(self):
         lst = []
@@ -65,7 +65,7 @@ class TestOwnedFunctions:
         assert keep(_ - 1, None)([0, 1, 2]) | L == [-1, 1]
 
     def test_without(self):
-        assert without(range(4), 1, 2) | L == [0, 3]
+        assert without({1, 2}, range(4)) | L == [0, 3]
 
     def test_split(self):
         a, b = split(_ < 2, range(5))
@@ -99,16 +99,16 @@ class TestOwnedFunctions:
         assert sums(range(4)) | L == [0, 1, 3, 6]
         assert sums(range(4), 1) | L == [1, 2, 4, 7]
 
-    def test_isequal(self):
-        assert isequal(range(2), [0, 1]) is True
-        assert isequal(range(2), [0, 1, 2]) is False
-        assert isequal(range(4), [0, 1, 2]) is False
+    def test_is_equal(self):
+        assert is_equal(range(2), [0, 1]) is True
+        assert is_equal(range(2), [0, 1, 2]) is False
+        assert is_equal(range(4), [0, 1, 2]) is False
 
-    def test_zipwith(self):
-        f = zipwith(range(3), range(1, 4))
+    def test_zip_with(self):
+        f = zip_with(range(3), range(1, 4))
         assert f(repeat(0)) | L == [(0, 0, 1), (0, 1, 2), (0, 2, 3)]
 
-        f = rzipwith(range(3), range(1, 4))
+        f = rzip_with(range(3), range(1, 4))
         assert f(repeat(0)) | L == [(0, 1, 0), (1, 2, 0), (2, 3, 0)]
 
     def test_flatten(self):
@@ -134,7 +134,7 @@ class TestToolzSuite:
     def test_remove(self):
         r = remove(iseven, range(5))
         assert type(r) is not list
-        assert list(r) == list(filter(isodd, range(5)))
+        assert list(r) == filter(isodd, range(5)) | L
 
     def test_groupby(self):
         assert groupby(iseven, [1, 2, 3, 4]) == {True: [2, 4], False: [1, 3]}
@@ -199,19 +199,19 @@ class TestToolzSuite:
         assert tuple(unique((1, 2, 3), key=iseven)) == (1, 2)
 
     def test_isiterable(self):
-        assert isiterable([1, 2, 3]) is True
-        assert isiterable('abc') is True
-        assert isiterable(5) is False
+        assert is_iterable([1, 2, 3]) is True
+        assert is_iterable('abc') is True
+        assert is_iterable(5) is False
 
     def test_isdistinct(self):
-        assert isdistinct([1, 2, 3]) is True
-        assert isdistinct([1, 2, 1]) is False
+        assert is_distinct([1, 2, 3]) is True
+        assert is_distinct([1, 2, 1]) is False
 
-        assert isdistinct("Hello") is False
-        assert isdistinct("World") is True
+        assert is_distinct("Hello") is False
+        assert is_distinct("World") is True
 
-        assert isdistinct(iter([1, 2, 3])) is True
-        assert isdistinct(iter([1, 2, 1])) is False
+        assert is_distinct(iter([1, 2, 3])) is True
+        assert is_distinct(iter([1, 2, 1])) is False
 
     def test_nth(self):
         assert nth(2, 'ABCDE') == 'C'
@@ -265,7 +265,7 @@ class TestToolzSuite:
 
         assert get('foo', {}, default='bar') == 'bar'
         assert get({}, [1, 2, 3], default='bar') == 'bar'
-        assert get([0, 2], 'AB', 'C') == ('A', 'C')
+        assert get([0, 2], 'AB', default='C') == ('A', 'C')
 
         assert get([0], 'AB') == ('A',)
         assert get([], 'AB') == ()
@@ -273,7 +273,7 @@ class TestToolzSuite:
         assert raises(IndexError, lambda: get(10, 'ABC'))
         assert raises(KeyError, lambda: get(10, {'a': 1}))
         assert raises(TypeError, lambda: get({}, [1, 2, 3]))
-        assert raises(TypeError, lambda: get([1, 2, 3], 1, None))
+        assert raises(TypeError, lambda: get([1, 2, 3], 1, default=None))
         assert raises(KeyError, lambda: get('foo', {}, default=no_default2))
 
     def test_mapcat(self):
@@ -319,31 +319,31 @@ class TestToolzSuite:
             "o": 4, "n": 1, "p": 1, "t": 1
         }
 
-    def test_reduceby(self):
+    def test_reduce_by(self):
         data = [1, 2, 3, 4, 5]
 
         def iseven(x): return x % 2 == 0
 
-        assert reduceby(iseven, add, data, 0) == {False: 9, True: 6}
-        assert reduceby(iseven, mul, data, 1) == {False: 15, True: 8}
+        assert reduce_by(iseven, add, data, init=0) == {False: 9, True: 6}
+        assert reduce_by(iseven, mul, data, init=1) == {False: 15, True: 8}
 
         projects = [{'name': 'build roads', 'state': 'CA', 'cost': 1000000},
                     {'name': 'fight crime', 'state': 'IL', 'cost': 100000},
                     {'name': 'help farmers', 'state': 'IL', 'cost': 2000000},
                     {'name': 'help farmers', 'state': 'CA', 'cost': 200000}]
-        assert reduceby(lambda x: x['state'],
-                        lambda acc, x: acc + x['cost'],
-                        projects, 0) == {'CA': 1200000, 'IL': 2100000}
+        assert reduce_by(lambda x: x['state'],
+                         lambda acc, x: acc + x['cost'],
+                         projects, init=0) == {'CA': 1200000, 'IL': 2100000}
 
-        assert reduceby('state',
-                        lambda acc, x: acc + x['cost'],
-                        projects, 0) == {'CA': 1200000, 'IL': 2100000}
+        assert reduce_by('state',
+                         lambda acc, x: acc + x['cost'],
+                         projects, init=0) == {'CA': 1200000, 'IL': 2100000}
 
     def test_reduce_by_init(self):
-        assert reduceby(iseven, add, [1, 2, 3, 4]) == {
+        assert reduce_by(iseven, add, [1, 2, 3, 4]) == {
             True: 2 + 4, False: 1 + 3
         }
-        assert reduceby(iseven, add, [1, 2, 3, 4], no_default2) == {
+        assert reduce_by(iseven, add, [1, 2, 3, 4], init=no_default2) == {
             True: 2 + 4,
             False: 1 + 3
         }
@@ -353,7 +353,7 @@ class TestToolzSuite:
             s.add(i)
             return s
 
-        assert reduceby(iseven, set_add, [1, 2, 3, 4, 1, 2], set) == \
+        assert reduce_by(iseven, set_add, [1, 2, 3, 4, 1, 2], init=set) == \
                {True: {2, 4}, False: {1, 3}}
 
     def test_iterate(self):
@@ -363,15 +363,15 @@ class TestToolzSuite:
     def test_accumulate(self):
         assert list(accumulate(add, [1, 2, 3, 4, 5])) == [1, 3, 6, 10, 15]
         assert list(accumulate(mul, [1, 2, 3, 4, 5])) == [1, 2, 6, 24, 120]
-        assert list(accumulate(add, [1, 2, 3, 4, 5], -1)) == [-1, 0, 2, 5, 9,
-                                                              14]
+        assert list(accumulate(add, [1, 2, 3, 4, 5], initial=-1)) == \
+               [-1, 0, 2, 5, 9, 14]
 
         def binop(a, b):
             raise AssertionError('binop should not be called')
 
         start = object()
-        assert list(accumulate(binop, [], start)) == [start]
-        assert list(accumulate(add, [1, 2, 3], no_default2)) == [1, 3, 6]
+        assert list(accumulate(binop, [], initial=start)) == [start]
+        assert list(accumulate(add, [1, 2, 3], initial=no_default2)) == [1, 3, 6]
 
     def test_accumulate_works_on_consumable_iterables(self):
         assert list(accumulate(add, iter((1, 2, 3)))) == [1, 3, 6]
@@ -407,23 +407,23 @@ class TestToolzSuite:
     def test_pluck(self):
         assert list(pluck(0, [[0, 1], [2, 3], [4, 5]])) == [0, 2, 4]
         assert list(pluck([0, 1], [[0, 1, 2], [3, 4, 5]])) == [(0, 1), (3, 4)]
-        assert list(pluck(1, [[0], [0, 1]], None)) == [None, 1]
+        assert list(pluck(1, [[0], [0, 1]], default=None)) == [None, 1]
 
         data = [{'id': 1, 'name': 'cheese'},
                 {'id': 2, 'name': 'pies', 'price': 1}]
         assert list(pluck('id', data)) == [1, 2]
-        assert list(pluck('price', data, 0)) == [0, 1]
+        assert list(pluck('price', data, default=0)) == [0, 1]
         assert list(pluck(['id', 'name'], data)) == [
             (1, 'cheese'), (2, 'pies')]
         assert list(pluck(['name'], data)) == [('cheese',), ('pies',)]
-        assert list(pluck(['price', 'other'], data, 0)) == [(0, 0), (1, 0)]
+        assert list(pluck(['price', 'other'], data, default=0)) == [(0, 0), (1, 0)]
 
         assert raises(IndexError, lambda: list(pluck(1, [[0]])))
         assert raises(KeyError, lambda: list(pluck('name', [{'id': 1}])))
 
-        assert list(pluck(0, [[0, 1], [2, 3], [4, 5]], no_default2)) == [0, 2,
+        assert list(pluck(0, [[0, 1], [2, 3], [4, 5]], default=no_default2)) == [0, 2,
                                                                          4]
-        assert raises(IndexError, lambda: list(pluck(1, [[0]], no_default2)))
+        assert raises(IndexError, lambda: list(pluck(1, [[0]], default=no_default2)))
 
     def test_join(self):
         names = [(1, 'one'), (2, 'two'), (3, 'three')]
@@ -539,22 +539,22 @@ class TestToolzSuite:
              {'cost': 300, 'currency': 'yen'})]
 
     def test_topk(self):
-        assert topk(2, [4, 1, 5, 2]) == (5, 4)
-        assert topk(2, [4, 1, 5, 2], key=lambda x: -x) == (1, 2)
-        assert topk(2, iter([5, 1, 4, 2]), key=lambda x: -x) == (1, 2)
+        assert top_k(2, [4, 1, 5, 2]) == (5, 4)
+        assert top_k(2, [4, 1, 5, 2], key=lambda x: -x) == (1, 2)
+        assert top_k(2, iter([5, 1, 4, 2]), key=lambda x: -x) == (1, 2)
 
-        assert topk(2, [{'a': 1, 'b': 10}, {'a': 2, 'b': 9},
-                        {'a': 10, 'b': 1}, {'a': 9, 'b': 2}], key='a') == \
+        assert top_k(2, [{'a': 1, 'b': 10}, {'a': 2, 'b': 9},
+                         {'a': 10, 'b': 1}, {'a': 9, 'b': 2}], key='a') == \
                ({'a': 10, 'b': 1}, {'a': 9, 'b': 2})
 
-        assert topk(2, [{'a': 1, 'b': 10}, {'a': 2, 'b': 9},
-                        {'a': 10, 'b': 1}, {'a': 9, 'b': 2}], key='b') == \
+        assert top_k(2, [{'a': 1, 'b': 10}, {'a': 2, 'b': 9},
+                         {'a': 10, 'b': 1}, {'a': 9, 'b': 2}], key='b') == \
                ({'a': 1, 'b': 10}, {'a': 2, 'b': 9})
-        assert topk(2, [(0, 4), (1, 3), (2, 2), (3, 1), (4, 0)], 0) == \
+        assert top_k(2, [(0, 4), (1, 3), (2, 2), (3, 1), (4, 0)], key=0) == \
                ((4, 0), (3, 1))
 
     def test_topk_is_stable(self):
-        assert topk(4, [5, 9, 2, 1, 5, 3], key=lambda x: 1) == (5, 9, 2, 1)
+        assert top_k(4, [5, 9, 2, 1, 5, 3], key=lambda x: 1) == (5, 9, 2, 1)
 
     def test_peek(self):
         alist = ["Alice", "Bob", "Carol"]

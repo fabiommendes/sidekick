@@ -3,7 +3,7 @@ import pytest
 import sidekick as sk
 from sidekick import delayed, deferred, Delayed, Deferred
 from sidekick import placeholder as _, record
-from sidekick.lazy import Lazy, find_descriptor_name, find_descriptor_owner, \
+from sidekick.lazy.lazy import Lazy, find_descriptor_name, find_descriptor_owner, \
     Delegate, lazy
 
 
@@ -119,6 +119,7 @@ class TestDelegateToDecorator:
 class TestAliasDecorator:
     @pytest.fixture(scope='class')
     def cls(self):
+        print(_)
         class Class(object):
             x = 1
             y = sk.alias('x')
@@ -164,8 +165,8 @@ class TestLazyImport:
     def test_lazy_import(self):
         assert sk.import_later('math').sqrt(4) == 2.0
         assert sk.import_later('math:sqrt')(4) == 2.0
-        assert sk.import_later('sidekick.predicate').is_zero(0)
-        assert sk.import_later('sidekick.predicate:is_zero')(0)
+        assert sk.import_later('sidekick.core').is_zero(0)
+        assert sk.import_later('sidekick.core:is_zero')(0)
 
 
 class TestDelayed:

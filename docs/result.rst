@@ -210,11 +210,11 @@ instances? Consider the example bellow:
 If we already have a Result value (such as x, y, bad), the function above cannot
 be used immediately: it is necessary to unwrap the value and select a different
 path for the Ok and Err cases (pass the value to sqrt or propagate the error).
-A better method is to use the .map_bound (monadic) interface:
+A better method is to use the .map monadic interface:
 
->>> x.map_bound(sqrt)
+>>> x.map(sqrt)
 Ok(2.0)
->>> bad.map_bound(sqrt)
+>>> bad.map(sqrt)
 Err(ZeroDivisionError())
 
 

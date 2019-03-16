@@ -89,7 +89,7 @@ class TestRecordWithInvalidNames:
             Record.define('IfBlock', ['if', 'else'])
 
     def test_make_record_with_invalid_names(self):
-        Rec = Record.define('IfBlock', ['if', 'else'], invalid_names=True)
+        Rec = Record.define('IfBlock', ['if', 'else'], use_invalid=True)
         rec = Rec(1, 2)
         assert dict(rec) == {'if': 1, 'else': 2}
         assert getattr(rec, 'if') == 1

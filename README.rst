@@ -16,9 +16,9 @@ Sidekick is a library that gives you functional superpowers.
 
 Sidekick implements a few utility functions and types that make functional
 programming more pleasant in Python. It is designed be self-contained and it wraps most
-functionality in the toolz library. Of course you can also use it in
-conjunction with other functional programming libraries such as funcy, fn.py and
-Pyrsistent.
+functionality present in the popular toolz library with a slightly different API.
+Of course you can also use it in conjunction with other functional programming
+libraries such as funcy, fn.py and Pyrsistent.
 
 If you are lazy, simply import everything and start to play ;)
 
@@ -49,10 +49,12 @@ Heavily functional idioms in Python quickly escalates to an unholy mess:
 1) setup.py
 2) tasks.py
 
-We formatted for maximum legibility, but even so that are so many nested
-functions that it is not even funny. The code above reads all files from
+The game is: we don't want to make unnecessary assignments, just pass the value
+through a pipeline of functions. That said, we formatted the previous code for
+maximum legibility. As you can see, there are so many nested functions that it is
+not even funny. If you haven't deciphered it yet, the code above reads all files from
 the current directory, keeps only the `.py` files, sort them alphabetically
-(after normalizing case), and finally prints a list of files on the screen.
+(after normalizing case), and finally prints a list with the result.
 
 We can do better with sidekick:
 
@@ -60,8 +62,8 @@ We can do better with sidekick:
 >>> print(
 ...     os.getcwd() | fn
 ...         >> os.listdir
-...         >> filter(_.endswith('.py'))
-...         >> order_by(str.casefold)
+...         >> filter(text.ends_with('.py'))
+...         >> order_by(text.casefold)
 ...         >> enumerate
 ...         >> map(lambda x: '%s) %s' % (x[0] + 1, x[1]))
 ...         >> '\n'.join
@@ -192,13 +194,12 @@ Consider the function:
         return (x, y, z)
 
 The function ``g`` can now be used as a filter or as a part of a pipeline.
-Like normal Python functions, fn-functions also use parenthesis to make call.
-If a function is called with square brackets, however, it makes a partial
+
+
+fn-functions also suports a explicit and flexible API for partial function
 application:
 
->>> g2 = g[1, 2]
->>> g2(3)
-(1, 2, 3)
+>>> gpart = g.partial(1, y=2)
 
 By default, partial application respect a auto-currying semantics. We decided to
 not make currying the default behavior for standard function calls since
@@ -210,42 +211,12 @@ mimick the behavior of curried programming languages define only single-argument
 functions (in those languages, e.g., Haskell, a function of two variables is
 a function of a single variable that returns another function of one variable).
 
-fn-functions also suports a more explicit and flexible mode of partial function
-application:
-
->>> gpart = g.partial(1, y=2)
-
-Finally, both partial and the square-brackets notation understands the special
-placeholder object ``_`` as a declaration for the position in which a single
-free argument should be used
-
->>> g[1, 2](3) == g[_, 2, 3](1) == g[1, _, 3](2)
-True
-
-If the placeholder is repeated, the same argument is passed to all used
-positions
-
->>> g[_, _, _](1)
-(1, 1, 1)
-
-The fn object offers a few additional goodies. The first is the ``method``
-attribute, that declares a function to be autocurrying:
+The fn object offers a few additional goodies. The first is the ``curried``
+constructor declares a function to be autocurrying:
 
 >>> g = fn.curried(lambda x, y, z: x + y + z)
 >>> g(1, 2, 3) == g(1, 2)(3) == g(1)(2)(3) == 6
 True
-
-Secondly, the fn object itself accepts the bracket notation and can be used
-to define partial application directly when the function is created:
-
-.. skip-next-block
-
-.. code-block:: python
-
-    g_ = lambda x, y, z: x + y + z
-    fn[g]           # the same as fn(g)
-    fn[g, 1]        # the same as fn(g)[1]
-    fn[g, _, 2, 3]  # the same as fn(g)[_, 2, 3] (you get the idea!)
 
 
 Quick lambdas

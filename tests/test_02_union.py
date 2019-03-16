@@ -1,7 +1,9 @@
 import pytest
 
-from sidekick import Maybe, Nothing, Union, opt, maybe, Ok, Err, Result
+from sidekick import Maybe, Nothing, Union, opt, maybe, Ok, Err
 from sidekick import case, case_fn
+from sidekick.union.maybe import mcall
+from sidekick.union.result import rcall
 
 UnionMeta = type(Union)
 
@@ -260,16 +262,16 @@ class TestMaybe(TestADT):
         assert y.is_nothing
 
     def test_maybe_chaining(self):
-        x = (Maybe.Just(42) >> (lambda x: 2 * x)).get()
-        y = (Maybe.Nothing >> (lambda x: 2 * x)).get()
+        x = (Maybe.Just(42) >> (lambda x: 2 * x)).get_value()
+        y = (Maybe.Nothing >> (lambda x: 2 * x)).get_value()
         assert x == 84
-        assert y == None
+        assert y is None
 
     def test_call(self):
         x = Maybe.Just(42)
         y = Maybe.Nothing
-        assert Maybe.apply(lambda x, y: x + y, x, x) == Maybe.Just(84)
-        assert Maybe.apply(lambda x, y: x + y, x, y) == Maybe.Nothing
+        assert mcall(lambda x, y: x + y, x, x) == Maybe.Just(84)
+        assert mcall(lambda x, y: x + y, x, y) == Maybe.Nothing
 
     def test_bitwise(self):
         x = Maybe.Just(42)
@@ -306,8 +308,6 @@ class TestMaybe(TestADT):
     def test_maybe_function(self, just, nothing):
         assert maybe(42) == just
         assert maybe(None) == nothing
-        assert maybe(Ok(42)) == just
-        assert maybe(Err('foo')) == nothing
 
 
 class TestResult:
@@ -328,8 +328,8 @@ class TestResult:
         assert err.error == 'err'
 
     def test_result_apply_method(self, ok, err):
-        assert Result.apply(str, ok) == Ok('42')
-        assert Result.apply(str, err) == Err('err')
+        assert rcall(str, ok) == Ok('42')
+        assert rcall(str, err) == Err('err')
 
     def test_result_then_chaining(self, ok, err):
         assert ok.map(str) == Ok('42')
@@ -340,8 +340,8 @@ class TestResult:
         assert err.map_error(str.upper) == Err('ERR')
 
     def test_test_get_value_from_result(self, ok, err):
-        assert ok.get() == 42
-        assert err.get() == None
+        assert ok.get_value() == 42
+        assert err.get_value() == None
 
     def test_to_maybe(self, ok, err):
         assert ok.to_maybe() == Maybe.Just(42)

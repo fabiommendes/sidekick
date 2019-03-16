@@ -34,7 +34,7 @@ Sidekick distinguishes mutable and immutable records types. In fact, we call
 mutable records "namespaces", and they are appropriately created using
 the :func:`sidekick.Record.define_namespace` function:
 
->>> MutablePoint = Record.define_namespace('MutablePoint', ['x', 'y'])
+>>> MutablePoint = Record.namespace('MutablePoint', ['x', 'y'])
 >>> w = MutablePoint(x=1, y=1)
 >>> w.y = 2  # this will not raise an error!
 >>> w

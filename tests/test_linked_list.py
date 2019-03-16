@@ -1,4 +1,4 @@
-from sidekick.union.list import List, linklist
+from sidekick.union.linked_list import List, linklist
 
 
 class TestLinkedLists:

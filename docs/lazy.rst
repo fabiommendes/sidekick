@@ -99,7 +99,7 @@ write access to the "start" attribute.
 Properties
 ==========
 
-Sidekick's :cls:`sidekick.property` decorator is a drop-in replacement for
+Sidekick's :mcs:`sidekick.property` decorator is a drop-in replacement for
 Python's builtin properties. It behaves similarly to Python's builtin, but also
 accepts placeholder expressions and quick lambdas as input functions. This
 allows very terse declarations:
@@ -110,7 +110,7 @@ allows very terse declarations:
         sqr_radius = property(_.x**2 + _.y**2)
 
 
-:cls:`sidekick.lazy` also accepts quick lambdas. The main difference between
+:mcs:`sidekick.lazy` also accepts quick lambdas. The main difference between
 both is that properties are read only and not cached, while lazy attributes
 are cached and writable.
 
@@ -149,8 +149,8 @@ modules, specially when heavy weights such as numpy, and pandas are used.
 Proxy and deferred objects
 ==========================
 
-Sidekick also provides two similar kind of deferred objects: :cls:`sidekick.Deferred`
-and :cls:`sidekick.Delayed`. They are both initialized from a callable with
+Sidekick also provides two similar kind of deferred objects: :mcs:`sidekick.Deferred`
+and :mcs:`sidekick.Delayed`. They are both initialized from a callable with
 arbitrary arguments and delay the execution of the callable until the result is
 needed:
 
@@ -176,8 +176,8 @@ User(name: 'Me', age: 42)
 We can see that proxy instances do not change class, while deferred instances
 do:
 
->>> type(a), type(b)
-(<class 'sidekick.deferred.Deferred'>, <class 'User'>)
+>>> type(a), type(b)                                        # doctest: +ELLIPSIS
+(<class '...Deferred'>, <class 'User'>)
 
 This limitation makes delayed objects much more limited. The delayed execution cannot
 return any type that has a different C layout as regular Python objects. This

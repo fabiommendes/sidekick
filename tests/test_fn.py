@@ -1,5 +1,6 @@
 import pytest
-from sidekick import fn, placeholder, curry
+
+from sidekick import fn, curry
 
 
 class TestFn:
@@ -22,8 +23,8 @@ class TestFn:
 
     def test_fn_function_filter_notation(self, fn_double):
         res = (
-            2 | fn_double
-            | fn_double
+                2 | fn_double
+                | fn_double
         )
         assert res == 8
 
@@ -52,32 +53,11 @@ class TestFn:
     def test_fn_function_attributes(self):
         @fn
         def f(x):
-            "doc"
+            """doc"""
             return x
 
         assert f.__name__ == 'f'
         assert f.__doc__ == 'doc'
-
-    def test_fn_partial_function_application(self, g):
-        g = fn(g)
-        assert g[1](2, 3) == g(1, 2, 3) == (1, 2, 3)
-        assert g[1, 2](3) == (1, 2, 3)
-        assert g[1, 2, 3]() == (1, 2, 3)
-
-    def test_fn_partial_application_on_creation(self, g):
-        assert fn[g](1, 2, 3) == (1, 2, 3)
-        assert fn[g, 1](2, 3) == (1, 2, 3)
-        assert fn[g, 1, 2](3) == (1, 2, 3)
-        assert fn[g, 1, 2, 3]() == (1, 2, 3)
-
-    def test_fn_partial_application_with_placehlder(self, g):
-        assert fn[g, placeholder, 2, 3](1) == (1, 2, 3)
-        assert fn[g, 1, placeholder, 3](2) == (1, 2, 3)
-        assert fn[g, 1, 2, placeholder](3) == (1, 2, 3)
-
-        assert fn[g, placeholder, placeholder, 2](1) == (1, 1, 2)
-        assert fn[g, 1, placeholder, placeholder](2) == (1, 2, 2)
-        assert fn[g, placeholder, 2, placeholder](1) == (1, 2, 1)
 
     def test_curry_decorator(self, g):
         g = curry(g)

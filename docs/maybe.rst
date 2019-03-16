@@ -2,7 +2,7 @@
 The Maybe type
 ==============
 
-Sidekick's Maybe is declared as:
+Sidekick's Maybe is declared essentially as:
 
 .. code-block:: python
 
