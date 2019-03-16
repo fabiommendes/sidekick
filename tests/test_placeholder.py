@@ -65,7 +65,7 @@ class TestPlaceholder:
 
 
 class TestThisPlaceholder:
-    @pytest.fixture(scope='class')
+    @pytest.fixture(scope="class")
     def cls(self):
         class Cls:
             sum = lazy(_.x + _.y)

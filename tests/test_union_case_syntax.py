@@ -46,18 +46,12 @@ class TestCaseSyntax:
 
 class TestCaseFnSyntax:
     def test_case_fn_exaustive(self, just, nothing):
-        func = case_fn[Maybe](
-            Just=lambda x: x,
-            Nothing=lambda: 0,
-        )
+        func = case_fn[Maybe](Just=lambda x: x, Nothing=lambda: 0)
         assert func(just) == 42
         assert func(nothing) == 0
 
     def test_case_with_else_case(self, just, nothing):
-        func = case_fn[Maybe](
-            Just=lambda x: x,
-            else_=lambda x: 0,
-        )
+        func = case_fn[Maybe](Just=lambda x: x, else_=lambda x: 0)
         assert func(just) == 42
         assert func(nothing) == 0
 
@@ -77,22 +71,13 @@ class TestCaseFnSyntax:
         err = TypeError
 
         with pytest.raises(err):
-            case_fn[Maybe](
-                Just=lambda x: x,
-            )
+            case_fn[Maybe](Just=lambda x: x)
 
         with pytest.raises(err):
-            case_fn[Maybe](
-                Just=lambda x: x,
-                Other=lambda: 0,
-            )
+            case_fn[Maybe](Just=lambda x: x, Other=lambda: 0)
 
         with pytest.raises(err):
-            case_fn[Maybe](
-                Just=lambda x: x,
-                Nothing=lambda: 0,
-                Other=lambda: 0,
-            )
+            case_fn[Maybe](Just=lambda x: x, Nothing=lambda: 0, Other=lambda: 0)
 
 
 class TestCaseDispatchDecorator:

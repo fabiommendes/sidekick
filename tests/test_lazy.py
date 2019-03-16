@@ -3,12 +3,17 @@ import pytest
 import sidekick as sk
 from sidekick import delayed, deferred, Delayed, Deferred
 from sidekick import placeholder as _, record
-from sidekick.lazy.lazy import Lazy, find_descriptor_name, find_descriptor_owner, \
-    Delegate, lazy
+from sidekick.lazy.lazy import (
+    Lazy,
+    find_descriptor_name,
+    find_descriptor_owner,
+    Delegate,
+    lazy,
+)
 
 
 class TestLazyDecorator:
-    @pytest.fixture(scope='class')
+    @pytest.fixture(scope="class")
     def cls(self):
         class Cls(object):
             @lazy
@@ -43,8 +48,8 @@ class TestLazyDecorator:
         assert isinstance(cls.c, Lazy)
 
     def test_descriptor_can_find_name_its_name(self, cls):
-        assert cls.c._init_name(cls) == 'c'
-        assert find_descriptor_name(cls.c, cls) == 'c'
+        assert cls.c._init_name(cls) == "c"
+        assert find_descriptor_name(cls.c, cls) == "c"
         assert find_descriptor_owner(cls.c, cls) is cls
 
     def test_cannot_find_descriptor_name_of_wrong_class(self, cls):
@@ -56,7 +61,7 @@ class TestLazyDecorator:
 
 
 class TestLazyShared:
-    @pytest.fixture(scope='class')
+    @pytest.fixture(scope="class")
     def cls(self):
         class Cls(object):
             a = 1.0
@@ -76,12 +81,12 @@ class TestLazyShared:
 
 
 class TestDelegateToDecorator:
-    @pytest.fixture(scope='class')
+    @pytest.fixture(scope="class")
     def cls(self):
         class cls(object):
-            x = sk.delegate_to('data')
-            y = sk.delegate_to('data', name='w')
-            z = sk.delegate_to('data', read_only=True)
+            x = sk.delegate_to("data")
+            y = sk.delegate_to("data", name="w")
+            z = sk.delegate_to("data", read_only=True)
 
             def __init__(self, data):
                 self.data = data
@@ -117,15 +122,16 @@ class TestDelegateToDecorator:
 
 
 class TestAliasDecorator:
-    @pytest.fixture(scope='class')
+    @pytest.fixture(scope="class")
     def cls(self):
         print(_)
+
         class Class(object):
             x = 1
-            y = sk.alias('x')
-            z = sk.alias('x', read_only=True)
-            w = sk.alias('x', transform=2 * _, prepare=_ / 2)
-            k = sk.alias('x', transform=2 * _)
+            y = sk.alias("x")
+            z = sk.alias("x", read_only=True)
+            w = sk.alias("x", transform=2 * _, prepare=_ / 2)
+            k = sk.alias("x", transform=2 * _)
 
         return Class
 
@@ -163,14 +169,14 @@ class TestAliasDecorator:
 
 class TestLazyImport:
     def test_lazy_import(self):
-        assert sk.import_later('math').sqrt(4) == 2.0
-        assert sk.import_later('math:sqrt')(4) == 2.0
-        assert sk.import_later('sidekick.core').is_zero(0)
-        assert sk.import_later('sidekick.core:is_zero')(0)
+        assert sk.import_later("math").sqrt(4) == 2.0
+        assert sk.import_later("math:sqrt")(4) == 2.0
+        assert sk.import_later("sidekick.core").is_zero(0)
+        assert sk.import_later("sidekick.core:is_zero")(0)
 
 
 class TestDelayed:
-    @pytest.fixture(scope='class')
+    @pytest.fixture(scope="class")
     def cls(self):
         class Cls:
             def __init__(self):
@@ -203,5 +209,5 @@ class TestDelayed:
         obj = delayed[record](record, x=1, y=2)
         assert type(obj) == delayed[record]
         assert isinstance(obj, delayed[record])
-        assert str(obj) == 'record(x=1, y=2)'
+        assert str(obj) == "record(x=1, y=2)"
         assert type(obj) == record

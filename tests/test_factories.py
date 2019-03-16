@@ -18,5 +18,5 @@ class TestCaller:
 class TestAttrGetter:
     def test_nested_attr_getter(self):
         f = attrgetter.real.imag.real.imag
-        assert f.__attrs__ == ('real', 'imag', 'real', 'imag')
+        assert f.__attrs__ == ("real", "imag", "real", "imag")
         assert f(42) == 0

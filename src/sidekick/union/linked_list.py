@@ -186,7 +186,7 @@ class List(Union, collections.abc.Sequence, metaclass=ListMeta):
     #
     # Reorganizing the list
     #
-    def reversed(lst) -> 'List':  # noqa: N805
+    def reversed(lst) -> "List":  # noqa: N805
         """
         Reversed copy of the list.
         """
@@ -348,7 +348,7 @@ def linklist(seq):
 
 def _link_list(seq):
     cons = Cons
-    xs = List.Nil
+    xs = Nil
     for x in reversed(seq):
         xs = cons(x, xs)
     return xs

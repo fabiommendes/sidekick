@@ -21,9 +21,7 @@ class TestPredicate:
         assert (~p1)(1) is False
 
     def test_cond(self):
-        f = cond(is_odd)\
-            .true((placeholder - 1) // 2)\
-            .false(placeholder // 2)
+        f = cond(is_odd).true((placeholder - 1) // 2).false(placeholder // 2)
 
         assert f(3) == 1
         assert f(4) == 2

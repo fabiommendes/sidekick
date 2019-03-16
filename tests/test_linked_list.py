@@ -24,4 +24,4 @@ class TestLinkedLists:
         assert ll == linklist([1, 2])
 
     def test_linked_list_repr(self):
-        assert str(linklist([1, 2])) == 'linklist([1, 2])'
+        assert str(linklist([1, 2])) == "linklist([1, 2])"

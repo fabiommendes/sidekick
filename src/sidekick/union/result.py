@@ -105,9 +105,9 @@ class Result(Union):
             return
         error = self.error
         if (
-                isinstance(error, Exception)
-                or isinstance(error, type)
-                and issubclass(error, Exception)
+            isinstance(error, Exception)
+            or isinstance(error, type)
+            and issubclass(error, Exception)
         ):
             raise error
         else:

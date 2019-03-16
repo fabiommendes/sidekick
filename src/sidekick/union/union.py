@@ -337,7 +337,7 @@ def make_init_kwargs(cls, types, names):
     def init_kwargs(self, *args, **kwargs):
         if kwargs:
             extra = []
-            for name in names[len(args):]:
+            for name in names[len(args) :]:
                 extra.append(kwargs[name])
             args = args + tuple(extra)
 

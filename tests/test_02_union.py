@@ -14,7 +14,7 @@ class TestCreateUnionType:
             Foo = opt()
             Bar = opt(1)
 
-        assert ADT.__name__ == 'ADT'
+        assert ADT.__name__ == "ADT"
         assert ADT._meta.is_base
         assert not ADT._meta.is_abstract
         assert not ADT._meta.is_case
@@ -61,6 +61,7 @@ class TestCreateUnionType:
             Spam = opt()
 
         with pytest.raises(TypeError):
+
             class ADT(FooBar, HamSpam):
                 pass
 
@@ -69,9 +70,10 @@ class TestCreateUnionType:
             Foo = opt()
             Bar = opt()
 
-        ADT.__module__ = 'not_the_same_module_as_child'
+        ADT.__module__ = "not_the_same_module_as_child"
 
         with pytest.raises(TypeError):
+
             class Child(ADT):
                 pass
 
@@ -115,8 +117,8 @@ class TestADT:
         assert issubclass(Maybe, Union)
 
     def test_adt_repr(self, Maybe):
-        assert repr(Maybe.Just(42)) == 'Just(42)'
-        assert repr(Maybe.Nothing) == 'Nothing'
+        assert repr(Maybe.Just(42)) == "Just(42)"
+        assert repr(Maybe.Nothing) == "Nothing"
 
     def test_adt_requires_correct_number_of_arguments(self, Maybe):
         with pytest.raises(TypeError):
@@ -138,26 +140,17 @@ class TestADT:
         x = Maybe.Just(42)
         y = Maybe.Nothing
 
-        res = case[x](
-            Just=lambda x: x * 2,
-            Nothing=lambda: 0,
-        )
+        res = case[x](Just=lambda x: x * 2, Nothing=lambda: 0)
         assert res == 84
 
-        res = case[y](
-            Just=lambda x: x * 2,
-            Nothing=lambda: 0,
-        )
+        res = case[y](Just=lambda x: x * 2, Nothing=lambda: 0)
         assert res == 0
 
     def test_match_function_constructor(self, Maybe):
         x = Maybe.Just(42)
         y = Maybe.Nothing
 
-        func = case_fn[Maybe](
-            Just=lambda x: x * 2,
-            Nothing=lambda: 0,
-        )
+        func = case_fn[Maybe](Just=lambda x: x * 2, Nothing=lambda: 0)
         assert func(x) == 84
         assert func(y) == 0
 
@@ -178,22 +171,13 @@ class TestADT:
         err = TypeError
 
         with pytest.raises(err):
-            case_fn[Maybe](
-                just=lambda x: x,
-            )
+            case_fn[Maybe](just=lambda x: x)
 
         with pytest.raises(err):
-            case_fn[Maybe](
-                just=lambda x: x,
-                nothing=lambda: 0,
-                other=lambda: 0,
-            )
+            case_fn[Maybe](just=lambda x: x, nothing=lambda: 0, other=lambda: 0)
 
         with pytest.raises(err):
-            case_fn[Maybe](
-                ok=lambda x: x,
-                err=lambda: 0,
-            )
+            case_fn[Maybe](ok=lambda x: x, err=lambda: 0)
 
     def test_adt_matches_instance(self, Maybe):
         a = Maybe.Just(42)
@@ -205,9 +189,11 @@ class TestADT:
     def test_adt_matches_are_exaustive(self, Maybe):
         err = TypeError
 
-        def f1(x): return x
+        def f1(x):
+            return x
 
-        def f2(x): return None
+        def f2(x):
+            return None
 
         with pytest.raises(err):
             case[Maybe.Nothing](just=f1)
@@ -247,7 +233,7 @@ class TestMaybe(TestADT):
         assert issubclass(type(Maybe.Nothing), Maybe)
 
     def test_maybe_type(self, Maybe):
-        assert Maybe.__name__ == 'Maybe'
+        assert Maybe.__name__ == "Maybe"
 
     def test_then_method(self):
         x = Maybe.Just(1)
@@ -317,27 +303,27 @@ class TestResult:
 
     @pytest.fixture
     def err(self):
-        return Err('err')
+        return Err("err")
 
     def test_result_get_value(self, ok, err):
         assert ok.value == 42
-        assert getattr(err, 'value', None) is None
+        assert getattr(err, "value", None) is None
 
     def test_result_get_error(self, ok, err):
         assert ok.error is None
-        assert err.error == 'err'
+        assert err.error == "err"
 
     def test_result_apply_method(self, ok, err):
-        assert rcall(str, ok) == Ok('42')
-        assert rcall(str, err) == Err('err')
+        assert rcall(str, ok) == Ok("42")
+        assert rcall(str, err) == Err("err")
 
     def test_result_then_chaining(self, ok, err):
-        assert ok.map(str) == Ok('42')
-        assert err.map(str) == Err('err')
+        assert ok.map(str) == Ok("42")
+        assert err.map(str) == Err("err")
 
     def test_result_map_error_chaining(self, ok, err):
         assert ok.map_error(str.upper) == Ok(42)
-        assert err.map_error(str.upper) == Err('ERR')
+        assert err.map_error(str.upper) == Err("ERR")
 
     def test_test_get_value_from_result(self, ok, err):
         assert ok.get_value() == 42

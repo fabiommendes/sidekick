@@ -4,7 +4,6 @@ from sidekick import fn, curry
 
 
 class TestFn:
-
     @pytest.fixture
     def double(self):
         return lambda x: 2 * x
@@ -22,10 +21,7 @@ class TestFn:
         return lambda x, y, z: (x, y, z)
 
     def test_fn_function_filter_notation(self, fn_double):
-        res = (
-                2 | fn_double
-                | fn_double
-        )
+        res = 2 | fn_double | fn_double
         assert res == 8
 
     def test_fn_pipeline_notation(self, fn_double, fn_inc):
@@ -56,8 +52,8 @@ class TestFn:
             """doc"""
             return x
 
-        assert f.__name__ == 'f'
-        assert f.__doc__ == 'doc'
+        assert f.__name__ == "f"
+        assert f.__doc__ == "doc"
 
     def test_curry_decorator(self, g):
         g = curry(g)
@@ -74,15 +70,15 @@ class TestFn:
 
     def test_fn_accepts_attribute_assignment(self, g):
         g = fn(g)
-        g.foo = 'foo'
-        assert g.foo == 'foo'
+        g.foo = "foo"
+        assert g.foo == "foo"
 
     def test_fn_preserves_function_attributes(self):
         def foo(x):
             return x
 
-        foo.attr = 'foo'
+        foo.attr = "foo"
 
         g = fn(foo)
-        assert g.__name__ == 'foo'
-        assert g.attr == 'foo'
+        assert g.__name__ == "foo"
+        assert g.attr == "foo"
