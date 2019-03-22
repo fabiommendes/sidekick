@@ -2,16 +2,16 @@
 Lazy access to resources
 ========================
 
-Sidekick encourages lazy evaluation of code and has a few functions that helps
-to implement lazy access to resources and objects.
+Python functional code tends to rely a lot on lazy evaluation. This module
+define a few utility functions and types that handles that outside the context
+of iterators and sequences.
 
 
 Lazy attributes
 ===============
 
-We can mark an attribute as lazy (i.e., it is initialized during first access,
-rather than instance initialization). :func:`sidekick.lazy` can be used as a
-decorator or quick lambda:
+Attributes can be marked as lazy (i.e., it is initialized during first access,
+rather than instance initialization) using the :func:`sidekick.lazy` decorator:
 
 .. code-block::python
 
@@ -44,7 +44,19 @@ just like any regular Python attribute.
 
 Lazy attributes can be useful either to simplify the implementation of
 ``__init__`` or as an optimization technique that delays potentially expensive
-computations that are not always necessary in the object's lifecycle.
+computations that are not always necessary in the object's lifecycle. Lazy
+attributes are often used together with quick lambdas for very compact
+definitions:
+
+.. code-block::python
+
+    import math
+    from sidekick import lazy, placeholder as _
+
+    class Square:
+        area = lazy(_.width * _.height)
+        perimeter = lazy(2 * (_.width + _.height))
+
 
 .. autofunction:: sidekick.lazy
 
@@ -65,9 +77,9 @@ we want to expose an specific interface in the instance object:
             self.vector = vector
             self.start = start
 
-Now, ``arrow.magnitude`` delegates to ``arrow.vector.magnitude``. Delegate
-fields are useful in class composition when one
-wants to expose a few selected attributes from the inner objects. delegate_to()
+Now, ``arrow.magnitude`` behaves as an alias to ``arrow.vector.magnitude``.
+Delegate fields are useful in class composition when one wants to expose a few
+selected attributes from the inner objects. delegate_to()
 handles attributes and methods with no distinction.
 
 
@@ -82,14 +94,14 @@ computing...
 Aliasing
 ========
 
-Aliasing is a very simple form of delegation. Aliases are simple views over
+Aliasing is another simple form of self-delegation. Aliases are views over
 other attributes in the instance itself:
 
 .. code-block::python
 
     class MyArrow(Arrow):
-        abs_value = alias('magnitude', read_only=True)
-        origin = alias('start')
+        abs_value = alias('magnitude')
+        origin = alias('start', mutable=True)
 
 This exposes two additional properties: "abs_value" and "origin". The first is
 just a read-only view on the "magnitude" property. The second exposes read and
@@ -101,8 +113,7 @@ Properties
 
 Sidekick's :mcs:`sidekick.property` decorator is a drop-in replacement for
 Python's builtin properties. It behaves similarly to Python's builtin, but also
-accepts placeholder expressions and quick lambdas as input functions. This
-allows very terse declarations:
+accepts quick lambdas as input functions. This allows very terse declarations:
 
 .. code-block:: python
 
@@ -110,10 +121,10 @@ allows very terse declarations:
         sqr_radius = property(_.x**2 + _.y**2)
 
 
-:mcs:`sidekick.lazy` also accepts quick lambdas. The main difference between
-both is that properties are read only and not cached, while lazy attributes
-are cached and writable.
-
+:mcs:`sidekick.lazy` is very similar to property. The main difference between
+both is that properties are not cached and hence the function is re-executed
+at each attribute access. The desired behavior will depend a lot on what you
+want to do.
 
 
 
@@ -121,7 +132,7 @@ are cached and writable.
 Deferred computations
 =====================
 
-Until now, we were concened with the deferred computation of instance
+Until now, we were concerned with the deferred computation of instance
 attributes. Sometimes, we just want to defer some expensive computation or the
 initialization of an entire object.
 
@@ -129,8 +140,7 @@ initialization of an entire object.
 Lazy imports
 ============
 
-Sidekick implements a lazy_import object that can be used to delay imports in
-a module. It can lazily import a module or a function inside a module:
+Sidekick implements a lazy_import object to delay imports of a module.
 
 .. code-block:: python
 
@@ -141,16 +151,19 @@ a module. It can lazily import a module or a function inside a module:
 
 
 Lazy imports can dramatically decrease the initialization time of your python
-modules, specially when heavy weights such as numpy, and pandas are used.
+modules, specially when heavy weights such as numpy, and pandas are used. Beware
+that import errors that normally are triggered during import time
+now can be triggered at the first use and thus produce confusing and hard
+to spot bugs.
 
 .. autofunction:: sidekick.import_later
 
 
-Proxy and deferred objects
-==========================
+Proxy and zombie objects
+========================
 
 Sidekick also provides two similar kind of deferred objects: :mcs:`sidekick.Deferred`
-and :mcs:`sidekick.Delayed`. They are both initialized from a callable with
+and :mcs:`sidekick.Zombie`. They are both initialized from a callable with
 arbitrary arguments and delay the execution of the callable until the result is
 needed:
 
@@ -162,11 +175,11 @@ needed:
 ...         data = ('%s: %r' % item for item in self.__dict__.items())
 ...         return 'User(%s)' % ', '.join(data)
 >>> a = deferred(User, name='Me', age=42)
->>> b = delayed(User, name='Me', age=42)
+>>> b = zombie(User, name='Me', age=42)
 
-The main difference between deferred and delayed, is that Delayed instances
-assume the type of the result, while deferred objects are proxies that
-simply mimic the interface of the result.
+The main difference between deferred and zombie, is that Zombie instances
+assume the type of the result after they awake, while deferred objects are
+proxies that simply mimic the interface of the result.
 
 >>> a
 Deferred(User(name: 'Me', age: 42))
@@ -189,7 +202,7 @@ in almost any context.
 A slightly safer version of delayed can specify the return type of the object.
 This allows delayed to work with a few additional types (e.g., types that
 use __slots__) and check if conversion is viable. In order to do so, just use
-the output type as an index:
+the constructor function output type as an index:
 
->>> delayed[record](record, x=1, y=2)
+>>> zombie[record](record, x=1, y=2)
 record(x=1, y=2)

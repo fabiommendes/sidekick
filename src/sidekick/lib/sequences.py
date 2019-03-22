@@ -4,8 +4,10 @@ from collections.abc import Iterator
 
 import toolz
 
-from ..core import fn, extract_function, extract_predicate_function
-from ..core.fn import Fn1, Fn1_, Fn2, Fn2_, Fn3_, Fn2P
+from ..core import fn
+from sidekick.core.base_fn import extract_predicate_function
+from sidekick import extract_function
+from ..core.fn import Fn1, Fn1o, Fn2, Fn2o, Fn3o, Fn2P
 
 NOT_GIVEN = object()
 
@@ -62,7 +64,7 @@ take_nth = Fn2(toolz.take_nth)
 first = Fn1(toolz.first)
 second = Fn1(toolz.second)
 nth = Fn2(toolz.nth)
-get = Fn2_(toolz.get)
+get = Fn2o(toolz.get)
 last = Fn1(toolz.last)
 tail = Fn2(toolz.tail)
 peek = fn(toolz.peek)
@@ -93,7 +95,7 @@ def rest(seq):
     return _islice(seq, 1, None)
 
 
-@Fn1_
+@Fn1o
 def consume(seq, last=None):
     """
     Consume iterator for its side-effects and return last value or None.
@@ -157,7 +159,7 @@ def concat(first, *extra):
 # Transformations
 #
 map = Fn2(_map)
-accumulate = Fn2_(toolz.accumulate)
+accumulate = Fn2o(toolz.accumulate)
 
 
 @Fn2
@@ -177,8 +179,8 @@ drop_while = Fn2P(itertools.dropwhile)
 unique = fn(toolz.unique)
 remove = Fn2P(toolz.remove)
 filter = Fn2P(_filter)
-random_sample = Fn2_(toolz.random_sample)
-top_k = Fn2_(toolz.topk)
+random_sample = Fn2o(toolz.random_sample)
+top_k = Fn2o(toolz.topk)
 
 
 @fn
@@ -222,7 +224,7 @@ def keep(f, seq=None):
     return _filter(bool, _map(extract_predicate_function(f), seq))
 
 
-@Fn2_
+@Fn2o
 def without(items, seq):
     """
     Returns sequence without items specified. Preserves order.
@@ -240,11 +242,11 @@ def without(items, seq):
 #
 # Partitioning
 #
-partition = Fn2_(toolz.partition)
-partition_by = Fn2_(toolz.partitionby)
+partition = Fn2o(toolz.partition)
+partition_by = Fn2o(toolz.partitionby)
 partition_all = Fn2(toolz.partition_all)
 sliding_window = Fn2(toolz.sliding_window)
-reduce_by = Fn3_(
+reduce_by = Fn3o(
     toolz.reduceby,
     doc="""
 Perform a simultaneous group_by and reduction.
@@ -346,7 +348,7 @@ def pairwise(seq):
     return zip(a, b)
 
 
-@Fn2_
+@Fn2o
 def reductions(f, seq, acc=NOT_GIVEN):
     """
     Returns a sequence of the intermediate values of the reduction of seq by f.
@@ -387,7 +389,7 @@ def sums(seq, acc=0):
 #
 diff = fn(toolz.diff)
 join = fn(toolz.join)
-pluck = Fn2_(toolz.pluck)
+pluck = Fn2o(toolz.pluck)
 merge_sorted = fn(toolz.merge_sorted)
 
 

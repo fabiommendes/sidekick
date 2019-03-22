@@ -4,7 +4,7 @@ import typing as typ
 from warnings import warn
 
 from ..core import predicate
-from ..core.fn import fn, Fn1, Fn2, Fn3, Fn1_, Fn2_, Fn3_
+from ..core.fn import fn, Fn1, Fn2, Fn3, Fn1o, Fn2o, Fn3o
 
 # from inflection import
 NOT_GIVEN = object()
@@ -13,9 +13,9 @@ PredOrBool = typ.Union[predicate, bool]
 _fn1 = lambda func: Fn1(lambda st: func(st))
 _fn2 = lambda func: Fn2(lambda x, st: func(st, x))
 _fn3 = lambda func: Fn3(lambda x, y, st: func(st, x, y))
-_fopt1 = lambda func: Fn1_(lambda st, **kwargs: func(st, **kwargs))
-_fopt2 = lambda func: Fn2_(lambda x, st, **kwargs: func(st, x, **kwargs))
-_fopt3 = lambda func: Fn3_(lambda x, y, st, **kwargs: func(st, x, y, **kwargs))
+_fopt1 = lambda func: Fn1o(lambda st, **kwargs: func(st, **kwargs))
+_fopt2 = lambda func: Fn2o(lambda x, st, **kwargs: func(st, x, **kwargs))
+_fopt3 = lambda func: Fn3o(lambda x, y, st, **kwargs: func(st, x, y, **kwargs))
 
 #
 # Case control
@@ -131,7 +131,7 @@ def _mk(func, doc=None, name=None):
 
     function.__name__ = function.__qualname__ = name or func.__name__
     function.__doc__ = doc or func.__doc__
-    return Fn2_(function)
+    return Fn2o(function)
 
 
 count = _mk(str.count, doc="Count the number of occurrences of sub in st.")
@@ -227,14 +227,14 @@ join = Fn2(str.join)
 #
 # Regular expressions
 #
-re_search = Fn2_(re.search)
-re_match = Fn2_(re.match)
-re_fullmatch = Fn2_(re.fullmatch)
-re_split = Fn2_(re.split)
-re_findall = Fn2_(re.findall)
-re_finditer = Fn2_(re.finditer)
-re_sub = Fn3_(re.sub)
-re_subn = Fn3_(re.subn)
+re_search = Fn2o(re.search)
+re_match = Fn2o(re.match)
+re_fullmatch = Fn2o(re.fullmatch)
+re_split = Fn2o(re.split)
+re_findall = Fn2o(re.findall)
+re_finditer = Fn2o(re.finditer)
+re_sub = Fn3o(re.sub)
+re_subn = Fn3o(re.subn)
 re_escape = _fn1(re.escape)
 
 

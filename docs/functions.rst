@@ -18,7 +18,7 @@ Creating sequences
 Retrieving items from a sequence
 ================================
 
-.. autofunction:: sidekick.butlast
+.. autofunction:: sidekick.but_last
 .. autofunction:: sidekick.consume
 .. autofunction:: sidekick.drop
 .. autofunction:: sidekick.first
@@ -68,13 +68,13 @@ Filtering items
 ===============
 
 .. autofunction:: sidekick.distinct
-.. autofunction:: sidekick.dropwhile
+.. autofunction:: sidekick.drop_while
 .. autofunction:: sidekick.filter
 .. autofunction:: sidekick.keep
 .. autofunction:: sidekick.random_sample
 .. autofunction:: sidekick.remove
-.. autofunction:: sidekick.takewhile
-.. autofunction:: sidekick.topk
+.. autofunction:: sidekick.take_while
+.. autofunction:: sidekick.top_k
 .. autofunction:: sidekick.unique
 .. autofunction:: sidekick.without
 
@@ -83,11 +83,11 @@ Filtering items
 Partitioning an iterable
 ========================
 
-.. autofunction:: sidekick.groupby
+.. autofunction:: sidekick.group_by
 .. autofunction:: sidekick.partition
-.. autofunction:: sidekick.partitionby
+.. autofunction:: sidekick.partition_by
 .. autofunction:: sidekick.partition_all
-.. autofunction:: sidekick.reduceby
+.. autofunction:: sidekick.reduce_by
 .. autofunction:: sidekick.sliding_window
 .. autofunction:: sidekick.split
 .. autofunction:: sidekick.split_at
@@ -112,8 +112,8 @@ Multiple sequences
 .. autofunction:: sidekick.join
 .. autofunction:: sidekick.merge_sorted
 .. autofunction:: sidekick.pluck
-.. autofunction:: sidekick.zipwith
-.. autofunction:: sidekick.rzipwith
+.. autofunction:: sidekick.zip_with
+.. autofunction:: sidekick.rzip_with
 
 
 Nested structures

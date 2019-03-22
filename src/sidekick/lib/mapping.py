@@ -1,4 +1,4 @@
-from ..core import extract_function
+from sidekick.core.base_fn import extract_function
 from ..core.fn import Fn2, Fn3
 
 

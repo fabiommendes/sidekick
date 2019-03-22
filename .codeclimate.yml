@@ -1,12 +1,10 @@
-languages:
-  python: true
-engines:
-  fixme:
-    enabled: true
-  radon:
-    enabled: true
-ratings:
-  paths:
-  - "src/**.py"
-exclude_paths:
-  - tests/
+version: "2"
+
+checks:
+    file-lines:
+        config:
+            threshold: 500
+
+exclude_patterns:
+  - "tests/"
+

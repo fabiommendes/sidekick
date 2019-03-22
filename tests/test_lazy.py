@@ -1,7 +1,8 @@
 import pytest
 
 import sidekick as sk
-from sidekick import delayed, deferred, Delayed, Deferred
+from sidekick import deferred, Deferred
+from sidekick.lazy.zombie import Zombie, zombie
 from sidekick import placeholder as _, record
 from sidekick.lazy.lazy import (
     Lazy,
@@ -124,12 +125,10 @@ class TestDelegateToDecorator:
 class TestAliasDecorator:
     @pytest.fixture(scope="class")
     def cls(self):
-        print(_)
-
         class Class(object):
             x = 1
-            y = sk.alias("x")
-            z = sk.alias("x", read_only=True)
+            y = sk.alias("x", mutable=True)
+            z = sk.alias("x")
             w = sk.alias("x", transform=2 * _, prepare=_ / 2)
             k = sk.alias("x", transform=2 * _)
 
@@ -185,13 +184,13 @@ class TestDelayed:
         return Cls
 
     def test_delayed_object_is_created_on_touch(self, cls):
-        obj = delayed(cls)
+        obj = zombie(cls)
         assert obj.attr == 42
         assert isinstance(obj, cls)
 
     def test_delayed_starts_as_a_different_class(self, cls):
-        obj = delayed(cls)
-        assert isinstance(obj, Delayed)
+        obj = zombie(cls)
+        assert isinstance(obj, Zombie)
         str(obj)
         assert isinstance(obj, cls)
 
@@ -206,8 +205,8 @@ class TestDelayed:
         assert isinstance(obj, Deferred)
 
     def test_delayed_with_result_class(self):
-        obj = delayed[record](record, x=1, y=2)
-        assert type(obj) == delayed[record]
-        assert isinstance(obj, delayed[record])
+        obj = zombie[record](record, x=1, y=2)
+        assert type(obj) == zombie[record]
+        assert isinstance(obj, zombie[record])
         assert str(obj) == "record(x=1, y=2)"
         assert type(obj) == record

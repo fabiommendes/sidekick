@@ -1,0 +1,14 @@
+[[package]]
+category = "main"
+description = "List processing tools and functional utilities"
+name = "toolz"
+optional = false
+python-versions = "*"
+version = "0.9.0"
+
+[metadata]
+content-hash = "4c717cd1f15e8c69f45c20697135d45c3e5bae8956e3e569eb2587d0602aafbd"
+python-versions = "^3.6"
+
+[metadata.hashes]
+toolz = ["929f0a7ea7f61c178bd951bdae93920515d3fbdbafc8e6caf82d752b9b3b31c9"]

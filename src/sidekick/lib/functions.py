@@ -5,8 +5,9 @@ from typing import Callable, TypeVar
 
 from .sequences import transform, transform_map
 from .. import toolz
-from ..core import extract_function, fn, Placeholder
-from ..core.fn import Fn2_
+from ..core import fn, Placeholder
+from sidekick.core.base_fn import extract_function
+from ..core.fn import Fn2o
 
 NOT_GIVEN = object()
 T = TypeVar("T")
@@ -214,7 +215,7 @@ def map_call(*args, **kwargs):
     )
 
 
-@Fn2_
+@Fn2o
 def do(func, x, *args, **kwargs):
     """ Runs ``func`` on ``x``, returns ``x``
 
