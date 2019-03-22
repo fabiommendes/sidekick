@@ -2,7 +2,7 @@ import operator
 from collections import namedtuple
 from functools import singledispatch
 
-from .operators import UNARY, BINARY, COMPARISON, METHODS, SYMBOLS
+from .operators import UNARY, BINARY, COMPARISON, METHODS, SYMBOLS, NAMES
 
 flip = lambda f: lambda x, y: f(y, x)
 named = lambda name, obj: setattr(obj, "__name__", name) or obj
@@ -18,30 +18,37 @@ def register_operators(rfunc, operators):
     """
 
     def decorator(cls):
+        registered = set(cls.__dict__)
+        registered.update(('__index__',))
+
         for op in operators:
             op = rfunc(op, cls)
-            setattr(cls, op.__name__, op)
+            if op.__name__ not in registered:
+                setattr(cls, op.__name__, op)
         return cls
 
     return decorator
 
 
 def unary(op, cls):
+    name = NAMES[op]
     return named(
-        "__%s__" % op.__name__.rstrip("_"), lambda self: cls(UnaryOp(op, self._ast))
+        "__%s__" % name, lambda self: cls(UnaryOp(op, self._ast))
     )
 
 
 def binary(op, cls):
+    name = NAMES[op]
     return named(
-        "__%s__" % op.__name__.rstrip("_"),
+        "__%s__" % name,
         lambda self, other: cls(BinOp(op, self._ast, to_ast(other))),
     )
 
 
 def rbinary(op, cls):
+    name = NAMES[op]
     return named(
-        "__r%s__" % op.__name__.rstrip("_"),
+        "__r%s__" % name,
         lambda self, other: cls(BinOp(op, to_ast(other), self._ast)),
     )
 
@@ -117,6 +124,7 @@ def to_ast(obj):
     Convert object to AST node.
     """
     if isinstance(obj, Placeholder):
+        # noinspection PyProtectedMember
         return obj._ast
     else:
         return Cte(obj)

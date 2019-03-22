@@ -1,6 +1,6 @@
-from .extended_semantics import extract_predicate_function
+from sidekick.core.base_fn import extract_predicate_function, extract_function
+from .base_fn import SkFunction
 
-nullfunc = lambda *args, **kwargs: None
 __all__ = [
     "predicate",
     "cond",
@@ -23,15 +23,14 @@ __all__ = [
 ]
 
 
-class predicate:  # noqa: N801
+# noinspection PyPep8Naming
+class predicate(SkFunction):  # noqa: N801
     """
     A predicate function.
     """
 
-    # __slots__ = ('_sk_function_', '__dict__')
-
-    def __init__(self, function):
-        self._sk_function_ = extract_predicate_function(function)
+    __slots__ = ()
+    _normalize_function = staticmethod(extract_predicate_function)
 
     def __call__(self, x):
         return bool(self._sk_function_(x))
@@ -50,61 +49,27 @@ class predicate:  # noqa: N801
         f = self._sk_function_
         return predicate(lambda x: not f(x))
 
-    def __getattr__(self, attr):
-        return getattr(self._sk_function_, attr)
 
-
-class cond:  # noqa: N801
+def cond(test, then, else_):
     """
-    Conditional pipeline.
+    Conditional evaluation.
 
-    It creates a function that takes a predicate and a true and false
-    branches. The resulting function executes either branch depending on the
-    value of the predicate.
+    Return a function that tests the argument with the cond function, and then
+    executes either the "then" or "else_" branches.
 
     Examples:
         >>> from sidekick import cond, placeholder as _
-        >>> collatz = cond(is_even) \
-        ...     .true(_ // 2) \
-        ...     .false((3 * _) + 1)
+        >>> collatz = cond(is_even, _ // 2, (3 * _) + 1)
         >>> [collatz(1), collatz(2), collatz(3), collatz(4)]
         [4, 1, 10, 2]
     """
-
-    # noinspection PyShadowingNames
-    def __init__(self, predicate, true=nullfunc, false=nullfunc):
-        self.predicate = predicate
-        self.if_true = true
-        self.if_false = false
-
-    def __call__(self, x):
-        if self.predicate(x):
-            return self.if_true(x)
-        else:
-            return self.if_false(x)
-
-    def __rshift__(self, other):
-        true, false = self.if_true, self.if_false
-        return cond(self.predicate, lambda x: other(true(x)), lambda x: other(false(x)))
-
-    def __rrshift__(self, other):
-        true, false = self.if_true, self.if_false
-        return cond(self.predicate, lambda x: true(other(x)), lambda x: false(other(x)))
-
-    def __ror__(self, other):
-        return self.__call__(other)
-
-    def true(self, true):
-        """
-        Sets the function for the True branch of the pipeline.
-        """
-        return cond(self.predicate, true, self.if_false)
-
-    def false(self, false):
-        """
-        Sets the function for the False branch of the pipeline.
-        """
-        return cond(self.predicate, self.if_true, false)
+    test = extract_predicate_function(test)
+    then = extract_function(then)
+    else_ = extract_function(else_)
+    return \
+        lambda *args, **kwargs: then(*args, **kwargs) \
+            if test(*args, **kwargs) \
+            else else_(*args, **kwargs)
 
 
 #
@@ -173,5 +138,6 @@ is_zero = predicate(lambda x: x == 0)
 #
 def _other_pred(x):
     if isinstance(x, predicate):
+        # noinspection PyProtectedMember
         return x._sk_function_
     raise TypeError("can only compose with other predicate functions")
