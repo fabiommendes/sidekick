@@ -1,13 +1,13 @@
 import builtins
 from importlib import import_module
 
+from sidekick.core.base_fn import extract_function as extract_func
 from .deferred import Deferred
-from ..core import extract_function as extract_func
 
 __all__ = ["lazy", "property", "delegate_to", "alias", "import_later"]
 
 
-def lazy(function=None, *, shared=False, name=None):
+def lazy(func=None, *, shared=False, name=None):
     """
     Decorator that defines an attribute that is initialized with first usage
     rather than during instance creation.
@@ -29,16 +29,16 @@ def lazy(function=None, *, shared=False, name=None):
             dynamically), the inference algorithm might fail and the name
             attribute must be set explicitly.
     """
-    if function is None:
-        return lambda func: lazy(func, shared=shared, name=name)
+    if func is None:
+        return lambda f: lazy(f, shared=shared, name=name)
 
     if shared:
-        return SharedLazy(function, name=name)
+        return SharedLazy(func, name=name)
     else:
-        return Lazy(function, name=name)
+        return Lazy(func, name=name)
 
 
-# noinspection PyShadowingBuiltins
+# noinspection PyShadowingBuiltins,PyPep8Naming
 class property(builtins.property):
     """
     A Sidekick-enabled property descriptor. It behaves just as standard Python
@@ -88,25 +88,25 @@ def delegate_to(attr, *, name=None, read_only=False):
         return Delegate(attr, name)
 
 
-def alias(attr, *, read_only=False, transform=None, prepare=None):
+def alias(attr, *, mutable=False, transform=None, prepare=None):
     """
     An alias to an attribute.
 
     Args:
         attr (str):
             Name of aliased attribute.
-        read_only (bool):
-            If True, makes the alias read only.
+        mutable (bool):
+            If True, makes the alias mutable.
         transform (callable):
             If given, transforms the resulting value
         prepare
     """
-    if transform or prepare:
+    if transform is not None or prepare is not None:
         return TransformingAlias(attr, transform, prepare)
-    elif read_only:
-        return ReadOnlyAlias(attr)
+    elif mutable:
+        return MutableAlias(attr)
     else:
-        return Alias(attr)
+        return ReadOnlyAlias(attr)
 
 
 def import_later(path, package=None):
@@ -146,8 +146,8 @@ class Lazy:
 
     __slots__ = ("function", "name")
 
-    def __init__(self, function, name=None):
-        self.function = extract_func(function)
+    def __init__(self, func, name=None):
+        self.function = extract_func(func)
         self.name = name
 
     def __get__(self, obj, cls=None):
@@ -228,7 +228,7 @@ class ReadOnlyDelegate(Delegate):
         raise AttributeError(self.name or self._init_name(type(obj)))
 
 
-class Alias:
+class MutableAlias:
     """
     Alias to another attribute/method in class.
     """
@@ -247,7 +247,7 @@ class Alias:
         setattr(obj, self.attr, value)
 
 
-class ReadOnlyAlias(Alias):
+class ReadOnlyAlias(MutableAlias):
     """
     Like alias, but read-only.
     """
@@ -258,7 +258,7 @@ class ReadOnlyAlias(Alias):
         raise AttributeError(self.attr)
 
 
-class TransformingAlias(Alias):
+class TransformingAlias(MutableAlias):
     """
     A bijection to another attribute in class.
     """
