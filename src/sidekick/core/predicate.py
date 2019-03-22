@@ -66,10 +66,11 @@ def cond(test, then, else_):
     test = extract_predicate_function(test)
     then = extract_function(then)
     else_ = extract_function(else_)
-    return \
-        lambda *args, **kwargs: then(*args, **kwargs) \
-            if test(*args, **kwargs) \
-            else else_(*args, **kwargs)
+    return (
+        lambda *args, **kwargs: then(*args, **kwargs)
+        if test(*args, **kwargs)
+        else else_(*args, **kwargs)
+    )
 
 
 #

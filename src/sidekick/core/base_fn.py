@@ -57,8 +57,10 @@ class FunctionMeta(type):
     _curry = None
 
     def __new__(cls, name, bases, ns):
-        ns.update(__doc__=sk_delegate("__doc__", None, "_extra"),
-                  __module__=sk_delegate("__module__", "", "_extra"))
+        ns.update(
+            __doc__=sk_delegate("__doc__", None, "_extra"),
+            __module__=sk_delegate("__module__", "", "_extra"),
+        )
         return type.__new__(cls, name, bases, ns)
 
     def curried(cls, func):  # noqa: N805
@@ -81,7 +83,7 @@ class SkFunction(metaclass=FunctionMeta):
     _sk_function_: callable
     _extra: dict
 
-    __slots__ = ('_sk_function_', '_extra')
+    __slots__ = ("_sk_function_", "_extra")
 
     def __init__(self, func, **kwargs):
         self._sk_function_ = func
@@ -146,8 +148,9 @@ class SkFunction(metaclass=FunctionMeta):
         applied.
         """
         func = self._sk_function_
-        return type(self)(lambda *args_, **kwargs_:
-                          func(*args, *args_, **kwargs, **kwargs_))
+        return type(self)(
+            lambda *args_, **kwargs_: func(*args, *args_, **kwargs, **kwargs_)
+        )
 
     def _apply_placeholder(self, *args, **kwargs):
         """

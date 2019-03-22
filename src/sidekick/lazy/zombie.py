@@ -6,8 +6,8 @@ from ..lib import call
 ZOMBIE_CLASSES = {}
 UNARY_METHODS = [NAMES[op] for op in UNARY]
 BINARY_METHODS = [NAMES[op] for op in COMPARISON + BINARY]
-RBINARY_METHODS = ['__r' + NAMES[op][2:] for op in BINARY]
-__all__ = ['ZombieTypes', 'zombie']
+RBINARY_METHODS = ["__r" + NAMES[op][2:] for op in BINARY]
+__all__ = ["ZombieTypes", "zombie"]
 
 
 class Zombie:
@@ -51,7 +51,7 @@ class Zombie:
     """
 
     def __init__(self, func, *args, **kwargs):
-        object.__setattr__(self, '_Zombie__constructor', lambda: func(*args, **kwargs))
+        object.__setattr__(self, "_Zombie__constructor", lambda: func(*args, **kwargs))
 
     def __getattr__(self, attr):
         self.__awake()
@@ -124,7 +124,7 @@ class ZombieFactory:
 
                     if not isinstance(result, cls):
                         res_class = type(result).__name__
-                        msg = f'expect {cls.__name__}, got {res_class}'
+                        msg = f"expect {cls.__name__}, got {res_class}"
                         raise TypeError(msg)
 
                     # Safer than obj.__class__ = type(result) since avoids
@@ -132,17 +132,16 @@ class ZombieFactory:
                     object.__setattr__(self, "__class__", type(result))
 
                     update_slot_attributes(self, result, slots)
-                    if '__dict__' in slots:
+                    if "__dict__" in slots:
                         update_dict_attributes(self, result)
 
                     return self
 
         for attr in dir(cls):
-            if not hasattr(base, attr) \
-                    and attr not in SpecializedZombie.__dict__:
+            if not hasattr(base, attr) and attr not in SpecializedZombie.__dict__:
                 setattr(SpecializedZombie, attr, zombie_attribute(attr))
 
-        SpecializedZombie.__name__ = f'Zombie[{cls.__name__}]'
+        SpecializedZombie.__name__ = f"Zombie[{cls.__name__}]"
         ZOMBIE_CLASSES[cls] = SpecializedZombie
         return SpecializedZombie
 
@@ -172,7 +171,7 @@ def get_class_slots(cls):
             continue
 
         # Get slots from slots attribute
-        cls_slots = sub.__dict__.get('__slots__')
+        cls_slots = sub.__dict__.get("__slots__")
         if isinstance(cls_slots, str):
             slots.add(cls_slots)
             continue
@@ -199,7 +198,7 @@ def update_slot_attributes(obj, source, slots):
     Save attributes from source that are stored in slots.
     """
     for field in slots:
-        if field == '__dict__':
+        if field == "__dict__":
             continue
         try:
             value = getattr(source, field)
@@ -220,7 +219,7 @@ def update_dict_attributes(obj, source):
 #
 # Zombie types
 #
-SlottedZombie = type('SlottedZombie', (), {'__slots__': ()})
+SlottedZombie = type("SlottedZombie", (), {"__slots__": ()})
 ZombieTypes = (Zombie, SlottedZombie)
 zombie = ZombieFactory()
 
@@ -232,25 +231,25 @@ zombie = ZombieFactory()
 def _patch_zombie_class():
     definitions = []
     zombie_ns = dict(Zombie.__dict__)
-    del zombie_ns['__doc__']
-    del zombie_ns['__dict__']
-    del zombie_ns['__weakref__']
+    del zombie_ns["__doc__"]
+    del zombie_ns["__dict__"]
+    del zombie_ns["__weakref__"]
     template = (
-        'def __{name}__(self{sep}{args}):\n'
-        '   self._Zombie__awake()\n'
-        '   return self.__{name}__({args})'
+        "def __{name}__(self{sep}{args}):\n"
+        "   self._Zombie__awake()\n"
+        "   return self.__{name}__({args})"
     )
 
     for name in UNARY_METHODS:
-        code = template.format(name=name, sep='', args='')
+        code = template.format(name=name, sep="", args="")
         definitions.append(code)
 
     for name in BINARY_METHODS + RBINARY_METHODS:
-        code = template.format(name=name, sep=', ', args='other')
+        code = template.format(name=name, sep=", ", args="other")
         definitions.append(code)
 
     ns = {}
-    code = '\n'.join(definitions)
+    code = "\n".join(definitions)
     exec(code, {}, ns)
     zombie_ns.update(ns)
 

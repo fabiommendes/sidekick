@@ -38,7 +38,7 @@ SYMBOLS = {
     op.truediv: "/",
     op.and_: "&",
     op.xor: "^ ",
-    op.or_: '|',
+    op.or_: "|",
     op.eq: "==",
     op.ge: ">=",
     op.gt: ">",
@@ -47,11 +47,11 @@ SYMBOLS = {
     op.ne: "!=",
 }
 
-IRREGULAR = {'invert': 'not'}
+IRREGULAR = {"invert": "not"}
 
 
 def normalize(name):
-    if name.endswith('___'):
+    if name.endswith("___"):
         return name[:-1]
     else:
         return IRREGULAR.get(name, name)

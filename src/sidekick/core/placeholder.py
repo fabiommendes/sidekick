@@ -19,7 +19,7 @@ def register_operators(rfunc, operators):
 
     def decorator(cls):
         registered = set(cls.__dict__)
-        registered.update(('__index__',))
+        registered.update(("__index__",))
 
         for op in operators:
             op = rfunc(op, cls)
@@ -32,24 +32,20 @@ def register_operators(rfunc, operators):
 
 def unary(op, cls):
     name = NAMES[op]
-    return named(
-        "__%s__" % name, lambda self: cls(UnaryOp(op, self._ast))
-    )
+    return named("__%s__" % name, lambda self: cls(UnaryOp(op, self._ast)))
 
 
 def binary(op, cls):
     name = NAMES[op]
     return named(
-        "__%s__" % name,
-        lambda self, other: cls(BinOp(op, self._ast, to_ast(other))),
+        "__%s__" % name, lambda self, other: cls(BinOp(op, self._ast, to_ast(other)))
     )
 
 
 def rbinary(op, cls):
     name = NAMES[op]
     return named(
-        "__r%s__" % name,
-        lambda self, other: cls(BinOp(op, to_ast(other), self._ast)),
+        "__r%s__" % name, lambda self, other: cls(BinOp(op, to_ast(other), self._ast))
     )
 
 
@@ -231,9 +227,7 @@ def _(ast):
     caller = compile_ast(caller)
     args = tuple(map(compile_ast, args))
     kwargs = {k: compile_ast(v) for k, v in kwargs.items()}
-    return lambda x: caller(x)(
-        *(f(x) for f in args), **{k: v(x) for k, v in kwargs}
-    )
+    return lambda x: caller(x)(*(f(x) for f in args), **{k: v(x) for k, v in kwargs})
 
 
 @compiler(GetAttr)
@@ -244,6 +238,7 @@ def _(ast):
     #   * Chained getattrs are also handled with operator.attrgetter
     #   * Constant propagation for safe objects
     from operator import attrgetter
+
     attr, value = ast
     getter = attrgetter(attr)
 
@@ -297,6 +292,7 @@ var_identity = lambda x: x
 # ------------------------------------------------------------------------------
 # Simplifying AST nodes
 # ------------------------------------------------------------------------------
+
 
 def simplify_ast(ast):
     """Deep AST simplification"""
