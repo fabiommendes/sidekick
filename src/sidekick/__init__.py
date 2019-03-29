@@ -10,21 +10,22 @@ except ImportError:
 
 from . import op
 from .core import *
-from .eff import *
-from .lazy import *
-from .lib import *
-from .types import *
-from .types import json
-from .union import *
+from .itertools import *
+# from .lazy import *
+# from .lib import *
+# from .functools import *
+# from .types import *
+# from .types import json
+# from .union import *
 
 
-@call()
-def _fix():
-    # Add sidekick.json to sys.modules
-    import sys
-
-    sys.modules["sidekick.json"] = json
-    return None
+# @call()
+# def _fix():
+#     # Add sidekick.json to sys.modules
+#     import sys
+#
+#     sys.modules["sidekick.json"] = json
+#     return None
 
 
 _ = placeholder

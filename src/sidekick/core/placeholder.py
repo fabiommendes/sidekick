@@ -62,7 +62,11 @@ class Placeholder:
     _name = property(lambda self: self.__repr__())
 
     @property
-    def _sk_function_(self):
+    def __wrapped__(self):
+        raise AttributeError('__wrapped__')
+
+    @property
+    def __inner_function__(self):
         if self._cache is None:
             self._cache = compile_ast(simplify_ast(self._ast))
         return self._cache
@@ -80,8 +84,6 @@ class Placeholder:
         return source(self._ast)
 
     def __getattr__(self, attr):
-        if attr == "__wrapped__":
-            raise AttributeError("__wrapped__")
         return Placeholder(GetAttr(attr, self._ast))
 
     def __call__(self, *args, **kwargs):
