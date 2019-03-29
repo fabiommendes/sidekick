@@ -26,8 +26,14 @@ def make_manuel_suite(ns):
     cd = os.path.dirname
     path = cd(cd(__file__))
     doc_path = os.path.join(path, "docs")
+    lib_path = os.path.join(doc_path, "lib")
+    types_path = os.path.join(doc_path, "types")
     readme = os.path.join(path, "README.rst")
-    files = sorted(os.path.join(doc_path, f) for f in os.listdir(doc_path))
+    files = [
+        *(os.path.join(doc_path, f) for f in os.listdir(doc_path)),
+        # *(os.path.join(lib_path, f) for f in os.listdir(lib_path)),
+        # *(os.path.join(types_path, f) for f in os.listdir(types_path)),
+    ]
     files = [f for f in files if f.endswith(".rst") or f.endswith(".txt")]
     files.append(readme)
 
@@ -44,7 +50,4 @@ def make_manuel_suite(ns):
     return suite
 
 
-try:
-    make_manuel_suite(globals())
-except OSError:
-    print("Documentation files not found: disabling tests!")
+make_manuel_suite(globals())
