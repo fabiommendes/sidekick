@@ -176,6 +176,23 @@ class fn(metaclass=FunctionMeta):
                    **{k: to_ast(v) for k, v in kwargs})
         return compiler(ast)
 
+    def splice(self, args, kwargs=None):
+        """
+        Splice sequence of arguments in function.
+
+        Keywords can be passed as a second optional argument.
+        """
+        if kwargs is None:
+            return self.__inner_function__(*args)
+        else:
+            return self.__inner_function__(*args, **kwargs)
+
+    def splice_kw(self, kwargs):
+        """
+        Splice keywords arguments in function.
+        """
+        return self.__inner_function__(**kwargs)
+
 
 # Slightly faster access for slotted object
 # noinspection PyPropertyAccess
