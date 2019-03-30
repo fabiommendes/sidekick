@@ -38,6 +38,7 @@ Our evil master plan, of course, is to make this (or a similar) syntax official,
 so there would be no separation between sidekick functions and regular Python
 functions. You can invoke some arcane magic to make it so:
 
+.. ignore-next-block
 .. code-block:: python
 
     from sidekick.evil import forbidden_powers
