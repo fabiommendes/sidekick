@@ -8,6 +8,9 @@ except ImportError:
     import toolz  # noqa: F401
     import toolz.curried as ctoolz
 
+map = map
+filter = filter
+
 from . import op
 from .core import *
 from .itertools import *
