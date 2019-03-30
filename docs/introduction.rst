@@ -191,7 +191,7 @@ the result of the previous expression.
 The function ``lambda x: x.width * x.height`` is created when we wrap the
 expression inside a :func:`fn` call:
 
->>> from sidekick import fn
+>>> from sidekick import fn, placeholder as _
 >>> perimeter = fn(2 * (_.width * _.height))
 
 Imagine we have a Rect object with the expected width and height attributes
@@ -206,6 +206,7 @@ All sidekick functions that receive other functions (e.g., :func:`sidekick.map`)
 also accept raw quick lambda expressions, so you don't need to wrap them with
 an fn.
 
+>>> from sidekick import placeholder as _
 >>> list(sk.map(_ * _, range(1, 11)))
 [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
 
