@@ -2,7 +2,7 @@
 Magic objects
 =============
 
-Sidekick's magic objects are just function factories for common Python idioms.
+Sidekick's magic objects are function factories for common Python idioms.
 The most important of those objects, perhaps, is the magic argument X that
 is used to quickly create partial applications of Python operators.
 
