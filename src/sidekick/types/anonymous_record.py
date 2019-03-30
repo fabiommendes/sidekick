@@ -1,11 +1,12 @@
 import collections.abc
 
-from types import SimpleNamespace
+from types import SimpleNamespace, MappingProxyType
 
 
 class _BaseSimpleNamespace(SimpleNamespace):
     # Common methods for record and namespace
     __slots__ = ()
+    _meta = property(lambda self: Meta(self))
 
     def __repr__(self):
         items = sorted(self.__dict__.items(), key=lambda x: x[0])
@@ -95,3 +96,46 @@ class MutableMapView(MapView, collections.abc.MutableMapping):
 
     def __delitem__(self, key):
         self._record.__delattr__(key)
+
+
+class MetaMixin:
+    """
+    Common implementations of Meta for anonymous and class based records.
+    """
+    __slots__ = ()
+
+    def __iter__(self):
+        raise NotImplementedError
+
+    def as_dict(self, obj):
+        """
+        Convert a record instance as a Python dictionary
+        """
+        return {k: getattr(obj, k) for k in self}
+
+    def as_tuple(self, obj):
+        """
+        Convert record to tuple of values.
+        """
+        return tuple(getattr(obj, k) for k in self)
+
+    def items(self, obj):
+        """
+        An iterator over all (field_name, value) pairs of a record.
+        """
+        return ((k, getattr(obj, k)) for k in self)
+
+
+class Meta(MetaMixin):
+    """
+    Implements the _meta attribute of anonymous records.
+    """
+    defaults = MappingProxyType({})
+    fields = property(lambda self: tuple(self))
+    types = property(lambda self: {k: object for k in self})
+
+    def __init__(self, data):
+        self._data = data
+
+    def __iter__(self):
+        yield from self._data.__dict__

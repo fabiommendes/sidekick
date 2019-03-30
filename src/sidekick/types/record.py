@@ -3,7 +3,7 @@ import keyword
 
 from types import MappingProxyType
 
-from .anonymous_record import MutableMapView, MapView, record, namespace
+from .anonymous_record import MutableMapView, MapView, record, namespace, MetaMixin
 
 NOT_GIVEN = object()
 Field = collections.namedtuple('Field', ['name', 'type', 'default'])
@@ -321,27 +321,14 @@ RecordMeta._record_base = Record
 #
 # Utility classes
 #
-class Meta:
+class Meta(MetaMixin):
+    __slots__ = ('fields', 'types', 'defaults')
+
     def __init__(self, fields):
         self.fields = tuple(f.name for f in fields)
         self.types = tuple(f.type for f in fields)
         self.defaults = MappingProxyType(
             {f.name: f.default for f in fields if f.default is not NOT_GIVEN})
 
-    def as_dict(self, obj):
-        """
-        Convert a record instance as a Python dictionary
-        """
-        return {k: getattr(obj, k) for k in self.fields}
-
-    def as_tuple(self, obj):
-        """
-        Convert record to tuple of values.
-        """
-        return tuple(getattr(obj, k) for k in self.fields)
-
-    def items(self, obj):
-        """
-        An iterator over all (field_name, value) pairs of a record.
-        """
-        return ((k, getattr(obj, k)) for k in self.fields)
+    def __iter__(self):
+        yield from self.fields
