@@ -30,7 +30,7 @@ Install it from pip
 
 Now import the most important names
 
->>> from sidekick.all import sk, op, L
+>>> from sidekick.all import sk, op, L, N
 
 Sidekick emphasizes working with immutable types and iterators. It also
 introduces a special embedded syntax for handling function composition and
@@ -77,7 +77,7 @@ For each prime we find, we remove it from the infinite sequence of integers
 ...     if p is not None:
 ...         yield p
 ...         yield from sieve(n for n in nums if n % p != 0)
->>> primes = sieve(sk.seq[2, ...])
+>>> primes = sieve(N[2, ...])
 >>> primes | L[:10]
 [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
 

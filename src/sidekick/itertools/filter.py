@@ -1,6 +1,5 @@
 import itertools
 
-import toolz
 import typing
 
 from ..core import fn, extract_function, Func, Pred, Seq
@@ -8,7 +7,7 @@ from ..core import fn, extract_function, Func, Pred, Seq
 try:
     import cytoolz as toolz
 except ImportError:
-    pass
+    import toolz
 
 _filter = filter
 
@@ -160,7 +159,12 @@ def without_idx(indexes, seq):
     >>> ''.join(without_idx([3, 4, 5], 'foobazbar'))
     'foobar'
     """
-    for i, x in seq:
+    try:
+        indexes = set(indexes)
+    except TypeError:
+        pass
+
+    for i, x in enumerate(seq):
         if i not in indexes:
             yield x
 
@@ -267,7 +271,7 @@ def first_repeated(key: Func, seq: Seq):
 
     Raises a ValueError if no repeated element is found.
 
-        >>> first_repeated([1, 2, 3, 1])
+        >>> first_repeated(None, [1, 2, 3, 1])
         (3, 1)
     """
 

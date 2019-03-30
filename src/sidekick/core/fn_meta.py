@@ -141,4 +141,4 @@ def extract_function(func):
         elif callable(func):
             return func
         else:
-            raise ValueError("cannot be interpreted as a function: %r" % func)
+            raise TypeError("cannot be interpreted as a function: %r" % func)

@@ -82,6 +82,7 @@ def zip_aligned(*args):
 
 
 # noinspection PyIncorrectDocstring
+@fn.curry(2)
 def zip_with(func: Union[Func, Seq], *seqs: Seq) -> Seq:
     """
     Apply each tuple of element obtained from zipping seqs as arguments to the
@@ -91,7 +92,7 @@ def zip_with(func: Union[Func, Seq], *seqs: Seq) -> Seq:
     their corresponding function.
 
     >>> incr = lambda n: lambda x: x + n
-    >>> list(zipper([incr(1), incr(2), incr(3)], [1, 2, 3]))
+    >>> zip_with([incr(1), incr(2), incr(3)], [1, 2, 3]) | L
     [2, 4, 6]
 
     Args:
@@ -105,9 +106,10 @@ def zip_with(func: Union[Func, Seq], *seqs: Seq) -> Seq:
         An iterator.
     """
     arg_items = zip(*seqs)
-    if isinstance(func, Func):
+    try:
         func = extract_function(func)
-        yield from (func(*args) for args in arg_items)
-    else:
+    except TypeError:
         to_func = extract_function
         yield from (to_func(f)(*args) for f, args in zip(func, arg_items))
+    else:
+        yield from (func(*args) for args in arg_items)

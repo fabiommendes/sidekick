@@ -28,7 +28,6 @@ def cond(test, then, else_):
     executes either the "then" or "else_" branches.
 
     Examples:
-        >>> from sidekick import cond, placeholder as _
         >>> collatz = cond(is_even, _ // 2, (3 * _) + 1)
         >>> [collatz(1), collatz(2), collatz(3), collatz(4)]
         [4, 1, 10, 2]
@@ -91,5 +90,5 @@ is_zero = fn(lambda x: x == 0)
 def _other_pred(x):
     if isinstance(x, fn):
         # noinspection PyProtectedMember
-        return x._sk_function_
+        return x.__inner_function__
     raise TypeError("can only compose with other predicate functions")

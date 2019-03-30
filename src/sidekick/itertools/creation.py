@@ -1,10 +1,8 @@
 import itertools
-from numbers import Real
 
 from ..core import fn, extract_function, Seq, Func
 
-__all__ = ['cons', 'cycle', 'evenly_spaced', 'frange', 'numbers',
-           'iterate', 'iterate_indexed', 'iterate_past',
+__all__ = ['cons', 'cycle', 'iterate', 'iterate_indexed', 'iterate_past',
            'repeat', 'repeatedly', 'singleton', 'uncons']
 
 _enumerate = enumerate
@@ -15,6 +13,10 @@ NOT_GIVEN = object()
 def cons(x, seq: Seq) -> Seq:
     """
     Add x to beginning of sequence.
+
+    Examples:
+        >>> cons(0, N[1, ..., 5]) | L
+        [0, 1, 2, 3, 4, 5]
     """
     yield x
     yield from seq
@@ -24,6 +26,11 @@ def cons(x, seq: Seq) -> Seq:
 def uncons(seq: Seq, default=NOT_GIVEN) -> (object, Seq):
     """
     De-construct sequence. Return a pair of (first, rest) of sequence.
+
+    Examples:
+        >>> n, seq = uncons(N[1, ..., 5])
+        >>> list(seq)
+        [2, 3, 4, 5]
     """
     seq = iter(seq)
     try:
@@ -40,48 +47,13 @@ def cycle(seq):
     Return elements from the iterable until it is exhausted.
     Then repeat the sequence indefinitely.
 
-    For a sequence of size n:
+        cycle(seq) ==> seq[0], seq[1], ..., seq[n - 1], seq[0], seq[1], ...
 
-    cycle(seq) ==> seq[0], seq[1], ..., seq[n - 1], seq[0], seq[1], ...
+    Examples:
+        >>> cycle([1, 2, 3]) | L[:10]
+        [1, 2, 3, 1, 2, 3, 1, 2, 3, 1]
     """
     return itertools.cycle(seq)
-
-
-@fn.annotate(3)
-def evenly_spaced(a: Real, b: Real, n: int) -> Seq:
-    """
-    Return a sequence of n evenly spaced numbers from a to b.
-    """
-    delta = b - a
-    dt = delta / (n - 1)
-    for _ in range(n):
-        yield a
-        a += dt
-
-
-@fn.annotate(2)
-def frange(*args):
-    """
-    Similar to range, but accepts float values.
-
-    It does not accept the single argument invocation (use range for that).
-
-    frange(start, stop) ==> start, start + 1, ... (until smaller than stop)
-    frange(start, stop, delta) ==> start, start + delta, ...
-    """
-    arity = len(args)
-    if arity == 2:
-        start, stop = args
-        delta = 1
-    elif arity == 3:
-        start, stop, delta = args
-    else:
-        raise TypeError('must be called with one or two arguments')
-
-    x = start
-    while x < stop:
-        yield x
-        x += delta
 
 
 @fn.annotate(2)
@@ -90,6 +62,10 @@ def iterate(func, x):
     Repeatedly apply a function func onto an original input.
 
         iterate(f, x) ==> x, f(x), f(f(x)), ...
+
+    Examples:
+        >>> iterate(lambda x: 2 * x, 1) | L[:12]
+        [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
     """
     func = extract_function(func)
     yield x
@@ -106,6 +82,10 @@ def iterate_indexed(func: Func, x, *, start: int = 0) -> Seq:
         iterate(f, x) ==> x, f(0, x), f(1, f(0, x)), ...
 
     You can also specify the starting index to be different than zero.
+
+    Examples:
+        >>> iterate_indexed(lambda i, x: i * x, 1, start=1) | L[:10]
+        [1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880]
     """
     func = extract_function(func)
     idx = start
@@ -123,6 +103,10 @@ def iterate_past(n: int, func: Func, init: Seq) -> Seq:
     func.
 
     Initial sequence must have exactly n elements.
+
+    Examples:
+        >>> iterate_past(2, op.add, [1, 1]) | L[:10]
+        [1, 1, 2, 3, 5, 8, 13, 21, 34, 55]
     """
 
     init = tuple(init)
@@ -157,22 +141,16 @@ def iterate_past(n: int, func: Func, init: Seq) -> Seq:
             yield args[-1]
 
 
-@fn
-def numbers(start=0, step=1):
-    """
-    Return sequence of numbers.
-
-    count(start, step) ==> start, start + step, start + 2 * step, ...
-    """
-    return itertools.count(start, step)
-
-
 @fn.annotate(1)
 def repeat(obj, *, times=None):
     """
     repeat(obj [,times]) -> create an iterator which returns the object
     for the specified number of times.  If not specified, returns the object
     endlessly.
+
+    Examples:
+        >>> repeat(42, times=5) | L
+        [42, 42, 42, 42, 42]
     """
     return itertools.repeat(obj, times)
 
@@ -185,6 +163,11 @@ def repeatedly(func, *args, **kwargs):
     Can be called with function or a tuple of (function, repetitions) as the
     first argument. Additional arguments are passed to the function at each
     call.
+
+    Examples:
+        >>> lst = [1, 2, 3, 4]
+        >>> repeatedly(lst.pop) | L[:4]
+        [4, 3, 2, 1]
     """
     func, n = func if isinstance(func, tuple) else (func, None)
     func = extract_function(func)
@@ -200,5 +183,9 @@ def repeatedly(func, *args, **kwargs):
 def singleton(obj):
     """
     Return single object.
+
+    Examples:
+        >>> singleton(42) | L
+        [42]
     """
     yield obj

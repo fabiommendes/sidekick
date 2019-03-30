@@ -69,6 +69,6 @@ def ldexp(n, x):
 #
 # Patch module to include other functions
 #
-_execute_with(globals(),
-              {'gcd': 2, 'is_close': 2, 'atan2': 2, 'hypot': 2}) \
-    (_create_fn_functions)
+# _execute_with(globals(),
+#               {'gcd': 2, 'is_close': 2, 'atan2': 2, 'hypot': 2}) \
+#     (_create_fn_functions)

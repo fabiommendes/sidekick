@@ -60,6 +60,40 @@ Magic list (L)
 Expose a curried version of the list API in which the list is always passed as
 the last parameter.
 
+>>> from sidekick import L, T, N, D
+>>> L.append(10, range(10))
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+It also accepts conversion using the pipe notation:
+
+>>> range(1, 5) | L
+[1, 2, 3, 4]
+
+>>> L[2]([1, 2, 3, 4])
+3
+>>> L[[1, 1, 2]]([1, 2, 3, 4])
+[2, 2, 3]
+
+
+the last parameter.
+
+>>> from sidekick import L, T, N, D
+>>> L.append(10, range(10))
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+It also accepts conversion using the pipe notation:
+
+>>> range(1, 5) | L
+[1, 2, 3, 4]
+
+>>> L[2]([1, 2, 3, 4])
+3
+>>> L[[1, 1, 2]]([1, 2, 3, 4])
+[2, 2, 3]
+
+
+the last parameter.
+
 >>> from sidekick import L, T, S, D
 >>> L.append(10, range(10))
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]

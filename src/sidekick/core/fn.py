@@ -132,7 +132,7 @@ class fn(metaclass=FunctionMeta):
         if instance is None:
             return self
         else:
-            return partial(self._sk_function_, instance)
+            return partial(self.__inner_function__, instance)
 
     #
     # Other python interfaces
