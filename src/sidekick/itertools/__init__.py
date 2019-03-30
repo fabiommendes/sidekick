@@ -1,24 +1,21 @@
+from ..builtins import map, filter, zip
 from .creation import *
-from .zipping import *
-# from .inspection import *
-# from .misc import *
-# from .nested import *
-# from .partitioning import *
-# from .selection import *
-# from .transforms import *
+from .zip import *
+from .filter import *
 
 #
 # Aliases
 #
+
 # countby = count_by
-# dropwhile = drop_while
+dropwhile = drop_while
 # groupby = group_by
 # isdistinct = is_distinct
 # isiterable = is_iterable
 # partitionby = partition_by
 # reduceby = reduce_by
-# takewhile = take_while
-# topk = top_k
+takewhile = take_while
+topk = top_k
 
 #
 # Removed/recipes

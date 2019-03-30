@@ -74,7 +74,7 @@ def iterate(func, x):
         yield x
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def iterate_indexed(func: Func, x, *, start: int = 0) -> Seq:
     """
     Similar to :func:`iterate`, but also pass the index of element to func.
@@ -84,11 +84,12 @@ def iterate_indexed(func: Func, x, *, start: int = 0) -> Seq:
     You can also specify the starting index to be different than zero.
     """
     func = extract_function(func)
+    idx = start
     yield x
     while True:
-        x = func(start, x)
+        x = func(idx, x)
         yield x
-        start += 1
+        idx += 1
 
 
 @fn.curry(3)

@@ -221,7 +221,7 @@ class Curried(fn):
         self.arity = arity
 
     def __call__(self, *args, **kwargs):
-        if not args or kwargs:
+        if not args and not kwargs:
             raise TypeError('curried function cannot be called without arguments')
 
         try:
