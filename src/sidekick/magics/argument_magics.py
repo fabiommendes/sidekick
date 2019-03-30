@@ -1,3 +1,4 @@
+from ..functools.functions import functor_map
 from .base_magics import base_operator_magic
 
 
@@ -57,6 +58,34 @@ class Y(base_operator_magic(make_op, make_rop, bitwise=False)):
 
     def __call__(self, *args, **kwargs):
         return lambda x, y: y(*args, **kwargs)
+
+
+del make_op, make_rop
+
+# ------------------------------------------------------------------------------
+# Function algebra: F object
+# ------------------------------------------------------------------------------
+make_op = lambda op: lambda _, cte: lambda f: lambda x: op(f(x), cte)
+make_rop = lambda op: lambda _, cte: lambda f: lambda x: op(cte, f(x))
+
+
+class F(base_operator_magic(make_op, make_rop, bitwise=False)):
+    def __repr__(self):
+        return 'F'
+
+
+del make_op, make_rop
+
+# ------------------------------------------------------------------------------
+# Functor application: X_i object
+# ------------------------------------------------------------------------------
+make_op = lambda op: lambda _, cte: lambda v: functor_map(lambda x: op(x, cte), v)
+make_rop = lambda op: lambda _, cte: lambda v: functor_map(lambda x: op(cte, x), v)
+
+
+class X_i(base_operator_magic(make_op, make_rop, bitwise=False)):
+    def __repr__(self):
+        return 'X_i'
 
 
 del make_op, make_rop

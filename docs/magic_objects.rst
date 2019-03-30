@@ -38,7 +38,11 @@ expression only involves X, it always return a single argument function.
 Magic Function (F)
 ------------------
 
->>> F + 1  # lambda f: lambda x: f(x) + 1
+>>> from sidekick import F
+>>> expr = F + 1  # lambda f: lambda x: f(x) + 1
+>>> f = expr(abs) # lambda x: abs(x) + 1
+>>> f(-41)
+42
 
 
 
@@ -47,7 +51,10 @@ Magic item (X_i)
 
 Similar to the X object, but all operations are mapped using :func:`functor_map`:
 
->>> X_i + 1  # lambda v: functor_map(lambda x: x + 1, v)
+>>> from sidekick import X_i
+>>> func = X_i + 1  # lambda v: functor_map(lambda x: x + 1, v)
+>>> func([1, 2, 3, 4])
+[2, 3, 4, 5]
 
 
 Data centric
