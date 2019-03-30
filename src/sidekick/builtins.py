@@ -105,7 +105,6 @@ bytearray = bytes = compile = eval = exec = pow = open = property = \
     })
 def _create_fn_functions(mod, ns, arities=None, flipped=(), blacklist=()):
     arities = arities or {}
-    print(mod)
     for k in _dir(mod):
         if k.startswith('_') or k in ns or k in blacklist:
             continue

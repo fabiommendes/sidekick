@@ -105,7 +105,7 @@ other attributes in the instance itself:
 
     class MyArrow(Arrow):
         abs_value = sk.alias('magnitude')
-        origin = alias('start', mutable=True)
+        origin = sk.alias('start', mutable=True)
 
 This exposes two additional properties: "abs_value" and "origin". The first is
 just a read-only view on the "magnitude" property. The second exposes read and
@@ -209,14 +209,14 @@ use __slots__) and produces checks if conversion is viable or not.
 
 Use the constructor function output type as an index:
 
->>> rec = sk.zombie[record](record, x=1, y=2)
->>> type(rec)
-Zombie[record]
+>>> rec = sk.zombie[sk.record](sk.record, x=1, y=2)
+>>> type(rec)                                               # doctest: +ELLIPSIS
+<class '...SpecializedZombie'>
 
 Touch it, and the zombie awakes
 
 >>> sk.touch(rec)
 record(x=1, y=2)
 
->>> type(rec)
-record
+>>> type(rec)                                               # doctest: +ELLIPSIS
+<class '...record'>
