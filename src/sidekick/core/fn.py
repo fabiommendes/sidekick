@@ -1,8 +1,10 @@
+import inspect
 from functools import partial, wraps
 
 from types import MappingProxyType as mappingproxy
 
-from .fn_meta import FunctionMeta, extract_function, FUNCTION_ATTRIBUTES, make_xor, mixed_accessor
+from .fn_meta import FunctionMeta, extract_function, FUNCTION_ATTRIBUTES, make_xor, mixed_accessor, \
+    lazy_property, arity
 from .placeholder import Call, Cte, to_ast, compiler
 
 __all__ = ['fn', 'as_fn']
@@ -40,6 +42,7 @@ class fn(metaclass=FunctionMeta):
         else:
             raise NotImplementedError
 
+    # TODO: rename annotate to curry
     annotate = curry
 
     @classmethod
@@ -48,6 +51,18 @@ class fn(metaclass=FunctionMeta):
         Creates a fn function that wraps another function.
         """
         return lambda impl: cls(wraps(func)(impl))
+
+    @lazy_property
+    def arity(self):
+        return arity(self.__wrapped__)
+
+    @lazy_property
+    def argspec(self):
+        return inspect.getfullargspec(self.__wrapped__)
+
+    @lazy_property
+    def signature(self):
+        return inspect.Signature.from_callable(self.__wrapped__)
 
     def __init__(self, func, **kwargs):
         self.__wrapped__ = extract_function(func)

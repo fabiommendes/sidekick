@@ -1,10 +1,10 @@
-import inspect
 from functools import partial as _partial
 
 import toolz
 from typing import Callable, TypeVar
 
 from ..core import fn, extract_function, Func
+from ..core.fn_meta import arity as _arity
 
 T = TypeVar("T")
 __all__ = [
@@ -86,13 +86,7 @@ def arity(func: Func) -> int:
     >>> arity(lambda x, y: x + y)
     2
     """
-    if hasattr(func, 'arity'):
-        return func.arity
-
-    spec = inspect.getfullargspec(func)
-    if spec.varargs or spec.varkw or spec.kwonlyargs:
-        raise TypeError("cannot curry a variadic function")
-    return len(spec.args)
+    return _arity(func)
 
 
 def curry(n: int, func: Callable = None) -> fn:

@@ -69,8 +69,15 @@ Logical composition of predicate functions is specially useful in methods such
 as filter, take_while, etc, that receive predicates.
 
 >>> from sidekick.pred import divisible_by
->>> list(filter(divisible_by(3) | divisible_by(4), range(10)))
-[0, 3, 4, 6, 8]
+>>> filter(divisible_by(3) | divisible_by(2), range(10)) | L
+[0, 2, 3, 4, 6, 8, 9]
+
+The pipe operator ``|`` represents the standard or, while ``^`` is interpreted
+as exclusive or.
+
+>>> filter(divisible_by(3) ^ divisible_by(2), range(10)) | L
+[2, 3, 4, 8, 9]
+
 
 The ``&`` stands for logical conjunction (the AND operation) and ``!`` for
 negation:
@@ -82,15 +89,6 @@ negation:
 >>> odd = ~divisible_by(2)
 >>> odd(2), odd(3)
 (False, True)
-
-The bitwise xor ``^`` is interpreted as the power operator: ``f ^ n`` is ``f``
-applied to itself n times.
-
->>> from sidekick import op
->>> incr = op.add(1)
->>> incr_by_3 = incr ^ 3  # an awful, but correct implementation
->>> incr_by_3(39)
-42
 
 The evil module activates this functionality for regular functions, but, again,
 use it with care (or, better yet, not at all).
@@ -134,18 +132,18 @@ play well with the ``inspect`` module.
 
 The wrapped function is accessible
 
->>> add.__wrapped__
-<add ....>
+>>> add.__wrapped__                                         # doctest: +ELLIPSIS
+<function add at ...>
 
 >>> add.arity
 2
 
 >>> add.argspec
-...
+FullArgSpec(args=['x', 'y'], varargs=None, varkw=None, defaults=None, kwonlyargs=[], kwonlydefaults=None, annotations={})
 
 
 >>> add.signature
-...
+<Signature (x, y)>
 
 
 
@@ -154,11 +152,11 @@ Methods
 
 # TODO: partial?
 >>> nums = range(1, 6)
->>> fold(op.add, 0)(nums)
+>>> sk.fold(op.add, 0)(nums)
 15
->>> fold.partial(op.mul, 1)(nums)
+>>> sk.fold.partial(op.mul, 1)(nums)
 120
->>> fold.rpartial(0, range(5))(op.sub)  # ((0 - 1) - 2) - 3 ...)
+>>> sk.fold.rpartial(0, range(5))(op.sub)  # ((0 - 1) - 2) - 3 ...)
 -15
->>> fold.single(op.add, _, nums)(1)
+>>> sk.fold.single(op.add, _, nums)(1)
 16

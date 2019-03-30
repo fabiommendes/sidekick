@@ -1,3 +1,4 @@
+import inspect
 from copy import copy
 
 from types import FunctionType, MethodType, BuiltinFunctionType, BuiltinMethodType
@@ -122,12 +123,25 @@ def make_xor(f, g):
     def xor(*args, **kwargs):
         a = f(*args, **kwargs)
         if a:
-            b = f(*args, **kwargs)
+            b = g(*args, **kwargs)
             return not b if b else a
         else:
             return g(*args, **kwargs)
 
     return xor
+
+
+def arity(func):
+    """
+    Return arity of function.
+    """
+    if hasattr(func, 'arity'):
+        return func.arity
+
+    spec = inspect.getfullargspec(func)
+    if spec.varargs or spec.varkw or spec.kwonlyargs:
+        raise TypeError("cannot curry a variadic function")
+    return len(spec.args)
 
 
 # noinspection PyProtectedMember

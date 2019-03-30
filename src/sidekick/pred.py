@@ -1,5 +1,5 @@
 from .core import fn, extract_function
-from .op import is_, eq
+from .op import is_ as is_identical, eq as is_equal
 
 __all__ = [
     "cond",
@@ -16,6 +16,8 @@ __all__ = [
     "is_strictly_positive",
     "is_zero",
     "is_nonzero",
+    "is_equal",
+    "is_identical",
 ]
 
 
@@ -69,9 +71,9 @@ def all_of(*predicates):
 #
 # Predicate functions
 #
-is_none = is_(None)
-is_true = is_(True)
-is_false = is_(False)
+is_none = is_identical(None)
+is_true = is_identical(True)
+is_false = is_identical(False)
 
 # Numeric
 is_odd = fn(lambda x: x % 2 == 1)
@@ -82,6 +84,7 @@ is_strictly_positive = fn(lambda x: x > 0)
 is_strictly_negative = fn(lambda x: x < 0)
 is_nonzero = fn(lambda x: x != 0)
 is_zero = fn(lambda x: x == 0)
+divisible_by = fn.curry(2, lambda n, x: x % n == 0)
 
 
 #
