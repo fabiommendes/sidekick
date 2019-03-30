@@ -1,5 +1,5 @@
 import inspect
-from functools import partial, wraps
+from functools import partial
 
 from types import MappingProxyType as mappingproxy
 
@@ -46,11 +46,19 @@ class fn(metaclass=FunctionMeta):
     annotate = curry
 
     @classmethod
-    def wraps(cls, func):
+    def wraps(cls, func, fn_obj=None):
         """
         Creates a fn function that wraps another function.
         """
-        return lambda impl: cls(wraps(func)(impl))
+        if fn_obj is None:
+            return lambda f: cls.wraps(func, f)
+        if not isinstance(fn_obj, fn):
+            fn_obj = fn(fn_obj)
+        for attr in ('__name__', '__qualname__', '__doc__', '__annotations__'):
+            value = getattr(func, attr, None)
+            if value is not None:
+                setattr(fn_obj, attr, value)
+        return fn_obj
 
     @lazy_property
     def arity(self):
@@ -71,12 +79,11 @@ class fn(metaclass=FunctionMeta):
             dic[FUNCTION_ATTRIBUTES.get(k, k)] = v
 
     def __repr__(self):
-        cls_name = type(self).__name__
         try:
             func = self.__wrapped__.__name__
         except AttributeError:
             func = repr(self.__wrapped__)
-        return f"{cls_name}({func})"
+        return f'fn({func})'
 
     def __call__(self, *args, **kwargs):
         return self.__wrapped__(*args, **kwargs)
@@ -243,6 +250,19 @@ class Curried(fn):
         self.keywords = keywords
         self.arity = arity
 
+    def __repr__(self):
+        try:
+            func = self.__wrapped__.__name__
+        except AttributeError:
+            func = repr(self.__wrapped__)
+        args = ', '.join(map(repr, self.args))
+        kwargs = ', '.join(f'{k}={v!r}' for k, v in self.keywords.items())
+        if not args:
+            args = kwargs
+        elif kwargs:
+            args = ', '.join([args, kwargs])
+        return f"<curry {func}({args})>"
+
     def __call__(self, *args, **kwargs):
         if not args and not kwargs:
             raise TypeError('curried function cannot be called without arguments')
@@ -251,7 +271,7 @@ class Curried(fn):
             return self.__wrapped__(*(self.args + args), **self.keywords, **kwargs)
         except TypeError:
             n = len(args)
-            if n == 0:
+            if n == 0 and not kwargs:
                 msg = f'function receives between 1 and {self.arity} arguments'
                 raise TypeError(msg)
             elif n >= self.arity:

@@ -60,8 +60,8 @@ Magic list (L)
 Expose a curried version of the list API in which the list is always passed as
 the last parameter.
 
->>> from sidekick import L, T, N, D
->>> L.append(10, range(10))
+>>> from sidekick import L, S, D, T, B
+>>> L.append_new(10, range(10))
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 It also accepts conversion using the pipe notation:
@@ -71,42 +71,6 @@ It also accepts conversion using the pipe notation:
 
 >>> L[2]([1, 2, 3, 4])
 3
->>> L[[1, 1, 2]]([1, 2, 3, 4])
-[2, 2, 3]
-
-
-the last parameter.
-
->>> from sidekick import L, T, N, D
->>> L.append(10, range(10))
-[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-
-It also accepts conversion using the pipe notation:
-
->>> range(1, 5) | L
-[1, 2, 3, 4]
-
->>> L[2]([1, 2, 3, 4])
-3
->>> L[[1, 1, 2]]([1, 2, 3, 4])
-[2, 2, 3]
-
-
-the last parameter.
-
->>> from sidekick import L, T, S, D
->>> L.append(10, range(10))
-[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-
-It also accepts conversion using the pipe notation:
-
->>> range(1, 5) | L
-[1, 2, 3, 4]
-
->>> L[2]([1, 2, 3, 4])
-3
->>> L[[1, 1, 2]]([1, 2, 3, 4])
-[2, 2, 3]
 
 .. autoclass:: sidekick.L
 :members:
@@ -128,7 +92,7 @@ Magic dictionary (D)
 --------------------
 
 >>> zip("abcd", range(1, 5)) | D
-{'a': 1, 'b': 2 'c': 3, 'd': 4}
+{'a': 1, 'b': 2, 'c': 3, 'd': 4}
 
 >>> D.get('foo')({'foo': 'bar', 'ham': 'spam'})
 'bar'
@@ -146,7 +110,7 @@ Magic string (T)
 >>> T.split('.')('42.0')
 ['42', '0']
 
-.. autoclass:: sidekick.D
+.. autoclass:: sidekick.T
 :members:
 
 
@@ -156,10 +120,10 @@ Magic bytes (B)
 >>> 42.0 | B
 b'42.0'
 
->>> B.split(b'.')('42.0')
-[b'42', b'0']
+>>> sk.map(B.split(b'.'), [b'42.0', b'3.14']) | L
+[[b'42', b'0'], [b'3', b'14']]
 
-.. autoclass:: sidekick.D
+.. autoclass:: sidekick.B
 :members:
 
 

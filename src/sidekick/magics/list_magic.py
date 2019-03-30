@@ -1,17 +1,15 @@
 import sys
 from itertools import islice
 
+from .base_magics import DataMagic
 from .. import itertools
 from ..core import fn, extract_function, Seq
 
 
-class L:
+class L(DataMagic, type=list):
     """
     Class for the L magic object.
     """
-
-    def __ror__(self, other):  # noqa: N805
-        return list(other)
 
     def __getitem__(self, item):
         if isinstance(item, slice):
@@ -185,5 +183,3 @@ class L:
 
     def discard_all(self, value):
         return lambda seq: [x for x in seq if x != value]
-
-
