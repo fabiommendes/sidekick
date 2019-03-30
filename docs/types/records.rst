@@ -147,20 +147,20 @@ On the other hand,
 5 Dictionaries is a standard language feature
 
 While we can't do nothing about #5, Sidekick offer a few introspection
-capabilities to dictionaries under the record's `_meta` and `_view` attributes.
+capabilities to dictionaries under the record's `_meta` and `M` attributes.
 
->>> artist._view.keys()
+>>> artist.M.keys()
 KeysView({'name': 'John Lennon', 'band': 'Beatles'})
 
 
-Record._view/Record._meta
+Record.D/Record._meta
 -------------------------
 
-The record `_view` field offers a Mapping interface to a record and support
+The record `M` attribute offers a Mapping interface to a record and support
 all expected dictionary methods (e.g., keys, values, items, etc). Record types
 preserve the order of key declaration, and behave like OrderedDict's.
 
->>> for k, v in u._view.items():
+>>> for k, v in u.M.items():
 ...     print('%s: %s' % (k, v))
 x: 1
 y: 2
@@ -175,7 +175,7 @@ The `_meta` field is class-bound and provides information about the record type
 **Default values**
 
 >>> Point._meta.defaults
-{'y': 0}
+mappingproxy({'y': 0})
 
 **Field types**
 

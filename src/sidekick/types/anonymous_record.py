@@ -43,7 +43,7 @@ class record(_BaseSimpleNamespace):  # noqa: N801
     def __setattr__(self, attr, value):
         raise AttributeError("cannot set attribute: immutable type")
 
-    D = property(lambda self: MapView(self))
+    M = property(lambda self: MapView(self))
 
 
 class namespace(_BaseSimpleNamespace):
@@ -52,7 +52,7 @@ class namespace(_BaseSimpleNamespace):
     """
 
     __slots__ = ()
-    D = property(lambda self: MutableMapView(self))
+    M = property(lambda self: MutableMapView(self))
 
 
 class MapView(collections.abc.Mapping):

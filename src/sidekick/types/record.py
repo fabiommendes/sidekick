@@ -3,7 +3,7 @@ import keyword
 
 from types import MappingProxyType
 
-from .anonymous_record import MutableMapView, MapView, record
+from .anonymous_record import MutableMapView, MapView, record, namespace
 
 NOT_GIVEN = object()
 Field = collections.namedtuple('Field', ['name', 'type', 'default'])
@@ -25,7 +25,7 @@ class RecordMeta(type):
         if mcs._record_base is None:
             return super().__new__(mcs, name, bases, ns)
         else:
-            fields = extract_fields(bases, ns)
+            fields = extract_fields_from_annotations(bases, ns)
             return new_record_type(name, fields, bases, ns, **kwargs)
 
     def __init__(cls, name, bases, ns, **kwargs):
@@ -79,16 +79,14 @@ class RecordMeta(type):
 
 
 def new_record_type(name: str, fields: list, bases: tuple, ns: dict,
-                    use_invalid=False, is_mutable=False):
+                    use_invalid=False, is_mutable=False) -> type:
     """
-    Worker function for Record.define and Record.namespace.
+    Create new record type.
     """
-    clean_fields = [clean_field(f, use_invalid) for f in fields]
-    meta_info = Meta(clean_fields)
-
+    meta_info = Meta([clean_field(f, use_invalid) for f in fields])
     bases = tuple(x for x in bases if x is not RecordMeta._record_base)
-    base_ns = make_record_namespace(meta_info, use_invalid, is_mutable)
-    ns = dict(base_ns, **ns)
+    initial_ns = make_record_namespace(meta_info, is_mutable)
+    ns = dict(initial_ns, **ns)
     ns["_meta"] = meta_info
 
     # Create class and update the init method
@@ -102,10 +100,15 @@ def new_record_type(name: str, fields: list, bases: tuple, ns: dict,
 
 
 def clean_field(field, use_invalid):
+    """
+    Coerce argument to a Field instance.
+    """
     tt = object
     default = NOT_GIVEN
     if isinstance(field, str):
         name = field
+    elif isinstance(field, Field):
+        return field
     elif len(field) == 1:
         name, = field
     elif len(field) == 2:
@@ -117,11 +120,28 @@ def clean_field(field, use_invalid):
     return Field(name, tt or object, default)
 
 
-def is_valid_name(name):
+def is_valid_name(name: str) -> bool:
+    """
+    True if name is a valid attribute name.
+    """
     return name.isidentifier() and not keyword.iskeyword(name)
 
 
-def make_record_namespace(meta_info, use_invalid=False, is_mutable=False):
+def safe_names(names):
+    """
+    Receive a list of names and return a map from names to the corresponding
+    safe name to use as a Python variable.
+    """
+    safe_names = {}
+    for name in names:
+        safe_names[name] = name + "_" if keyword.iskeyword(name) else name
+    if len(safe_names) != len(set(safe_names.values())):
+        msg = "collision between escaped field names and given field names"
+        raise ValueError(msg + ": %s" % names)
+    return safe_names
+
+
+def make_record_namespace(meta_info, is_mutable=False):
     fields = meta_info.fields
 
     ns = dict(__slots__=tuple(fields), **RECORD_NAMESPACE)
@@ -132,6 +152,37 @@ def make_record_namespace(meta_info, use_invalid=False, is_mutable=False):
     return ns
 
 
+def extract_fields_from_annotations(bases, ns):
+    annotations = {}
+    annotations.update(ns.get('__annotations__', ()))
+    for base in bases:
+        try:
+            base_annotations = base.__annotations__
+        except AttributeError:
+            continue
+        for k, v in base_annotations.items():
+            annotations.setdefault(k, v)
+
+    fields = []
+    for name, tt in annotations.items():
+        try:
+            default = ns.pop(name)
+        except KeyError:
+            default = getattr_from_bases(bases, name, NOT_GIVEN)
+
+        fields.append(Field(name, tt, default))
+    return fields
+
+
+def getattr_from_bases(bases, attr, default):
+    for base in bases:
+        try:
+            return getattr(base, attr)
+        except AttributeError:
+            pass
+    return default
+
+
 def make_init_function(cls):
     """
     Create a init function from a list of field names, their respective types
@@ -140,59 +191,53 @@ def make_init_function(cls):
 
     # noinspection PyProtectedMember
     meta = cls._meta
-    fields = meta.fields
-    defaults = meta.defaults
-    slots = {f: getattr(cls, f) for f in fields}
+    slots = {f: getattr(cls, f) for f in meta.fields}
+    names_map = safe_names(meta.fields)
 
-    # Mapping from names to safe names
-    safe_names = {}
-    for name in fields:
-        safe_names[name] = name + "_" if keyword.iskeyword(name) else name
-    if len(safe_names) != len(set(safe_names.values())):
-        msg = "collision between escaped field names and given field names"
-        raise ValueError(msg + ": %s" % fields)
+    # Initialize defaults
+    ns = {}
+    for name, value in meta.defaults.items():
+        safe_name = names_map[name]
+        ns["_%s_default" % safe_name] = value
+    for name, slot in slots.items():
+        safe_name = names_map[name]
+        ns["_%s_getter" % safe_name] = slot.__get__
+        ns["_%s_setter" % safe_name] = slot.__set__
 
-    # Create argument list
+    code = make_init_function_code(names_map, meta.defaults)
+    exec(code, ns, ns)
+    return ns["__init__"]
+
+
+def make_init_function_code(names_map: dict, defaults: dict) -> str:
+    """
+    Return a string with source code for the init function.
+    """
+
     args = []
-    for name in fields:
-        safe_name = safe_names[name]
+    for name, safe_name in names_map.items():
         if name in defaults:
             args.append("%s=_%s_default" % (safe_name, safe_name))
         else:
             args.append(safe_name)
     args = ", ".join(args)
 
-    # Body of the __init__ function
     body = []
-    for name in fields:
-        safe_name = safe_names[name]
+    for name, safe_name in names_map.items():
         slot_name = "_%s_setter" % safe_name
         body.append("%s(self, %s)" % (slot_name, safe_name))
     body = "\n    ".join(body)
 
-    # Complete source for the __init__ function
-    code = ("def __init__(self, {args}):\n" "    {body}").format(
-        args=args, body=body or "pass"
-    )
-
-    # Initialize defaults
-    ns = {}
-    for name, value in defaults.items():
-        safe_name = safe_names[name]
-        ns["_%s_default" % safe_name] = value
-    for name, slot in slots.items():
-        safe_name = safe_names[name]
-        ns["_%s_getter" % safe_name] = slot.__get__
-        ns["_%s_setter" % safe_name] = slot.__set__
-
-    exec(code, ns, ns)
-    return ns["__init__"]
+    template = "def __init__(self, {args}):\n    {body}"
+    return template.format(args=args, body=body or "pass")
 
 
 def make_eq_function(fields):
     """
     Create a __eq__ method from a list of (name, field) tuples.
     """
+
+    fields = tuple(fields)
 
     def __eq__(self, other):  # noqa: N802
         if isinstance(other, self.__class__):
@@ -219,7 +264,7 @@ class Record(metaclass=RecordMeta):
 
     __slots__ = ()
 
-    D = property(lambda self: MapView(self))
+    M = property(lambda self: MapView(self))
     _meta = None
 
     def __repr__(self):
@@ -236,14 +281,14 @@ class Record(metaclass=RecordMeta):
         return NotImplemented
 
     def __getstate__(self):
-        return tuple(self.D.values())
+        return tuple(self.M.values())
 
     def __setstate__(self, state):
         # noinspection PyArgumentList
         self.__init__(*state)
 
     def __json__(self):
-        return dict(self.D)
+        return dict(self.M)
 
     def __hash__(self):
         return hash(tuple(self))
@@ -262,7 +307,7 @@ class Namespace(metaclass=RecordMeta, is_mutable=True):
     """
 
     __slots__ = ()
-    D = property(lambda self: MutableMapView(self))
+    M = property(lambda self: MutableMapView(self))
 
 
 RECORD_NAMESPACE = dict(Record.__dict__.items())
