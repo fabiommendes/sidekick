@@ -9,7 +9,7 @@ with a few useful methods and operators.
 .. module:: sidekick
 .. invisible-code-block:: python
 
-    from sidekick.all import sk, fn, op, L
+    from sidekick.all import sk, fn, op, L, N
 
 
 Function operators
@@ -146,17 +146,70 @@ FullArgSpec(args=['x', 'y'], varargs=None, varkw=None, defaults=None, kwonlyargs
 <Signature (x, y)>
 
 
-
 Methods
 =======
 
-# TODO: partial?
->>> nums = range(1, 6)
->>> sk.fold(op.add, 0)(nums)
-15
->>> sk.fold.partial(op.mul, 1)(nums)
+Regular and curried fn functions have a few methods that perform common function
+transformations such as partial application of arguments, composition, etc.
+Since curried and non-curried functions behave slightly different, we contrast
+the behaviors of :func:`sidekick.fold` (curried) with our own fold function
+implementation (non-curried)
+
+.. code-block:: python
+
+    @fn
+    def fold(func, init, seq):
+        acc = init
+        for x in seq:
+            acc = func(acc, x)
+        return acc
+
+The :func:`sum` can be thought as a fold over addition, with an initial value
+of 0. This is a partial application
+
+>>> sum_a = fold.partial(op.add, 0)
+
+For a auto-curried function, this would be accomplished more easily by passing
+only the first two arguments:
+
+>>> sum_b = sk.fold(op.add, 0)
+
+Of course, both implementations are equivalent:
+
+>>> sum_a(N[1:5]) == sum_b(N[1:5]) == 10
+True
+
+Partial application happens from left to right. If you want to reverse direction,
+use the rpartial method. In this case, if we fix two arguments, only the first
+leftmost argument will be missing:
+
+>>> one_to_four = fold.rpartial(0, [1, 2, 3, 4])
+
+It expects a function, and different functions will create different behaviors
+
+>>> one_to_four(op.add), one_to_four(op.sub)
+(10, -10)
+
+With a combination of left and right partial applications we can target an
+argument in the middle of the function.
+
+>>> mul_range_by = fold.partial(op.mul).rpartial([1, 2, 3, 4])
+>>> mul_range_by(5)
 120
->>> sk.fold.rpartial(0, range(5))(op.sub)  # ((0 - 1) - 2) - 3 ...)
--15
->>> sk.fold.single(op.add, _, nums)(1)
-16
+
+Usually it is easier to use the "single" method, that creates a function with
+a single argument. It uses the placeholder object to mark the places in which
+the argument will be filled by the function.
+
+>>> from sidekick import placeholder as _
+>>> mul_range_by = fold.single(op.mul, _, [1, 2, 3, 4])
+>>> mul_range_by(5)
+120
+
+Single accepts duplicate ocurrences, which sometimes is useful for creating
+new functions:
+
+>>> from sidekick import placeholder as _
+>>> double = op.add.single(_, _)  # double(x) = x + x
+>>> double(21)
+42

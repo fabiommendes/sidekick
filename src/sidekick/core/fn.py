@@ -5,7 +5,7 @@ from types import MappingProxyType as mappingproxy
 
 from .fn_meta import FunctionMeta, extract_function, FUNCTION_ATTRIBUTES, make_xor, mixed_accessor, \
     lazy_property, arity
-from .placeholder import Call, Cte, to_ast, compiler
+from .placeholder import Call, Cte, to_ast, compile_ast
 
 __all__ = ['fn', 'as_fn']
 
@@ -164,8 +164,17 @@ class fn(metaclass=FunctionMeta):
         applied.
         """
         func = self.__inner_function__
-        return type(self)(
-            lambda *args_, **kwargs_: func(*args, *args_, **kwargs, **kwargs_)
+        return fn(
+            lambda *xs, **kw: func(*args, *xs, **kwargs, **kw)
+        )
+
+    def rpartial(self, *args, **kwargs):
+        """
+        Like partial, but fill positional arguments from right to left.
+        """
+        func = self.__inner_function__
+        return fn(
+            lambda *xs, **kw: func(*xs, *args, **update_arguments(kwargs, kw))
         )
 
     def single(self, *args, **kwargs):
@@ -177,7 +186,6 @@ class fn(metaclass=FunctionMeta):
           to the resulting function.
 
         Example:
-            >>> from sidekick import placeholder as _
             >>> add = fn(lambda x, y: x + y)
             >>> g = add.single(_, 2 * _)
             >>> g(10)  # g(x) = x + 2 * x
@@ -186,10 +194,10 @@ class fn(metaclass=FunctionMeta):
         Returns:
             fn
         """
-        ast = Call(Cte(self.__inner_function__),
-                   *map(to_ast, args),
-                   **{k: to_ast(v) for k, v in kwargs})
-        return compiler(ast)
+        args = tuple(map(to_ast, args))
+        kwargs = {k: to_ast(v) for k, v in kwargs.items()}
+        ast = Call(Cte(self.__inner_function__), args, kwargs)
+        return compile_ast(ast)
 
     def splice(self, args, kwargs=None):
         """
@@ -249,12 +257,21 @@ class Curried(fn):
             elif n >= self.arity:
                 raise
             else:
-                duplicate = set(kwargs).intersection(self.keywords)
-                if duplicate:
-                    raise TypeError(f'duplicated keyword arguments: {duplicate}')
                 args = self.args + args
-                kwargs.update(self.keywords)
+                update_arguments(self.keywords, kwargs)
                 return Curried(self.__wrapped__, self.arity - n, args, kwargs)
+
+    def partial(self, *args, **kwargs):
+        update_arguments(self.keywords, kwargs)
+        n_args = self.arity - len(args)
+        return Curried(self.__wrapped__, n_args, args + self.args, kwargs)
+
+    def rpartial(self, *args, **kwargs):
+        update_arguments(self.keywords, kwargs)
+        wrapped = self.__wrapped__
+        if self.args:
+            wrapped = partial(wrapped, args)
+        return fn(wrapped).rpartial(*args, **kwargs)
 
 
 #
@@ -279,3 +296,11 @@ class AmbiguousOperation(ValueError):
         return cls(
             'do you want to compose predicates or pass argument to function?'
             '\nUse `fn(lhs) | func` in the former and `lhs > func` in the latter.')
+
+
+def update_arguments(src, dest):
+    duplicate = set(src).intersection(dest)
+    if duplicate:
+        raise TypeError(f'duplicated keyword arguments: {duplicate}')
+    dest.update(src)
+    return dest
