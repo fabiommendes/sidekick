@@ -3,14 +3,14 @@ Lazy access to resources
 ========================
 
 Python functional code tends to rely a lot on lazy evaluation. This module
-define a few utility functions and types that handles that outside the context
-of iterators and sequences.
+define a few utility functions and types that handles lazy evaluation outside
+the context of iterators and sequences.
 
 
 Lazy attributes
 ===============
 
-Attributes can be marked as lazy (i.e., it is initialized during first access,
+Attributes can be marked lazy (i.e., it is initialized during first access,
 rather than instance initialization) using the :func:`sidekick.lazy` decorator:
 
 .. code-block::python
@@ -153,7 +153,7 @@ Sidekick implements a lazy_import object to delay imports of a module.
 Lazy imports can dramatically decrease the initialization time of your python
 modules, specially when heavy weights such as numpy, and pandas are used. Beware
 that import errors that normally are triggered during import time
-now can be triggered at the first use and thus produce confusing and hard
+now can be triggered at the first use and may introduce confusing and hard
 to spot bugs.
 
 .. autofunction:: sidekick.import_later
@@ -162,7 +162,7 @@ to spot bugs.
 Proxy and zombie objects
 ========================
 
-Sidekick also provides two similar kind of deferred objects: :mcs:`sidekick.Deferred`
+Sidekick also provides two similar kinds of deferred objects: :mcs:`sidekick.Deferred`
 and :mcs:`sidekick.Zombie`. They are both initialized from a callable with
 arbitrary arguments and delay the execution of the callable until the result is
 needed:
@@ -186,23 +186,33 @@ Deferred(User(name: 'Me', age: 42))
 >>> b
 User(name: 'Me', age: 42)
 
-We can see that proxy instances do not change class, while deferred instances
+We can see that deferred instances do not change class, while zombie instances
 do:
 
 >>> type(a), type(b)                                        # doctest: +ELLIPSIS
 (<class '...Deferred'>, <class 'User'>)
 
-This limitation makes delayed objects much more limited. The delayed execution cannot
+This limitation makes zombie objects much more limited. Delayed execution cannot
 return any type that has a different C layout as regular Python objects. This
 excludes all builtin types, C extension classes and even Python classes that
-define __slots__. On the plus side, deferred objects fully assume
+define __slots__. On the plus side, zombie objects fully assume
 the properties of the delayed result, including its type and can replace them
 in almost any context.
 
-A slightly safer version of delayed can specify the return type of the object.
-This allows delayed to work with a few additional types (e.g., types that
-use __slots__) and check if conversion is viable. In order to do so, just use
-the constructor function output type as an index:
+A slightly safer version of :func:`zombie` allows specifying the return type of
+the resulting object. This opens up a few additional types (e.g., types that
+use __slots__) and produces checks if conversion is viable or not.
 
->>> zombie[record](record, x=1, y=2)
+Use the constructor function output type as an index:
+
+>>> rec = zombie[record](record, x=1, y=2)
+>>> type(rec)
+Zombie[record]
+
+Touch it, and the zombie awakes
+
+>>> touch(rec)
 record(x=1, y=2)
+
+>>> type(rec)
+record
