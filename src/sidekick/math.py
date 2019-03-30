@@ -1,6 +1,6 @@
 import math as _math
 
-from .builtins import _execute_with, _create_fn_functions
+from .builtins import _execute_with, _create_fn_functions, abs, int, float, complex
 from .core import fn
 
 
@@ -69,6 +69,8 @@ def ldexp(n, x):
 #
 # Patch module to include other functions
 #
-# _execute_with(globals(),
-#               {'gcd': 2, 'is_close': 2, 'atan2': 2, 'hypot': 2}) \
-#     (_create_fn_functions)
+_execute_with(
+    mod=_math,
+    ns=globals(),
+    arities={'gcd': 2, 'is_close': 2, 'atan2': 2, 'hypot': 2}) \
+    (_create_fn_functions)

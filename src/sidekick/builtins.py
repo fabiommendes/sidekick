@@ -2,12 +2,14 @@ from functools import wraps as _wraps
 
 import builtins as _builtins
 
-from sidekick import fn, Pred, Seq, extract_function, Func
+from .core import fn, Pred, Seq, extract_function, Func
 
-_execute_with = lambda *args, **kwargs: lambda f: f(*args, **kwargs) or f
+_execute_with = lambda **kwargs: lambda f: f(**kwargs) or f
 _flipped = lambda f: _wraps(f)(lambda x, y: f(y, x))
 _filter = filter
 _map = map
+_getattr = getattr
+_dir = dir
 
 
 # Arity-1 functions
@@ -71,6 +73,7 @@ def setattr(value, attr, obj):
 
 max = fn(max)
 min = fn(min)
+print = fn(print)
 
 
 # What should we do with those functions?
@@ -78,7 +81,7 @@ def _raise(*args, **kwargs):
     raise NotImplementedError('use the builtin function for now!')
 
 
-bytearray = bytes = compile = eval = exec = pow = open = print = property = \
+bytearray = bytes = compile = eval = exec = pow = open = property = \
     range = slice = super = zip = _raise
 
 
@@ -86,7 +89,8 @@ bytearray = bytes = compile = eval = exec = pow = open = print = property = \
 # Patch module to include other functions
 #
 @_execute_with(
-    _builtins, globals(),
+    mod=_builtins,
+    ns=globals(),
     arities={
         'complex': 2, 'divmod': 2, 'globals': 0, 'locals': 0, 'object': 0
     },
@@ -98,15 +102,17 @@ bytearray = bytes = compile = eval = exec = pow = open = print = property = \
         'breakpoint', 'copyright', 'credits', 'display', 'get_ipython',
         'license',
     })
-def _create_fn_functions(mod, variables, arities=None, flipped=(), blacklist=()):
+def _create_fn_functions(mod, ns, arities=None, flipped=(), blacklist=()):
     arities = arities or {}
-    for k, v in vars(mod).items():
-        if k.startswith('_') or k in variables or k in blacklist:
+    print(mod)
+    for k in _dir(mod):
+        if k.startswith('_') or k in ns or k in blacklist:
             continue
+        v = _getattr(mod, k)
 
         if callable(v):
             if k in flipped:
-                v = fn.annotate(2)(_flipped(v))
+                v = fn.curry(2, _flipped(v))
             else:
-                v = fn.annotate(arities.get(k, 1))(v)
-        variables[k] = v
+                v = fn.curry(arities.get(k, 1), v)
+        ns[k] = v
