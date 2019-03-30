@@ -33,7 +33,7 @@ def make_manuel_suite(ns):
     files = [
         *(os.path.join(doc_path, f) for f in os.listdir(doc_path)),
         *(os.path.join(lib_path, f) for f in os.listdir(lib_path)),
-        # *(os.path.join(types_path, f) for f in os.listdir(types_path)),
+        *(os.path.join(types_path, f) for f in os.listdir(types_path)),
     ]
     files = [f for f in files if f.endswith(".rst") or f.endswith(".txt")]
     files.append(readme)
