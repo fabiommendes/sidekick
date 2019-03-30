@@ -16,10 +16,10 @@ from .core import *
 from .itertools import *
 from .functools import *
 from .magics import *
+from .types import *
 # from .lazy import *
 # from .lib import *
 # from .functools import *
-# from .types import *
 # from .types import json
 # from .union import *
 
