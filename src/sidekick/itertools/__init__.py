@@ -1,7 +1,7 @@
 from .creation import *
-from .zip import *
-from .filter import *
-from .reduce import *
+from .zipping import *
+from .filtering import *
+from .reducing import *
 from ..builtins import map, filter, zip
 
 #
