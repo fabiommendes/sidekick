@@ -6,6 +6,9 @@ import manuel.ignore
 import manuel.testing
 import pytest
 
+cd = os.path.dirname
+path = cd(cd(__file__))
+
 
 def make_manuel_suite(ns):
     """
@@ -23,8 +26,6 @@ def make_manuel_suite(ns):
         return wrapped
 
     # Collect documentation files
-    cd = os.path.dirname
-    path = cd(cd(__file__))
     doc_path = os.path.join(path, "docs")
     lib_path = os.path.join(doc_path, "lib")
     types_path = os.path.join(doc_path, "types")
@@ -45,9 +46,19 @@ def make_manuel_suite(ns):
     # Copy tests from the suite to the global namespace
     suite = manuel.testing.TestSuite(m, *files)
     for i, test in enumerate(suite):
-        name = "test_doc_%s" % i
+        name = "test_doc_%s__%s" % (i, safe(test))
         ns[name] = pytest.mark.documentation(_wrapped(test.runTest, name))
     return suite
+
+
+def safe(obj):
+    name = str(obj)[len(path) + 1:]
+    return name \
+        .replace('-', '_') \
+        .replace(' ', '_') \
+        .replace('/', '__') \
+        .replace('\\', '__') \
+        .replace('.', '_')
 
 
 make_manuel_suite(globals())
