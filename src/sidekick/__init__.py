@@ -11,6 +11,7 @@ except ImportError:
 from . import op
 from .core import *
 from .itertools import *
+from .magics import *
 # from .lazy import *
 # from .lib import *
 # from .functools import *
