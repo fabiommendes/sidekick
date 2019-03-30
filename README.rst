@@ -53,22 +53,33 @@ Easily generate sequences of infinite Fibonacci numbers
 We just consumed the first 10 Fibonacci numbers. We can continue to walk the
 sequence to find the golden ratio.
 
->>> ratios = sk.map(op.div.splice, sk.window(2, fibonacci))
->>> sk.until_convergence_by(op.eq, ratios) | sk.last
-1.6123242
+>>> ratios = sk.map(op.rdiv.splice, sk.window(2, fibonacci))
+>>> sk.until_convergence(op.eq, ratios) | sk.last
+1.618033988749895
 
 
-.. cmt
-    >>> factorials = sk.iter_indexed(1, op.mul, start=1)
-    >>> 1 + sum(sk.stop_at_convergence(op.eq, sk.map(1 / X, factorials)))
-    2.7172727232
+**Euler number**
 
-.. cmt
-    >>> def sieve(nums):
-    ...     p = next(nums)
-    ...     return sk.cons(p, sieve(sk.filter(X % p, nums))
-    >>> primes = sieve(sk.seq[2, ...])
-    >>> sk.take(20, primes) | L
+We are using Taylor formula to compute the Euler number from exp(1)
+
+>>> factorials = sk.iterate_indexed(op.mul, 1, start=1)
+>>> sk.last(sk.until_convergence(op.eq,
+...                              sk.sums(sk.map(op.div(1), factorials))))
+2.7182818284590455
+
+
+**Sieve of Eratosthenes**
+
+For each prime we find, we remove it from the infinite sequence of integers
+
+>>> def sieve(nums):
+...     p, nums = sk.uncons(nums, default=None)
+...     if p is not None:
+...         yield p
+...         yield from sieve(n for n in nums if n % p != 0)
+>>> primes = sieve(sk.seq[2, ...])
+>>> primes | L[:10]
+[2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
 
 
 See also
@@ -84,5 +95,13 @@ languages. Most notably
 * `Lodash`_: a practical functional Javascript library. Also inspired a few functions.
 
 
-
-
+.. _toolz: https://toolz.readthedocs.io/en/latest/
+.. _placeholder: https://placeholder.readthedocs.io/en/latest/
+.. _fn.py: https://pypi.org/project/fn/
+.. _funcy: https://funcy.readthedocs.io/en/latest/
+.. _Pyrsistent: https://pyrsistent.readthedocs.io/en/latest/
+.. _Haskell: http://hackage.haskell.org/package/base-4.12.0.0/docs/Data-Data.html
+.. _Elm: https://elm-lang.org/
+.. _Clojure: https://clojuredocs.org/clojure.core
+.. _Elixir: https://hexdocs.pm/elixir/Kernel.html
+.. _Lodash: https://lodash.com/

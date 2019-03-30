@@ -3,11 +3,35 @@ from numbers import Real
 
 from ..core import fn, extract_function, Seq, Func
 
-__all__ = ['cycle', 'evenly_spaced', 'frange', 'numbers',
+__all__ = ['cons', 'cycle', 'evenly_spaced', 'frange', 'numbers',
            'iterate', 'iterate_indexed', 'iterate_past',
-           'repeat', 'repeatedly', 'singleton']
+           'repeat', 'repeatedly', 'singleton', 'uncons']
 
 _enumerate = enumerate
+NOT_GIVEN = object()
+
+
+@fn
+def cons(x, seq: Seq) -> Seq:
+    """
+    Add x to beginning of sequence.
+    """
+    yield x
+    yield from seq
+
+
+@fn
+def uncons(seq: Seq, default=NOT_GIVEN) -> (object, Seq):
+    """
+    De-construct sequence. Return a pair of (first, rest) of sequence.
+    """
+    seq = iter(seq)
+    try:
+        return next(seq), seq
+    except StopIteration:
+        if default is NOT_GIVEN:
+            raise ValueError('Cannot deconstruct empty sequence.')
+        return default, iter(())
 
 
 @fn
