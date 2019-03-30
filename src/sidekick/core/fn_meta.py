@@ -29,6 +29,19 @@ class FunctionMeta(type):
         )
         return type.__new__(cls, name, bases, ns)
 
+    def __rshift__(self, other):
+        if isinstance(other, self):
+            return other
+
+        try:
+            func = extract_function(other)
+        except TypeError:
+            return NotImplementedError
+        else:
+            return self(func)
+
+    __lshift__ = __rlshift__ = __rrshift__ = __rshift__
+
 
 #
 # Utility types

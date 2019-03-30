@@ -6,6 +6,11 @@ Python functions have a somewhat minimalist interface: we can introspect and
 call them. Sidekick functions extends standard Python's functions interfaces
 with a few useful methods and operators.
 
+.. module:: sidekick
+.. invisible-code-block:: python
+
+    from sidekick.all import sk, fn, op, L
+
 
 Function operators
 ==================
@@ -20,7 +25,7 @@ direction that bit shift points to:
 >>> from sidekick.math import abs, sqrt
 >>> safe_sqrt = abs >> sqrt  # same as lambda x: sqrt(abs(x))
 >>> safe_sqrt(-4)
-2
+2.0
 
 It could be defined equivalently as
 
