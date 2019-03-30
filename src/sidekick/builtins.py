@@ -42,6 +42,7 @@ def map(func: Func, *seqs: Seq) -> Seq:
 
     in which X, Y, Z, ... are the sequences in seqs.
     """
+    func = extract_function(func)
     return _map(func, *seqs)
 
 

@@ -192,7 +192,7 @@ The function ``lambda x: x.width * x.height`` is created when we wrap the
 expression inside a :func:`fn` call:
 
 >>> from sidekick import fn, placeholder as _
->>> perimeter = fn(2 * (_.width * _.height))
+>>> perimeter = fn(2 * (_.width + _.height))
 
 Imagine we have a Rect object with the expected width and height attributes
 (maybe it was created as a namedtuple):
@@ -238,7 +238,7 @@ Bellow we convert the "add" function using both approaches:
 .. code-block:: python
 
     def add_tuple(args):
-        return x[0] + y[1]
+        return args[0] + args[1]
 
     def add_curried(x):
         return lambda y: x + y

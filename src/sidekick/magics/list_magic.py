@@ -5,7 +5,7 @@ from .. import itertools
 from ..core import fn, extract_function, Seq
 
 
-class LType:
+class L:
     """
     Class for the L magic object.
     """
@@ -187,4 +187,3 @@ class LType:
         return lambda seq: [x for x in seq if x != value]
 
 
-L = LType()

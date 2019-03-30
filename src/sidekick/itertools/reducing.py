@@ -22,6 +22,7 @@ def fold(func: Func, init, seq: Seq):
         >>> fold(op.add, 0, [1, 2, 3, 4])
         10
     """
+    func = extract_function(func)
     return _reduce(func, seq, init)
 
 
@@ -36,6 +37,7 @@ def reduce(func: Func, seq: Seq):
         >>> reduce(op.add, [1, 2, 3, 4])
         10
     """
+    func = extract_function(func)
     return _reduce(func, seq)
 
 
