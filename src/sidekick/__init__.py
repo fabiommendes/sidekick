@@ -18,7 +18,7 @@ from .functools import *
 from .magics import *
 from .types import *
 from .types import json
-# from .lazy import *
+from .lazytools import *
 # from .lib import *
 # from .functools import *
 # from .union import *

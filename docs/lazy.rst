@@ -13,13 +13,17 @@ Lazy attributes
 Attributes can be marked lazy (i.e., it is initialized during first access,
 rather than instance initialization) using the :func:`sidekick.lazy` decorator:
 
+.. invisible-code-block:: python
+
+    from sidekick.all import sk, op
+
+
 .. code-block::python
 
     import math
-    from sidekick import *
 
     class Vec:
-        @lazy
+        @sk.lazy
         def magnitude(self):
             print('computing...')
             return math.sqrt(self.x**2 + self.y**2)
@@ -51,11 +55,11 @@ definitions:
 .. code-block::python
 
     import math
-    from sidekick import lazy, placeholder as _
+    from sidekick import placeholder as _
 
     class Square:
-        area = lazy(_.width * _.height)
-        perimeter = lazy(2 * (_.width + _.height))
+        area = sk.lazy(_.width * _.height)
+        perimeter = sk.lazy(2 * (_.width + _.height))
 
 
 .. autofunction:: sidekick.lazy
@@ -71,7 +75,7 @@ we want to expose an specific interface in the instance object:
 .. code-block::python
 
     class Arrow:
-        magnitude = delegate_to('vector')
+        magnitude = sk.delegate_to('vector')
 
         def __init__(self, vector, start=Vec(0, 0)):
             self.vector = vector
@@ -100,7 +104,7 @@ other attributes in the instance itself:
 .. code-block::python
 
     class MyArrow(Arrow):
-        abs_value = alias('magnitude')
+        abs_value = sk.alias('magnitude')
         origin = alias('start', mutable=True)
 
 This exposes two additional properties: "abs_value" and "origin". The first is
@@ -117,8 +121,10 @@ accepts quick lambdas as input functions. This allows very terse declarations:
 
 .. code-block:: python
 
+    from sidekick import placeholder as _
+
     class Vector:
-        sqr_radius = property(_.x**2 + _.y**2)
+        sqr_radius = sk.property(_.x**2 + _.y**2)
 
 
 :mcs:`sidekick.lazy` is very similar to property. The main difference between
@@ -144,10 +150,8 @@ Sidekick implements a lazy_import object to delay imports of a module.
 
 .. code-block:: python
 
-    from sidekick import import_later
-
-    np = import_later('numpy')           # a proxy to the numpy module
-    array = import_later('numpy:array')  # proxy to the array function in the module
+    np = sk.import_later('numpy')           # a proxy to the numpy module
+    array = sk.import_later('numpy:array')  # proxy to the array function in the module
 
 
 Lazy imports can dramatically decrease the initialization time of your python
@@ -174,8 +178,8 @@ needed:
 ...     def __repr__(self):
 ...         data = ('%s: %r' % item for item in self.__dict__.items())
 ...         return 'User(%s)' % ', '.join(data)
->>> a = deferred(User, name='Me', age=42)
->>> b = zombie(User, name='Me', age=42)
+>>> a = sk.deferred(User, name='Me', age=42)
+>>> b = sk.zombie(User, name='Me', age=42)
 
 The main difference between deferred and zombie, is that Zombie instances
 assume the type of the result after they awake, while deferred objects are
@@ -205,13 +209,13 @@ use __slots__) and produces checks if conversion is viable or not.
 
 Use the constructor function output type as an index:
 
->>> rec = zombie[record](record, x=1, y=2)
+>>> rec = sk.zombie[record](record, x=1, y=2)
 >>> type(rec)
 Zombie[record]
 
 Touch it, and the zombie awakes
 
->>> touch(rec)
+>>> sk.touch(rec)
 record(x=1, y=2)
 
 >>> type(rec)
