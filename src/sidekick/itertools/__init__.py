@@ -2,6 +2,7 @@ from ..builtins import map, filter, zip
 from .creation import *
 from .zip import *
 from .filter import *
+from .reduce import *
 
 #
 # Aliases
