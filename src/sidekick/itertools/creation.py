@@ -92,7 +92,7 @@ def iterate_indexed(func: Func, x, *, start: int = 0) -> Seq:
 
 
 @fn.curry(3)
-def iterate_past(n: int, func: Func, init: Seq, *, start: int = 0) -> Seq:
+def iterate_past(n: int, func: Func, init: Seq) -> Seq:
     """
     Iterate func and compute next elements by passing the past n elements to
     func.

@@ -8,6 +8,7 @@ from .core import fn as _fn
 _fn3 = _fn.annotate(3)
 _fn2 = _fn.annotate(2)
 _fn1 = _fn.annotate(1)
+_flip = lambda f: lambda x, y: f(y, x)
 
 #
 # Ternary operators
@@ -55,6 +56,39 @@ rshift = _fn2(op.rshift)
 sub = _fn2(op.sub)
 div = truediv = _fn2(op.truediv)
 xor = _fn2(op.xor)
+
+#
+# Reverse operators
+#
+radd = _fn2(_flip(op.add))
+rcontains = _fn2(_flip(op.contains))
+rcount_of = _fn2(_flip(op.countOf))
+rdelitem = _fn2(_flip(op.delitem))
+rfloordiv = _fn2(_flip(op.floordiv))
+rgetitem = _fn2(_flip(op.getitem))
+riadd = _fn2(_flip(op.iadd))
+riand = _fn2(_flip(op.iand))
+riconcat = _fn2(_flip(op.iconcat))
+rifloordiv = _fn2(_flip(op.ifloordiv))
+rilshift = _fn2(_flip(op.ilshift))
+rimod = _fn2(_flip(op.imod))
+rimul = _fn2(_flip(op.imul))
+rindex_of = _fn2(_flip(op.indexOf))
+rior = _fn2(_flip(op.ior))
+ripow = _fn2(_flip(op.ipow))
+rirshift = _fn2(_flip(op.irshift))
+risub = _fn2(_flip(op.isub))
+ritruediv = _fn2(_flip(op.itruediv))
+rixor = _fn2(_flip(op.ixor))
+rlshift = _fn2(_flip(op.lshift))
+rmod = _fn2(_flip(op.mod))
+rmul = _fn2(_flip(op.mul))
+rpow = _fn2(_flip(op.pow))
+rrshift = _fn2(_flip(op.rshift))
+rsub = _fn2(_flip(op.sub))
+rdiv = _fn2(_flip(op.truediv))
+rtruediv = _fn2(_flip(op.truediv))
+rxor = _fn2(_flip(op.xor))
 
 #
 # Unary operators
