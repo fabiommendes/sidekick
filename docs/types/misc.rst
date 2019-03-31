@@ -6,8 +6,7 @@ Sidekick also implement a few straightforward types.
 
 .. invisible-code-block:: python
 
-    from sidekick.all import *
-    from sidekick import *
+    from sidekick import ObservableSeq
 
 
 FrozenDict
