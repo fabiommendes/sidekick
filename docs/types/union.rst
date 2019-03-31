@@ -187,8 +187,8 @@ metaclass. Methods can make our union types much more convenient:
 42
 
 
-Separate declaration of cases
-.............................
+Separate cases
+..............
 
 If each case class is sufficiently complicated, or if we want to declare
 different implementations of methods, we need to create the case
@@ -199,7 +199,9 @@ a predictable interface.
 .. code-block:: python
 
     class Result(Union):
-        ...
+        """
+        Represent a computation that mail fail with Err() or succeed with Ok()
+        """
 
     class Ok(Result):
         value: object

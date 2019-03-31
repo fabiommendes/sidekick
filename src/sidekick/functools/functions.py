@@ -420,8 +420,15 @@ def keep_args(n, func):
 def error(exc):
     """
     Raises the given exception.
+
+    If argument is not an exception, raises ValueError(exc).
     """
-    raise exc
+    if isinstance(exc, Exception):
+        raise exc
+    elif isinstance(exc, type) and issubclass(exc, Exception):
+        raise exc()
+    else:
+        raise ValueError(exc)
 
 
 @fn.annotate(2)
