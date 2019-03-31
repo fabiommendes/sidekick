@@ -1,5 +1,10 @@
-from ..functools.functions import functor_map
+from itertools import repeat, chain
+
+import typing
+
 from .base_magics import base_operator_magic
+from ..core.placeholder import call_node, Placeholder
+from ..functools.functions import functor_map
 
 
 # ------------------------------------------------------------------------------
@@ -72,6 +77,16 @@ make_rop = lambda op: lambda _, cte: lambda f: lambda x: op(cte, f(x))
 class F(base_operator_magic(make_op, make_rop, bitwise=False)):
     def __repr__(self):
         return 'F'
+
+    def __call__(self, *args, **kwargs):
+        values = [*args, *kwargs.values()]
+        if any(map(isinstance, values, repeat(Placeholder))):
+            return Placeholder(call_node(*args, **kwargs))
+        elif any(map(isinstance, values, repeat((X, Y)))):
+            raise NotImplementedError
+        else:
+            raise TypeError
+
 
 
 del make_op, make_rop

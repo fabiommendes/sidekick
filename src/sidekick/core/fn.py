@@ -5,7 +5,7 @@ from types import MappingProxyType as mappingproxy
 
 from .fn_meta import FunctionMeta, extract_function, FUNCTION_ATTRIBUTES, make_xor, mixed_accessor, \
     lazy_property, arity
-from .placeholder import Call, Cte, to_ast, compile_ast
+from .placeholder import Call, Cte, to_ast, compile_ast, call_node
 
 __all__ = ['fn', 'as_fn']
 
@@ -201,9 +201,7 @@ class fn(metaclass=FunctionMeta):
         Returns:
             fn
         """
-        args = tuple(map(to_ast, args))
-        kwargs = {k: to_ast(v) for k, v in kwargs.items()}
-        ast = Call(Cte(self.__inner_function__), args, kwargs)
+        ast = call_node(self.__inner_function__, *args, **kwargs)
         return compile_ast(ast)
 
     def splice(self, args, kwargs=None):

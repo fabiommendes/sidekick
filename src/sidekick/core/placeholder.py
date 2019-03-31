@@ -128,6 +128,16 @@ def to_ast(obj):
         return Cte(obj)
 
 
+def call_node(func, *args, **kwargs):
+    """
+    Create a call node for ast.
+    """
+    func = to_ast(func)
+    args = tuple(map(to_ast, args))
+    kwargs = {k: to_ast(v) for k, v in kwargs.items()}
+    return Call(func, args, kwargs)
+
+
 #
 # Rendering ASTs
 #
