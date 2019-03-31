@@ -49,10 +49,10 @@ Magic Function (F)
 Magic item (X_i)
 ----------------
 
-Similar to the X object, but all operations are mapped using :func:`functor_map`:
+Similar to the X object, but all operations are mapped using :func:`fmap`:
 
 >>> from sidekick import X_i
->>> func = X_i + 1  # lambda v: functor_map(lambda x: x + 1, v)
+>>> func = X_i + 1  # lambda v: fmap(lambda x: x + 1, v)
 >>> func([1, 2, 3, 4])
 [2, 3, 4, 5]
 

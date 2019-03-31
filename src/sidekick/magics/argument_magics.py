@@ -4,7 +4,7 @@ import typing
 
 from .base_magics import base_operator_magic
 from ..core.placeholder import call_node, Placeholder
-from ..functools.functions import functor_map
+from ..functools.functions import fmap
 
 
 # ------------------------------------------------------------------------------
@@ -94,8 +94,8 @@ del make_op, make_rop
 # ------------------------------------------------------------------------------
 # Functor application: X_i object
 # ------------------------------------------------------------------------------
-make_op = lambda op: lambda _, cte: lambda v: functor_map(lambda x: op(x, cte), v)
-make_rop = lambda op: lambda _, cte: lambda v: functor_map(lambda x: op(cte, x), v)
+make_op = lambda op: lambda _, cte: lambda v: fmap(lambda x: op(x, cte), v)
+make_rop = lambda op: lambda _, cte: lambda v: fmap(lambda x: op(cte, x), v)
 
 
 class X_i(base_operator_magic(make_op, make_rop, bitwise=False)):

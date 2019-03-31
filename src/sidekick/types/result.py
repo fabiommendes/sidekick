@@ -5,6 +5,9 @@ from .union import Union
 from ..core import extract_function, fn
 from ..functools import error
 
+__all__ = ['Result', 'Err', 'Ok', 'result', 'rapply', 'rcall', 'rpipe',
+           'rpipeline', 'result_fn', 'catch_exceptions', 'first_error']
+
 
 class Result(Union):
     """
@@ -331,7 +334,8 @@ def result_fn(func):
     """
     return fn(functools.partial(rcall, func))
 
-fn._ok = result
+
+fn._ok = staticmethod(result)
 fn._err = Err
 
 # from .maybe import Maybe, Just, Nothing  # noqa: E402

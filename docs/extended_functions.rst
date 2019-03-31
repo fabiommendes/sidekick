@@ -104,10 +104,10 @@ method, it tries one of the following:
 * list, tuple, set: apply function to each element, preserving the type.
 * dict: apply function to values.
 * strings: apply function to each character, joining the result.
-* other: call :sidekick:`functor_map(f, x)` singledispatch function. Users can
+* other: call :sidekick:`fmap(f, x)` singledispatch function. Users can
   register implementations of arbitrary types in this function.
 
-The default implementation of `functor_map` also does this:
+The default implementation of `fmap` also does this:
 
 * if object is a mapping, return the generator ``((k, f(v)) for k, v in obj.items())``.
 * if object is iterable, return the generator ``(f(x) for x in obj)``.

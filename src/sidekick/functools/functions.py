@@ -503,7 +503,7 @@ def force_function(func, name=None) -> Callable:
 
 
 @singledispatch
-def _functor_map(f, x):
+def _fmap(f, x):
     try:
         fmap = x.map
     except AttributeError:
@@ -517,49 +517,49 @@ def _functor_map(f, x):
 # Functor map implementations
 #
 @fn
-def functor_map(f, x):
+def fmap(f, x):
     """
     Register actions to how interpret``f @ x`` if f is a sidekick function.
     """
     return _functor_dispatch(type(x))(f, x)
 
 
-_functor_dispatch = _functor_map.dispatch
-functor_map.register = lambda cls: _functor_map.register(cls)
-functor_map.dispatch = _functor_map.dispatch
+_functor_dispatch = _fmap.dispatch
+fmap.register = lambda cls: _fmap.register(cls)
+fmap.dispatch = _fmap.dispatch
 
 
-@functor_map.register(str)
+@fmap.register(str)
 def _(f, st):
     return ''.join(map(f, st))
 
 
-@functor_map.register(list)
+@fmap.register(list)
 def _(f, obj):
     return [f(x) for x in obj]
 
 
-@functor_map.register(tuple)
+@fmap.register(tuple)
 def _(f, obj):
     return tuple(f(x) for x in obj)
 
 
-@functor_map.register(set)
+@fmap.register(set)
 def _(f, obj):
     return {f(x) for x in obj}
 
 
-@functor_map.register(dict)
+@fmap.register(dict)
 def _(f, obj):
     return {k: f(v) for k, v in obj.items()}
 
 
-@functor_map.register(Mapping)
+@fmap.register(Mapping)
 def _(f, obj):
     return ((k, f(v)) for k, v in ob1j.items())
 
 
-@functor_map.register(Iterable)
+@fmap.register(Iterable)
 def _(f, obj):
     return ((k, f(v)) for k, v in obj.items())
 
