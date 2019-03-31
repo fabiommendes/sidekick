@@ -6,7 +6,7 @@ Sidekick also implement a few straightforward types.
 
 .. invisible-code-block:: python
 
-    from sidekick import ObservableSeq
+    from sidekick import ObservableSeq, InvMap
 
 
 FrozenDict
@@ -19,6 +19,38 @@ thus can be used as elements in sets and keys in other mappings.
 
 :cls:`FrozenKeyDict` is intermediate type in which keys are fixed, but values
 can be mutated.
+
+
+InvMap
+======
+
+An map with an inv attribute that holds inverse data. The example bellow creates
+a mapping of natural numbers to their respective squares. This can be inverted
+since we can recover the original number from the square.
+
+>>> squares = InvMap((k, k**2) for k in range(5))
+>>> squares[2]     # square of 2
+4
+>>> squares.inv[4] # number whose square is 4
+2
+
+The inverse of the inverse is obviously the mapping itself
+
+>>> squares.inv.inv is squares
+True
+
+One can use all regular dict methods in order to edit the dictionary or
+its inverse, e.g.,
+
+>>> squares[5] = 25
+>>> squares.inv[36] = 6
+
+The inverse relation is simply an ``InvMap`` with the direct and
+reversed mappings exchanged. When we change one relation the other updates
+the corresponding values.
+
+>>> squares.inv
+InvMap({0: 0, 1: 1, 4: 2, 9: 3, 16: 4, 25: 5, 36: 6})
 
 
 ObservableSeq
