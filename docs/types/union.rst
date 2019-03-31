@@ -6,7 +6,7 @@ Union types
 .. invisible-code-block:: python
 
     import sidekick as sk
-    from sidekick import Record
+    from sidekick import Record, Case, Union, union
 
 Union types represent values that can be in one of a series of different states.
 Many functional languages implement Union types (a.k.a. variant types, or
@@ -111,12 +111,11 @@ declare the variants. This saves the trouble of declaring ``__init__``,
 that, the machinery around the ``is_ok``, ``is_err`` attributes can be
 easily automated and it seems kind of dull and error prone to do by hand.
 
-The union type constructor does exactly this:
+The :cls:`union` type constructor does exactly this:
 
 .. code-block:: python
 
-    Result = sk.union(
-        'Result',
+    Result = union('Result',
         Ok=Record.define('Ok', ['value']),
         Err=Record.define('Err', ['err']),
     )
@@ -135,3 +134,81 @@ The answer is 42!
 Under the hood, it creates the Ok and Err classes by subclassing both Result and
 the corresponding record type. It also insert the ``is_ok/err`` attributes and
 forbid instantiation of bare Result values.
+
+
+Case function class based syntax
+--------------------------------
+
+Our much improved alternative can get even better. Record types are a great
+match for creating cases for union types. However, the current solution involves
+some redundancy that can be avoided. The record type definition requires the
+name of the resulting type and a list or mapping with the attributes.
+
+When creating a base for a case type, the name will be overridden by the case
+name, hence there is no use in specifying it. The :meth:`Record.define` function
+also accepts a few options that are not needed most of the time. We optimize
+usage to the common case introducing the :func:`Case` function. It declares new
+record types more efficiently and with a more convenient syntax:
+
+.. code-block:: python
+
+    Result = union('Result',
+        Ok=Case('value'),
+        Err=Case('error'),
+    )
+
+Everything works as before
+
+>>> Result.Err('Still processing answer...')
+Err('Still processing answer...')
+
+As good as it is, this syntax is still a low-level way of declaring new Union
+type akin to using ``type(name, bases, namespace)`` to create new classes. The
+"official" way of creating new classes uses the class keyword and allows for
+definition of methods and class attributes:
+
+.. code-block:: python
+
+    class Result(Union):
+        Ok: Case('value')
+        Err: Case('error')
+
+        def with_default(self, value):
+            if self.is_ok:
+                return self.value
+            else:
+                return value
+
+Notice it inherits from the ``Union`` base class and not from the ``union``
+metaclass. Methods can make our union types much more convenient:
+
+>>> x = Result.Err(ZeroDivisionError())
+>>> 42 + x.with_default(0)
+42
+
+
+Separate declaration of cases
+.............................
+
+If each case class is sufficiently complicated, or if we want to declare
+different implementations of methods, we need to create the case
+classes separately. This lead us back to a similar situation as the initial
+case. Even so, the Union class cuts some of the boilerplate and guarantees
+a predictable interface.
+
+.. code-block:: python
+
+    class Result(Union):
+        ...
+
+    class Ok(Result):
+        value: object
+        with_default = lambda self, value: self.value
+
+    class Err(Result):
+        error: object
+        with_default = lambda self, value: value
+
+>>> answer = Result.Err("still unsure...")
+>>> answer.with_default(42)
+42

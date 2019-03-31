@@ -1,21 +1,9 @@
 from functools import lru_cache
 
+from .record import Record, clean_field, normalize_field_mapping, make_init_function, RecordMeta
 from ..utils import snake_case
 
-__all__ = ['union']
-
-
-class Meta:
-    """
-    Meta-information about Union type hierarchies.
-    """
-
-    def __init__(self, cls):
-        self.union = cls
-        self.cases = {}
-
-    def add_case(self, name, case):
-        self.cases[name] = case
+__all__ = ['union', 'Case', 'Union']
 
 
 # ------------------------------------------------------------------------------
@@ -39,59 +27,73 @@ class union(type):
         namespace (mapping):
             An optional namespace to inject into the base class.
     """
-    _meta: Meta
 
     def __new__(mcs, *args, **kwargs):
         # Prepare arguments
         name, *args = args
         bases, *args = args if args else ((),)
         ns, = args if args else ({},)
-        ns.setdefault('__slots__', ())
-        mcs.check_bases(bases)
-        kwargs.update(ns.get('__annotations__', {}))
+        bases = mcs.check_bases(bases)
 
-        # Construct union type tree
-        new = mcs.create_base_type(name, bases, ns, kwargs)
-        [new.add_case(*item) for item in kwargs.items()]
-        return new
+        if all(not isinstance(cls, union) for cls in bases):
+            ns.setdefault('__slots__', ())
+            kwargs.update(ns.get('__annotations__', {}))
+            new = mcs.create_root(name, bases, ns, kwargs)
+            for item in kwargs.items():
+                new.create_case(*item)
+            return new
+        else:
+            return mcs.create_record_case(name, bases, ns, **kwargs)
 
     @classmethod
-    def create_base_type(mcs, name, bases, ns, cases) -> 'union':
+    def create_root(mcs, name, bases, ns, cases) -> 'union':
         """
         Create base class of a union type.
         """
 
         new = type.__new__(mcs, name, bases, ns)
-        for name in cases:
-            set_default_attr(new, query_name(name), False)
-        new._meta = Meta(new)
+        new._union = Info(new)
         return new
 
     @classmethod
     def check_bases(mcs, bases):
-        pass
+        if bases == (Union,):
+            return ()
+        return tuple(cls for cls in bases if cls is not Union)
 
-    def create_case_type(cls, name, base):
+    @classmethod
+    def create_record_case(cls, name, bases, ns, **kwargs):
+        """
+        Create record type as a new case in union class.
+        """
+
+        root, = (cls for cls in bases if isinstance(cls, union))
+        annotations = ns.get('__annotations__', {})
+        ns.setdefault('__slots__', tuple(annotations))
+        metaclass = case_metaclass(type(Record))
+        new = RecordMeta.__new__(metaclass, name, (Record, *bases), ns, **kwargs)
+        root._union.add_case(name, new)
+        return new
+
+    def create_case(cls, name, base):
         """
         Create case class with given base for a union type.
         """
 
         metaclass = case_metaclass(type(base))
         new = metaclass(name, (base, cls), {'__slots__': ()})
-        set_default_attr(new, query_name(name), True)
+        cls._union.add_case(name, new)
         return new
 
-    def add_case(cls, name, base):
+    def case(cls, base):
         """
-        Add case to the union type.
+        Decorator that adds case from base class. Notice it constructs the
+        intermediate class from the base case.
         """
-        case = cls.create_case_type(name, base)
-        cls._meta.add_case(name, case)
-        setattr(cls, name, case)
-        return case
+        return cls.add_case(base.__name__, base)
 
     def __init__(cls, *args, **kwargs):
-        super().__init__(*args)
+        super(type, union).__init__(*args)
 
     def __call__(cls, *args, **kwargs):
         raise TypeError(
@@ -100,29 +102,73 @@ class union(type):
         )
 
 
-class CaseMeta(union):
+class Info:
+    """
+    Meta-information about Union type hierarchies.
+    """
+
+    def __init__(self, cls):
+        self.union = cls
+        self.cases = {}
+
+    def add_case(self, name, case):
+        """
+        Register case in union class hierarchy.
+        """
+        self.cases[name] = case
+        type_query = query_name(name)
+        setattr(self.union, type_query, False)
+        setattr(case, type_query, True)
+        setattr(self.union, name, case)
+
+
+class CaseType(union):
     """
     Metaclass for cases.
     """
 
-    def __new__(mcs, name, bases, ns):
-        return super().__new__(mcs, name, bases, ns)
+    def __new__(mcs, name, bases, ns, **kwargs):
+        return super(union, CaseType).__new__(mcs, name, bases, ns)
 
     __call__ = type.__call__
+
+
+# We have to declare union a generic value since the meta-type constructor
+# explicity checks for the presence of a Union base class.
+Union = NotImplemented
+Union = union('Union')
 
 
 # ------------------------------------------------------------------------------
 # UTILITIES
 # ------------------------------------------------------------------------------
 
+# noinspection PyPep8Naming
+def Case(*args, **kwargs):
+    """
+    Declare a record base class for a Union case.
+
+    Position arguments
+    """
+    args = list(map(clean_field, args))
+    args.extend(normalize_field_mapping(kwargs))
+    return fetch_case(tuple(args))
+
+
+@lru_cache(None)
+def fetch_case(attrs: tuple):
+    return Record.define('Case', list(attrs))
+
+
 @lru_cache(None)
 def case_metaclass(typ):
     """
     Creates a compatible metaclass for the given type.
     """
+    assert issubclass(typ, type), f'Not a type: {typ}'
     if typ is type:
-        return CaseMeta
-    return type('CaseMeta', (CaseMeta, typ), {})
+        return CaseType
+    return type(typ.__name__ + 'Case', (CaseType, typ), {})
 
 
 def query_name(name):
@@ -130,13 +176,3 @@ def query_name(name):
     if not name.isidentifier() or not name:
         raise ValueError('invalid python identifier' + name)
     return name
-
-
-def set_default_attr(obj, attr, value, own=True):
-    """Set attribute if it does not exist in object."""
-    if own:
-        if not attr in obj.__dict__:
-            setattr(obj, attr, value)
-    else:
-        if not hasattr(obj, attr):
-            setattr(obj, attr, value)

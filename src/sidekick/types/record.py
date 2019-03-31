@@ -17,15 +17,15 @@ class RecordMeta(type):
     Metaclass for Record types.
     """
 
-    _record_base = None
-    _meta = None
+    _record_base = NOT_GIVEN
+    _meta = NOT_GIVEN
 
     def __new__(mcs, name, bases, ns, use_invalid=False, **kwargs):
-        if mcs._record_base is None:
+        if mcs._record_base is NOT_GIVEN:
             return super().__new__(mcs, name, bases, ns)
         else:
             fields = extract_fields_from_annotations(bases, ns)
-            return new_record_type(name, fields, bases, ns, **kwargs)
+            return new_record_type(name, fields, bases, ns, mcs=mcs, **kwargs)
 
     def __init__(cls, name, bases, ns, **kwargs):
         super().__init__(name, bases, ns)
@@ -33,7 +33,7 @@ class RecordMeta(type):
     def __prepare__(cls, bases, **kwargs):
         return collections.OrderedDict()
 
-    def define(self, name, fields, bases=(), ns=None, use_invalid=False):
+    def define(self, name: str, fields: list, bases=(), ns: dict = None, use_invalid=False):
         """
         Declare a new record class.
 
@@ -69,7 +69,7 @@ class RecordMeta(type):
         bases = (Record,) if bases is None else tuple(bases)
         return new_record_type(name, fields, bases, ns or {}, use_invalid)
 
-    def namespace(self, name, fields, bases=(), ns=None, use_invalid=False):
+    def namespace(self, name: str, fields: list, bases=(), ns: dict = None, use_invalid=False):
         """
         Like meth:`sidekick.Record.define`, but declares a mutable record
         (a.k.a, namespace).
@@ -80,7 +80,7 @@ class RecordMeta(type):
 
 
 def new_record_type(name: str, fields: list, bases: tuple, ns: dict,
-                    use_invalid=False, is_mutable=False) -> type:
+                    use_invalid=False, is_mutable=False, mcs: type = RecordMeta) -> type:
     """
     Create new record type.
     """
@@ -90,10 +90,10 @@ def new_record_type(name: str, fields: list, bases: tuple, ns: dict,
     bases = tuple(x for x in bases if x is not RecordMeta._record_base)
     initial_ns = make_record_namespace(meta_info, is_mutable)
     ns = dict(initial_ns, **ns)
-    ns["_meta"] = meta_info
 
     # Create class and update the init method
-    cls: RecordMeta = type.__new__(RecordMeta, name, bases, ns)
+    cls = type.__new__(mcs, name, bases, ns)
+    cls._meta = meta_info
     init = make_init_function(cls)
     if not hasattr(cls, "_init"):
         cls._init = init
@@ -102,7 +102,7 @@ def new_record_type(name: str, fields: list, bases: tuple, ns: dict,
     return cls
 
 
-def clean_field(field, use_invalid):
+def clean_field(field, use_invalid=False):
     """
     Coerce argument to a Field instance.
     """
@@ -200,7 +200,7 @@ def getattr_from_bases(bases, attr, default):
     return default
 
 
-def make_init_function(cls):
+def make_init_function(cls: RecordMeta):
     """
     Create a init function from a list of field names, their respective types
     and a dictionary of defaults.
@@ -208,7 +208,7 @@ def make_init_function(cls):
 
     # noinspection PyProtectedMember
     meta = cls._meta
-    slots = {f: getattr(cls, f) for f in meta.fields}
+    slots = {f: get_slot(cls, f) for f in meta.fields}
     names_map = safe_names(meta.fields)
 
     # Initialize defaults
@@ -264,6 +264,14 @@ def make_eq_function(fields):
     return __eq__
 
 
+def get_slot(cls, name):
+    try:
+        return getattr(cls, name)
+    except AttributeError:
+        return property(lambda x: x.__dict__[name],
+                        lambda x, v: x.__dict__.__setitem__(name, v))
+
+
 # ------------------------------------------------------------------------------
 # Record classes
 # ------------------------------------------------------------------------------
@@ -282,7 +290,7 @@ class Record(metaclass=RecordMeta):
     __slots__ = ()
 
     M = property(lambda self: MapView(self))
-    _meta = None
+    _meta = NOT_GIVEN
 
     def __repr__(self):
         return "%s(%s)" % (
