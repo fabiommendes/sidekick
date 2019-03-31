@@ -16,7 +16,7 @@ from .lazytools import *
 from .magics import *
 from .types import *
 from .types import json
-
+from .misc import misc
 
 @call()
 def _fix():
