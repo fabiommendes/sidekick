@@ -1,6 +1,5 @@
 import collections.abc
 import keyword
-
 from types import MappingProxyType
 
 from .anonymous_record import MutableMapView, MapView, record, namespace, MetaMixin
@@ -42,8 +41,10 @@ class RecordMeta(type):
             name:
                 The name of the
             fields:
-                A list of field names or field declarations using the
-                func:`sidekick.field` function.
+                A list of field names or a tuples with (name, type) or even
+                (name, type, default). If fields is a mapping, it is treated
+                as sequence of (name, type) pairs if values are types or
+                (name, default) pairs if values are instances.
             bases:
                 An optional list of base classes for the derived class. By
                 default, it has a single base of :cls:`sidekick.Record`.
@@ -83,6 +84,8 @@ def new_record_type(name: str, fields: list, bases: tuple, ns: dict,
     """
     Create new record type.
     """
+    if isinstance(fields, collections.abc.Mapping):
+        fields = list(normalize_field_mapping(fields))
     meta_info = Meta([clean_field(f, use_invalid) for f in fields])
     bases = tuple(x for x in bases if x is not RecordMeta._record_base)
     initial_ns = make_record_namespace(meta_info, is_mutable)
@@ -118,6 +121,20 @@ def clean_field(field, use_invalid):
     if not use_invalid and not is_valid_name(name):
         raise ValueError("%s is an invalid field name" % name)
     return Field(name, tt or object, default)
+
+
+def normalize_field_mapping(fields):
+    """
+    Normalize each declaration in a field mapping.
+    """
+    for name, value in fields.items():
+        if isinstance(value, type):
+            yield Field(name, value, NOT_GIVEN)
+        else:
+            if value in (None, ..., NotImplemented):
+                yield Field(name, object, value)
+            else:
+                yield Field(name, type(value), value)
 
 
 def is_valid_name(name: str) -> bool:
