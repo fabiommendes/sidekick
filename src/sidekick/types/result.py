@@ -1,12 +1,8 @@
 import functools
-import importlib
-import warnings
 from contextlib import AbstractContextManager
 
-import types
-
 from .union import Union
-from ..core import extract_function
+from ..core import extract_function, fn
 from ..functools import error
 
 
@@ -319,7 +315,7 @@ class catch_exceptions(AbstractContextManager):
         return self.result
 
 
-def safe(func):
+def result_fn(func):
     """
     Return a exception-free version of the input function. It wraps the
     result in a Ok state and any exception is converted to an Err state.
@@ -329,56 +325,13 @@ def safe(func):
             The wrapped function.
 
     Examples:
-        >>> safe_float = safe(float)
+        >>> safe_float = result_fn(float)
         >>> safe_float("3.14")
         Ok(3.14)
     """
-    return functools.partial(rcall, func)
+    return fn(functools.partial(rcall, func))
 
-
-def with_safe(func):
-    """
-    Decorator that creates a except-safe version of func and saves it into the
-    function's "safe" attribute.
-
-    This implements the following interface:
-
-    >>> @with_safe
-    ... def div(x, y):
-    ...     return x / y
-    >>> div(1, 2)
-    0.5
-    >>> div.safe(1, 2)
-    Ok(0.5)
-    """
-    func.safe = safe(func)
-    return func
-
-
-def safe_module(mod, private=False):
-    """
-    Apply Result.with_safe() decorator to all functions in a module.
-
-    Args:
-        mod:
-            A python module or a python module path.
-
-    Usage:
-        If you want to convert all functions of the current module, type this
-        at the end of the module:
-
-        >>> safe_module(__name__)
-    """
-    if isinstance(mod, str):
-        mod = importlib.import_module(mod)
-    for name, value in vars(mod).items():
-        if name.startswith("_") and not private:
-            continue
-        if isinstance(value, types.FunctionType):
-            try:
-                with_safe(value)
-            except Exception:
-                func_name = "%s.%s" % (mod.__name__, name)
-                warnings.warn("could not create safe version of %s" % func_name)
+fn._ok = result
+fn._err = Err
 
 # from .maybe import Maybe, Just, Nothing  # noqa: E402

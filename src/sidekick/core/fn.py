@@ -5,7 +5,7 @@ from types import MappingProxyType as mappingproxy
 
 from .fn_meta import FunctionMeta, extract_function, FUNCTION_ATTRIBUTES, make_xor, mixed_accessor, \
     lazy_property, arity
-from .placeholder import Call, Cte, to_ast, compile_ast, call_node
+from .placeholder import compile_ast, call_node
 
 __all__ = ['fn', 'as_fn']
 
@@ -17,6 +17,7 @@ class fn(metaclass=FunctionMeta):
 
     __slots__ = ("__dict__", "__wrapped__")
     __inner_function__: callable = property(lambda self: self.__wrapped__)
+    _ok = _err = None
 
     #
     # Alternate constructors
@@ -220,6 +221,20 @@ class fn(metaclass=FunctionMeta):
         Splice keywords arguments in function.
         """
         return self.__inner_function__(**kwargs)
+
+    #
+    # Wrapping
+    #
+    def result(self, *args, **kwargs):
+        """
+        Return a result instance after function call.
+
+        Exceptions are converted to Err() cases.
+        """
+        try:
+            return self._ok(self.__wrapped__(*args, **kwargs))
+        except Exception as exc:
+            return self._err(exc)
 
 
 # Slightly faster access for slotted object
