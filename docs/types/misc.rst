@@ -4,13 +4,17 @@ Miscellaneous types
 
 Sidekick also implement a few straightforward types.
 
+.. module:: sidekick
 .. invisible-code-block:: python
 
-    from sidekick import ObservableSeq, InvMap
+    from sidekick import ObservableSeq, InvMap, IdMap
 
+
+Mappings
+========
 
 FrozenDict
-==========
+----------
 
 :cls:`FrozenDict` implements a straightforward immutable dictionary variant.
 It differs from ``mappingproxy`` types since it owns its data, instead of
@@ -20,9 +24,32 @@ thus can be used as elements in sets and keys in other mappings.
 :cls:`FrozenKeyDict` is intermediate type in which keys are fixed, but values
 can be mutated.
 
+Reference
+.........
+
+.. autoclass:: FrozenDict
+.. autoclass:: FrozenKeyDict
+
+
+IdMap
+-----
+
+A mapping that saves keys by identity rather than by value. Keys do not need
+to be hashable.
+
+>>> key = [1, 2]
+>>> dic = IdMap([(key, 3), ([1, 2], 4)])
+>>> dic
+IdMap({[1, 2]: 3, [1, 2]: 4})
+
+Reference
+.........
+
+.. autoclass:: IdMap
+
 
 InvMap
-======
+------
 
 An map with an inv attribute that holds inverse data. The example bellow creates
 a mapping of natural numbers to their respective squares. This can be inverted
@@ -52,9 +79,17 @@ the corresponding values.
 >>> squares.inv
 InvMap({0: 0, 1: 1, 4: 2, 9: 3, 16: 4, 25: 5, 36: 6})
 
+Reference
+.........
+
+.. autoclass:: InvMap
+
+
+Sequences
+=========
 
 ObservableSeq
-=============
+-------------
 
 View to sequence with the ability to register callback functions to monitor
 modifications.
@@ -86,3 +121,8 @@ ObservableSeq(['ham', 'spam', 'foo', 'bar'])
 It is the user's responsibility to raise the appropriate exceptions in
 callback functions for cancelled operations if this is the desired
 behavior.
+
+Reference
+.........
+
+.. autoclass:: ObservableSeq
