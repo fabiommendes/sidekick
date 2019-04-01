@@ -101,16 +101,21 @@ class union(type):
         Decorator that adds case from base class. Notice it constructs the
         intermediate class from the base case.
         """
-        return cls.add_case(base.__name__, base)
+        return cls.create_case(base.__name__, base)
 
     def __init__(cls, *args, **kwargs):
         super(type, union).__init__(*args)
 
     def __call__(cls, *args, **kwargs):
-        raise TypeError(
-            "cannot instantiate abstract class. "
-            "Please instantiate one of the concrete cases"
-        )
+        try:
+            constructor = cls.__union_constructor__
+        except AttributeError:
+            raise TypeError(
+                "cannot instantiate abstract class. "
+                "Please instantiate one of the concrete cases"
+            )
+        else:
+            return constructor(*args, **kwargs)
 
 
 class Info:
