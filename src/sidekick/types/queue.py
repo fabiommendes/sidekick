@@ -27,7 +27,7 @@ def as_list(func):
 
     @functools.wraps(func)
     def method(self, *args):
-        result = func(self.to_list(), *args)
+        result = func(list(self), *args)
         return self.__class__(result) if isinstance(result, List) else result
 
     return method
@@ -114,6 +114,9 @@ class Queue(collections.abc.Sequence):
         return self.__class__(self._left.cons(value), self._right)
 
     def extend_right(self, seq):
+        """
+        Extend queue to the right.
+        """
         right = self._right
         i = 0
         for i, x in enumerate(seq):
@@ -126,6 +129,9 @@ class Queue(collections.abc.Sequence):
             return self
 
     def extend_left(self, seq):
+        """
+        Extend queue to the left.
+        """
         left = self._left
         i = 0
         for i, x in enumerate(seq):
@@ -169,12 +175,6 @@ class Queue(collections.abc.Sequence):
             raise ValueError("Queue is empty")
         return value, Queue(left, right)
 
-    def to_list(self):
-        """
-        Convert queue to list.
-        """
-        return List(iter(self))
-
     def reversed(self):
         """
         Reversed copy of queue.
@@ -185,7 +185,7 @@ class Queue(collections.abc.Sequence):
         """
         Return True if queue is empty.
         """
-        return self._left is Nil and self._right is Nil
+        return not self
 
     map = on_parts(List.map)
     __lt__ = as_list(List.__lt__)

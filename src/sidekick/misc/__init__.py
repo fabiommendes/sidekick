@@ -5,6 +5,7 @@ idmap = _import_later('.idmap', package=__package__)
 invmap = _import_later('.invmap', package=__package__)
 lazylist = _import_later('.lazylist', package=__package__)
 observableseq = _import_later('.observableseq', package=__package__)
+tagseq = _import_later('.tagseq', package=__package__)
 
 
 class _Misc:
@@ -15,6 +16,7 @@ class _Misc:
         'InvMap': invmap,
         'LazyList': lazylist,
         'ObservableSeq': observableseq,
+        'TagSeq': tagseq,
     }
     _names = {}
 
