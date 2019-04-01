@@ -1,7 +1,7 @@
 import random
 from functools import lru_cache
 
-from .record import Record, clean_field, normalize_field_mapping, make_init_function, RecordMeta
+from .record import Record, clean_field, normalize_field_mapping, RecordMeta
 from ..utils import snake_case
 
 __all__ = ['union', 'Case', 'Union']
@@ -197,16 +197,17 @@ Union = union('Union')
 def Case(*args, **kwargs):
     """
     Declare a record base class for a Union case.
-
-    Position arguments
     """
     args = list(map(clean_field, args))
     args.extend(normalize_field_mapping(kwargs))
-    return fetch_case(tuple(args))
+    attrs = tuple(args)
+    return fetch_case(attrs)
 
 
 @lru_cache(None)
 def fetch_case(attrs: tuple):
+    if not attrs:
+        return SingletonMeta('Case', (SingletonMixin,), {})
     return Record.define('Case', list(attrs))
 
 
@@ -216,7 +217,7 @@ def case_metaclass(typ):
     Creates a compatible metaclass for the given type.
     """
     assert issubclass(typ, type), f'Not a type: {typ}'
-    if typ is type:
+    if issubclass(typ, CaseType):
         return CaseType
     return type(typ.__name__ + 'Case', (CaseType, typ), {})
 

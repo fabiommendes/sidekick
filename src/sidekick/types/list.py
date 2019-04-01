@@ -122,9 +122,9 @@ class List(Union):
             return end_op(a, b)
         return NotImplemented
 
-    __eq__ = lambda self, other: self._cmp(self, other, op.ne, op.is_, True)
-    __ge__ = lambda self, other: self._cmp(self, other, op.lt, lambda x, y: y is Nil, True)
-    __gt__ = lambda self, other: self._cmp(self, other, op.gt, lambda x, y: y is Nil, False)
+    __eq__ = lambda self, other: self._cmp(other, op.ne, op.is_, True)
+    __ge__ = lambda self, other: self._cmp(other, op.lt, lambda x, y: y is Nil, True)
+    __gt__ = lambda self, other: self._cmp(other, op.gt, lambda x, y: y is Nil, False)
 
     #
     # Inserting and removing elements
