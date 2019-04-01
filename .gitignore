@@ -18,6 +18,7 @@ docs/_build/
 build/
 dist/
 htmlcov/
+examples/
 src/sidekick/parser.out
 src/sidekick/parsetab.py
 
@@ -33,3 +34,4 @@ src/sidekick/__meta__.py
 .pytest_cache/
 .ipynb_checkpoints/
 .nbgrader.log
+pending/

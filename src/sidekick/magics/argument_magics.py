@@ -1,6 +1,4 @@
-from itertools import repeat, chain
-
-import typing
+from itertools import repeat
 
 from .base_magics import base_operator_magic
 from ..core.placeholder import call_node, Placeholder
@@ -29,8 +27,8 @@ class X(base_operator_magic(make_op, make_rop, bitwise=False)):
     def __repr__(self):
         return 'X'
 
-    def __call__(self, *args, **kwargs):
-        return lambda x: x(*args, **kwargs)
+    def __call__(self, x):
+        return x
 
     # attr = staticmethod(op.attrgetter)
     # method = staticmethod(op.methodcaller)
@@ -59,10 +57,10 @@ make_rop = lambda op: lambda _, value: lambda x, y: op(value, y)
 
 class Y(base_operator_magic(make_op, make_rop, bitwise=False)):
     def __repr__(self):
-        return 'X'
+        return 'Y'
 
-    def __call__(self, *args, **kwargs):
-        return lambda x, y: y(*args, **kwargs)
+    def __call__(self, x, y):
+        return y
 
 
 del make_op, make_rop
@@ -86,7 +84,6 @@ class F(base_operator_magic(make_op, make_rop, bitwise=False)):
             raise NotImplementedError
         else:
             raise TypeError
-
 
 
 del make_op, make_rop

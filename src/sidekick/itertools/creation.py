@@ -96,22 +96,22 @@ def iterate_indexed(func: Func, x, *, start: int = 0) -> Seq:
         idx += 1
 
 
-@fn.curry(3)
-def iterate_past(n: int, func: Func, init: Seq) -> Seq:
+@fn.curry(2)
+def iterate_past(func: Func, init: Seq) -> Seq:
     """
-    Iterate func and compute next elements by passing the past n elements to
+    Iterate func and compute next elements by passing the last n elements to
     func.
 
-    Initial sequence must have exactly n elements.
+    Number ``n`` is given by the size of the ``init`` sequence. Elements from
+    init are included on the resulting sequence.
 
     Examples:
-        >>> iterate_past(2, op.add, [1, 1]) | L[:10]
+        >>> iterate_past(X + Y, [1, 1]) | L[:10]
         [1, 1, 2, 3, 5, 8, 13, 21, 34, 55]
     """
 
     init = tuple(init)
-    if len(init) != n:
-        raise ValueError(f'initial sequence needs at least {n} values')
+    n = len(init)
     yield from init
 
     # Special cases
