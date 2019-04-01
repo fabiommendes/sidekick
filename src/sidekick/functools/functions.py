@@ -334,6 +334,10 @@ def background(func, *, timeout=None):
     return caller
 
 
+# Can we implement this in a robust way? It seems to be impossible with Python
+# unless we accept fragile solutions based on killing threads, multiprocessing
+# and signals
+#
 # @fn.annotate(2)
 # def timeout(*args, **kwargs):
 #     """

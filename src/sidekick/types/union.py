@@ -1,3 +1,4 @@
+import random
 from functools import lru_cache
 
 from .record import Record, clean_field, normalize_field_mapping, make_init_function, RecordMeta
@@ -69,11 +70,21 @@ class union(type):
 
         root, = (cls for cls in bases if isinstance(cls, union))
         annotations = ns.get('__annotations__', {})
-        ns.setdefault('__slots__', tuple(annotations))
-        metaclass = case_metaclass(type(Record))
-        new = RecordMeta.__new__(metaclass, name, (Record, *bases), ns, **kwargs)
+
+        # Record-based class
+        if annotations:
+            ns.setdefault('__slots__', tuple(annotations))
+            metaclass = case_metaclass(type(Record))
+            new = RecordMeta.__new__(metaclass, name, (Record, *bases), ns, **kwargs)
+            result = new
+
+        # Singleton classes
+        else:
+            ns['__slots__'] = ()
+            new = SingletonMeta(name, (SingletonMixin, *bases), ns, **kwargs)
+            result = new()
         root._union.add_case(name, new)
-        return new
+        return result
 
     def create_case(cls, name, base):
         """
@@ -81,7 +92,7 @@ class union(type):
         """
 
         metaclass = case_metaclass(type(base))
-        new = metaclass(name, (base, cls), {'__slots__': ()})
+        new = type.__new__(metaclass, name, (base, cls), {'__slots__': ()})
         cls._union.add_case(name, new)
         return new
 
@@ -111,7 +122,7 @@ class Info:
         self.union = cls
         self.cases = {}
 
-    def add_case(self, name, case):
+    def add_case(self, name, case, singleton=False):
         """
         Register case in union class hierarchy.
         """
@@ -119,7 +130,7 @@ class Info:
         type_query = query_name(name)
         setattr(self.union, type_query, False)
         setattr(case, type_query, True)
-        setattr(self.union, name, case)
+        setattr(self.union, name, case() if singleton else case)
 
 
 class CaseType(union):
@@ -128,9 +139,43 @@ class CaseType(union):
     """
 
     def __new__(mcs, name, bases, ns, **kwargs):
-        return super(union, CaseType).__new__(mcs, name, bases, ns)
+        return super(union, mcs).__new__(mcs, name, bases, ns)
 
     __call__ = type.__call__
+
+
+class SingletonMeta(CaseType):
+    """
+    Metaclass for unit-like special cases.
+    """
+
+    _instance = None
+
+    def __init__(cls, *args, **kwargs):
+        super().__init__(*args)
+        cls._hash = random.randrange(1, 2 ** 32)
+        cls._instance = type.__call__(cls)
+
+    __instancecheck__ = lambda cls, other: other is cls._instance
+
+    def __call__(cls):
+        return cls._instance
+
+
+class SingletonMixin:
+    """
+    Mixin class that is injected into singleton case classes.
+    """
+
+    __slots__ = ()
+    _hash = random.randrange(1, 2 ** 32)
+
+    __instancecheck__ = lambda self, other: self is other
+    __eq__ = lambda self, other: self is other or NotImplemented
+    __hash__ = lambda self: self._hash
+    __repr__ = lambda self: self.__class__.__name__
+    __iter__ = lambda self: iter(())
+    __len__ = lambda self: 0
 
 
 # We have to declare union a generic value since the meta-type constructor

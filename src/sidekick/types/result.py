@@ -14,38 +14,28 @@ class Result(Union):
     Represents a result with an Ok and an Err state.
     """
 
-    is_err = is_ok = False
+    is_success = is_failure = False
 
     #
     # API methods
     #
-    def map(self, func):
+    def map(self, func, *funcs):
         """
         Apply function if object is in the Ok state and return another Result.
         """
-        return rcall(func, self.value) if self.is_ok else self
+        if self:
+            if funcs:
+                return rpipe(self.value, func, *funcs)
+            else:
+                return rcall(func, self.value)
+        else:
+            return self
 
     def map_error(self, func):
         """
         Like the .map(func) method, but modifies the error part of the result.
         """
-        return self if self.is_ok else self.Err(func(self.error))
-
-    def chain(self, *funcs):
-        """
-        Chain several computations that expect regular types.
-
-        Args:
-            *funcs:
-                Any number of functions that expect regular types.
-        """
-
-        x = self
-        for func in funcs:
-            if x.is_err:
-                return x
-            x = x.map(func)
-        return x
+        return self if self else self.Err(func(self.error))
 
     def get_value(self, default=None):
         """
@@ -59,7 +49,7 @@ class Result(Union):
         >>> Err("NaN").get_value("default")
         'default'
         """
-        return self.value if self.is_ok else default
+        return self.value if self else default
 
     def check_error(self):
         """
@@ -68,19 +58,56 @@ class Result(Union):
         Exception error values are raised as is and all other values are
         wrapped into a ValueError.
         """
-        self.is_ok or error(self.error)
+        self or error(self.error)
 
     def flip(self):
         """
         Convert Ok to Err and vice-versa.
         """
-        return Err(self.value) if self.is_ok else Ok(self.error)
+        return Err(self.value) if self else Ok(self.error)
+
+    def method(self, method, *args, **kwargs):
+        """
+        Call the given method of success value and promote result to Result.
+
+        Exceptions are wrapped into an Err case. Raise AttributeError if method
+        does not exist.
+
+        Examples:
+            >>> Ok('Hello {name}!').method('format', 'world')
+            Err(KeyError('name'))
+        """
+        if self:
+            method = getattr(self.value, method)
+            return rcall(method, *args, **kwargs)
+        else:
+            return self
+
+    def attr(self, attr):
+        """
+        Retrieves attribute as a Maybe.
+
+        Examples:
+            >>> Just(1 + 2j).attr('real')
+            Just(1.0)
+        """
+        return self and maybe(getattr(self.value, attr))
+
+    def iter(self):
+        """
+        Iterates over content.
+
+        It returns an empty iterator in the Nothing case.
+        """
+        if self:
+            it: Iterator = self.value
+            yield from it
 
     def to_maybe(self) -> "Maybe":
         """
         Convert result object into a Maybe.
         """
-        return Just(self.value) if self.is_ok else Nothing
+        return Just(self.value) if self else Nothing
 
     def to_result(self):
         """
@@ -91,34 +118,6 @@ class Result(Union):
         """
         return self
 
-    # Operators
-    __bool__ = lambda x: x.is_ok
-
-    def __or__(self, other):
-        if isinstance(other, Result):
-            return self if self.is_ok else other
-        elif isinstance(other, Maybe):
-            return self if self.is_ok else other.to_result()
-        return NotImplemented
-
-    def __ror__(self, other):
-        if isinstance(other, Maybe):
-            return other.to_result() if other.is_just else self
-        else:
-            return NotImplemented
-
-    def __and__(self, other):
-        if isinstance(other, Result):
-            return self if self.is_err else other
-        elif isinstance(other, Maybe):
-            return self if self.is_err else other.to_result()
-
-    def __rand__(self, other):
-        if isinstance(other, Maybe):
-            return other.to_result() if other.nothing else self
-        else:
-            return NotImplemented
-
 
 class Err(Result):
     """
@@ -126,6 +125,8 @@ class Err(Result):
     """
     error: object
     value = property(lambda self: self.check_error())
+    is_failure = True
+    __bool__ = lambda _: False
 
 
 class Ok(Result):
@@ -134,6 +135,8 @@ class Ok(Result):
     """
     value: object
     error = None
+    is_success = True
+    __bool__ = lambda _: True
 
 
 # ------------------------------------------------------------------------------
@@ -338,4 +341,4 @@ def result_fn(func):
 fn._ok = staticmethod(result)
 fn._err = Err
 
-# from .maybe import Maybe, Just, Nothing  # noqa: E402
+from .maybe import Maybe, Just, Nothing  # noqa: E402
