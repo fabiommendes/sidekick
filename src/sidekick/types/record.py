@@ -1,6 +1,7 @@
 import collections.abc
 import keyword
 from types import MappingProxyType
+from typing import Mapping
 
 from .anonymous_record import MutableMapView, MapView, record, namespace, MetaMixin
 
@@ -17,7 +18,7 @@ class RecordMeta(type):
     Metaclass for Record types.
     """
 
-    _meta = NOT_GIVEN
+    _meta: 'Meta' = NOT_GIVEN
 
     def __new__(mcs, name, bases, ns, use_invalid=False, **kwargs):
         if Namespace is NotImplemented:
@@ -65,7 +66,8 @@ class RecordMeta(type):
         Returns:
             A new Record subclass.
         """
-        bases = (Record,) if bases is None else tuple(bases)
+        if Record not in bases:
+            bases = (*bases, Record)
         return new_record_type(name, fields, bases, ns or {}, use_invalid)
 
     def namespace(self, name: str, fields: list, bases=(), ns: dict = None, use_invalid=False):
@@ -73,9 +75,10 @@ class RecordMeta(type):
         Like meth:`sidekick.Record.define`, but declares a mutable record
         (a.k.a, namespace).
         """
-        bases = (Namespace,) if bases is None else tuple(bases)
-        ns = ns or {}
-        return new_record_type(name, fields, bases, ns, use_invalid, is_mutable=True)
+        if Namespace not in bases:
+            bases = (*bases, Namespace)
+        kwargs = {'use_invalid': use_invalid, 'is_mutable': True}
+        return new_record_type(name, fields, bases, ns or {}, **kwargs)
 
 
 def new_record_type(name: str, fields: list, bases: tuple, ns: dict,
@@ -160,21 +163,10 @@ def make_record_namespace(bases, meta_info, is_mutable=False):
     fields = meta_info.fields
     ns = {'__slots__': tuple(fields)}
 
-    if not has_record_base(bases):
-        ns.update(RECORD_NAMESPACE)
-
     if not is_mutable:
         ns.setdefault("__hash__", lambda self: hash(tuple(self)))
         ns["__setattr__"] = record.__setattr__
     return ns
-
-
-def has_record_base(bases):
-    if not bases:
-        return False
-    if Record in bases or Namespace in bases:
-        return True
-    return any(has_record_base(cls.__bases__) for cls in bases)
 
 
 def extract_fields_from_annotations(bases, ns):
@@ -182,12 +174,9 @@ def extract_fields_from_annotations(bases, ns):
     annotations.update(ns.get('__annotations__', ()))
     for base in bases:
         if isinstance(base, RecordMeta):
-            try:
-                base_annotations = base.__annotations__
-            except AttributeError:
-                continue
-            for k, v in base_annotations.items():
-                annotations.setdefault(k, v)
+            step = base.__dict__.get('__annotations__', {})
+            step.update(annotations)
+            annotations = step
 
     fields = []
     for name, tt in annotations.items():
@@ -235,7 +224,7 @@ def make_init_function(cls: RecordMeta):
     return ns["__init__"]
 
 
-def make_init_function_code(names_map: dict, defaults: dict) -> str:
+def make_init_function_code(names_map: dict, defaults: Mapping) -> str:
     """
     Return a string with source code for the init function.
     """
@@ -300,21 +289,10 @@ class Meta(MetaMixin):
 Record = Namespace = NotImplemented
 
 
-class Record(metaclass=RecordMeta):
-    """
-    Base class for Record types.
-
-    A records is a lightweight class that have only a fixed number of
-    attributes. It is analogous to a C struct type.
-
-    Record types can be used to hold data or as a basis for a no-boilerplate
-    class.
-    """
-
+class RecordMixin:
     __slots__ = ()
-
-    M = property(lambda self: MapView(self))
-    _meta = NOT_GIVEN
+    _meta: Meta = NOT_GIVEN
+    M: Mapping
 
     def __repr__(self):
         return "%s(%s)" % (
@@ -350,16 +328,28 @@ class Record(metaclass=RecordMeta):
         return ((f, getattr(self, f)) for f in self._meta.fields)
 
 
-class Namespace(metaclass=RecordMeta, is_mutable=True):
+# noinspection PyRedeclaration
+class Record(RecordMixin, metaclass=RecordMeta):
+    """
+    Base class for Record types.
+
+    A records is a lightweight class that have only a fixed number of
+    attributes. It is analogous to a C struct type.
+
+    Record types can be used to hold data or as a basis for a no-boilerplate
+    class.
+    """
+
+    __slots__ = ()
+
+    M = property(lambda self: MapView(self))
+
+
+# noinspection PyRedeclaration
+class Namespace(RecordMixin, metaclass=RecordMeta, is_mutable=True):
     """
     A mutable record-like type.
     """
 
     __slots__ = ()
     M = property(lambda self: MutableMapView(self))
-
-
-RECORD_NAMESPACE = dict(Record.__dict__.items())
-del RECORD_NAMESPACE["__module__"]
-del RECORD_NAMESPACE["__slots__"]
-del RECORD_NAMESPACE["__doc__"]
