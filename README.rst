@@ -156,12 +156,12 @@ See also
 ========
 
 Sidekick is heavily inspired by other libraries and functional programming
-languages. Most notably
+languages. Most notably,
 
 * `toolz`_: excellent utility library focused on handling iterators.
 * `placeholder`_, `fn.py`_, `funcy`_, `Pyrsistent`_: other functional programming libraries for Python.
 * `Haskell`_: an essential inspiration to functional programming. You will see many ideas stolen
-   directly from Haskell. If you want to learn Haskell, however, I recommend learning `Elm`_ first ;)
+directly from Haskell. If you want to learn Haskell, however, I recommend learning `Elm`_ first ;)
 * `Clojure`_ and `Elixir`_: inspiration for many parts of the API.
 * `Lodash`_: a practical functional Javascript library.
 
