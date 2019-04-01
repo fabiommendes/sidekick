@@ -75,13 +75,13 @@ class union(type):
         if annotations:
             ns.setdefault('__slots__', tuple(annotations))
             metaclass = case_metaclass(type(Record))
-            new = RecordMeta.__new__(metaclass, name, (Record, *bases), ns, **kwargs)
+            new = RecordMeta.__new__(metaclass, name, (*bases, Record), ns, **kwargs)
             result = new
 
         # Singleton classes
         else:
             ns['__slots__'] = ()
-            new = SingletonMeta(name, (SingletonMixin, *bases), ns, **kwargs)
+            new = SingletonMeta(name, (*bases, SingletonMixin), ns, **kwargs)
             result = new()
         root._union.add_case(name, new)
         return result

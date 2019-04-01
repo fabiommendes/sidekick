@@ -17,11 +17,10 @@ class RecordMeta(type):
     Metaclass for Record types.
     """
 
-    _record_base = NOT_GIVEN
     _meta = NOT_GIVEN
 
     def __new__(mcs, name, bases, ns, use_invalid=False, **kwargs):
-        if mcs._record_base is NOT_GIVEN:
+        if Namespace is NotImplemented:
             return super().__new__(mcs, name, bases, ns)
         else:
             fields = extract_fields_from_annotations(bases, ns)
@@ -87,8 +86,7 @@ def new_record_type(name: str, fields: list, bases: tuple, ns: dict,
     if isinstance(fields, collections.abc.Mapping):
         fields = list(normalize_field_mapping(fields))
     meta_info = Meta([clean_field(f, use_invalid) for f in fields])
-    bases = tuple(x for x in bases if x is not RecordMeta._record_base)
-    initial_ns = make_record_namespace(meta_info, is_mutable)
+    initial_ns = make_record_namespace(bases, meta_info, is_mutable)
     ns = dict(initial_ns, **ns)
 
     # Create class and update the init method
@@ -158,27 +156,38 @@ def safe_names(names):
     return safe_names
 
 
-def make_record_namespace(meta_info, is_mutable=False):
+def make_record_namespace(bases, meta_info, is_mutable=False):
     fields = meta_info.fields
+    ns = {'__slots__': tuple(fields)}
 
-    ns = dict(__slots__=tuple(fields), **RECORD_NAMESPACE)
+    if not has_record_base(bases):
+        ns.update(RECORD_NAMESPACE)
+
     if not is_mutable:
-        hash_function = lambda self: hash(tuple(self))
-        ns["__hash__"] = hash_function
+        ns.setdefault("__hash__", lambda self: hash(tuple(self)))
         ns["__setattr__"] = record.__setattr__
     return ns
+
+
+def has_record_base(bases):
+    if not bases:
+        return False
+    if Record in bases or Namespace in bases:
+        return True
+    return any(has_record_base(cls.__bases__) for cls in bases)
 
 
 def extract_fields_from_annotations(bases, ns):
     annotations = {}
     annotations.update(ns.get('__annotations__', ()))
     for base in bases:
-        try:
-            base_annotations = base.__annotations__
-        except AttributeError:
-            continue
-        for k, v in base_annotations.items():
-            annotations.setdefault(k, v)
+        if isinstance(base, RecordMeta):
+            try:
+                base_annotations = base.__annotations__
+            except AttributeError:
+                continue
+            for k, v in base_annotations.items():
+                annotations.setdefault(k, v)
 
     fields = []
     for name, tt in annotations.items():
@@ -272,9 +281,24 @@ def get_slot(cls, name):
                         lambda x, v: x.__dict__.__setitem__(name, v))
 
 
+class Meta(MetaMixin):
+    __slots__ = ('fields', 'types', 'defaults')
+
+    def __init__(self, fields):
+        self.fields = tuple(f.name for f in fields)
+        self.types = tuple(f.type for f in fields)
+        self.defaults = MappingProxyType(
+            {f.name: f.default for f in fields if f.default is not NOT_GIVEN})
+
+    def __iter__(self):
+        yield from self.fields
+
+
 # ------------------------------------------------------------------------------
 # Record classes
 # ------------------------------------------------------------------------------
+Record = Namespace = NotImplemented
+
 
 class Record(metaclass=RecordMeta):
     """
@@ -339,21 +363,3 @@ RECORD_NAMESPACE = dict(Record.__dict__.items())
 del RECORD_NAMESPACE["__module__"]
 del RECORD_NAMESPACE["__slots__"]
 del RECORD_NAMESPACE["__doc__"]
-
-RecordMeta._record_base = Record
-
-
-#
-# Utility classes
-#
-class Meta(MetaMixin):
-    __slots__ = ('fields', 'types', 'defaults')
-
-    def __init__(self, fields):
-        self.fields = tuple(f.name for f in fields)
-        self.types = tuple(f.type for f in fields)
-        self.defaults = MappingProxyType(
-            {f.name: f.default for f in fields if f.default is not NOT_GIVEN})
-
-    def __iter__(self):
-        yield from self.fields
