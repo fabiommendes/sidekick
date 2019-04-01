@@ -382,7 +382,7 @@ def flip(func):
     The resulting function is always curried.
     """
     func = extract_function(func)
-    return fn.annotate(2)(lambda x, y: func(y, x))
+    return fn.curry(2, lambda x, y: func(y, x))
 
 
 @fn
@@ -492,7 +492,7 @@ def force_function(func, name=None) -> Callable:
             func.__name__ = name
         return func
     elif isinstance(func, Placeholder):
-        return force_function(func._sk_function_, name)
+        return force_function(func.__inner_function__, name)
     else:
 
         def f(*args, **kwargs):

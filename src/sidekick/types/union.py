@@ -60,6 +60,8 @@ class union(type):
     def check_bases(mcs, bases):
         if bases == (Union,):
             return ()
+        if sum(1 for cls in bases if isinstance(cls, union)) > 1:
+            raise TypeError('cannot inherit from different union types')
         return tuple(cls for cls in bases if cls is not Union)
 
     @classmethod
@@ -83,18 +85,23 @@ class union(type):
             ns['__slots__'] = ()
             new = SingletonMeta(name, (*bases, SingletonMixin), ns, **kwargs)
             result = new()
-        root._union.add_case(name, new)
+
+        root._union.add_case(name, new, singleton=isinstance(new, SingletonMeta))
         return result
 
     def create_case(cls, name, base):
         """
         Create case class with given base for a union type.
         """
+        if base is SingletonCase:
+            new = CaseType(name, (base, cls), {'__slots__': ()})
+        else:
+            metaclass = case_metaclass(type(base))
+            new = type.__new__(metaclass, name, (base, cls), {'__slots__': ()})
 
-        metaclass = case_metaclass(type(base))
-        new = type.__new__(metaclass, name, (base, cls), {'__slots__': ()})
-        cls._union.add_case(name, new)
-        return new
+        is_singleton = isinstance(new, SingletonMeta)
+        cls._union.add_case(name, new, singleton=is_singleton)
+        return new() if is_singleton else new
 
     def case(cls, base):
         """
@@ -183,12 +190,6 @@ class SingletonMixin:
     __len__ = lambda self: 0
 
 
-# We have to declare union a generic value since the meta-type constructor
-# explicity checks for the presence of a Union base class.
-Union = NotImplemented
-Union = union('Union')
-
-
 # ------------------------------------------------------------------------------
 # UTILITIES
 # ------------------------------------------------------------------------------
@@ -227,3 +228,10 @@ def query_name(name):
     if not name.isidentifier() or not name:
         raise ValueError('invalid python identifier' + name)
     return name
+
+
+# We have to declare union a generic value since the meta-type constructor
+# explicity checks for the presence of a Union base class.
+Union = NotImplemented
+Union = union('Union')
+SingletonCase = Case()

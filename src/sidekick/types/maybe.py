@@ -4,6 +4,8 @@ from ..functools import call
 from ..core import fn
 from .union import Union
 
+__all__ = ['Maybe', 'Just', 'Nothing', 'mapply', 'mpipe', 'mpipeline', 'mfilter']
+
 flip = lambda f: lambda x, y: f(y, x)
 this = None
 
@@ -135,7 +137,7 @@ def maybe(just, nothing, type_):
     return maybe
 
 
-def mcall(func, *args, **kwargs):
+def mapply(func, *args, **kwargs):
     """
     Execute function with all given Maybe values unwrapping all positional
     arguments and return ``Just(result)`` or ``Nothing`` if result is None.
@@ -144,9 +146,9 @@ def mcall(func, *args, **kwargs):
     keyword arguments do not propagate the Nothing state.
 
     Examples:
-        >>> mcall(max, Just(1), Just(2), Just(3))
+        >>> mapply(max, Just(1), Just(2), Just(3))
         Just(3)
-        >>> mcall(max, Nothing, Just(1), Just(2), Just(3))
+        >>> mapply(max, Nothing, Just(1), Just(2), Just(3))
         Nothing
     """
     arg_values = []

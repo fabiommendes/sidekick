@@ -1,6 +1,7 @@
 import pytest
 
-from sidekick import fn, curry
+from sidekick import fn, curry, placeholder as _
+from sidekick.pred import cond, is_odd
 
 
 class TestFn:
@@ -82,3 +83,29 @@ class TestFn:
         g = fn(foo)
         assert g.__name__ == "foo"
         assert g.attr == "foo"
+
+
+class TestPredicateOperations:
+    def test_predicate_object_is_callable(self):
+        p = fn(lambda x: x == 2)
+        assert p(2) is True
+        assert p(1) is False
+
+    def test_predicate_accepts_extended_function_semantics(self):
+        assert fn(_ == 2)(2) is True
+        assert fn(_ == 2)(3) is False
+
+    def test_predicate_composes_on_logical_operations(self):
+        p1 = fn(_ > 0)
+        p2 = fn(_ < 10)
+        p3 = p1 & p2
+        assert p3(5) is True
+        assert p3(11) is False
+        assert (p1 | p2)(0) is True
+        assert (~p1)(1) is False
+
+    def test_cond(self):
+        f = cond(is_odd, (_ - 1) // 2, _ // 2)
+        print(f(3))
+        assert f(3) == 1
+        assert f(4) == 2
