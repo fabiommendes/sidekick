@@ -25,7 +25,7 @@ __all__ = [
 #
 # Filtering functions
 #
-@fn.annotate(2)
+@fn.curry(2)
 def drop_while(pred: Pred, seq: Seq) -> Seq:
     """
     Drop items from the iterable while predicate(item) is true.
@@ -38,7 +38,7 @@ def drop_while(pred: Pred, seq: Seq) -> Seq:
     return itertools.dropwhile(extract_function(pred), seq)
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def random_sample(prob: float, seq: Seq, *, random_state=None) -> Seq:
     """
     Choose with probability ``prob`` if each element of seq will be included in
@@ -50,7 +50,7 @@ def random_sample(prob: float, seq: Seq, *, random_state=None) -> Seq:
     return toolz.random_sample(prob, seq, random_state=random_state)
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def remove(pred: Pred, seq: Seq) -> Seq:
     """
     Return those items of sequence for which pred(item) is False
@@ -61,7 +61,7 @@ def remove(pred: Pred, seq: Seq) -> Seq:
     return toolz.remove(extract_function(pred), seq)
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def take_while(pred: Pred, seq: Seq) -> Seq:
     """
     Return successive entries from an iterable as long as the
@@ -74,7 +74,7 @@ def take_while(pred: Pred, seq: Seq) -> Seq:
     return itertools.takewhile(extract_function(pred), seq)
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def top_k(k: int, seq: Seq, *, key: Func = None) -> tuple:
     """
     Find the k largest elements of a sequence.
@@ -134,7 +134,7 @@ def until_convergence(pred: Pred, seq: Seq) -> Seq:
         x = y
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def without(items, seq: Seq) -> Seq:
     """
     Returns sequence without items specified. Preserves order.
@@ -149,7 +149,7 @@ def without(items, seq: Seq) -> Seq:
             yield x
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def without_idx(indexes, seq):
     """
     Returns sequence without the specified indexes.
@@ -169,7 +169,7 @@ def without_idx(indexes, seq):
             yield x
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def filter_idx(func: Pred, seq: Seq) -> Seq:
     """
     Similar to :func:`filter`, but return selected indexes instead of values.
@@ -256,7 +256,7 @@ def consume(seq: Seq, *, default=None) -> Seq:
     return default
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def drop(n: int, seq: Seq) -> Seq:
     """
     Return the sequence following the first n elements.
@@ -264,7 +264,7 @@ def drop(n: int, seq: Seq) -> Seq:
     return toolz.drop(n, seq)
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def first_repeated(key: Func, seq: Seq):
     """
     Return the index and value of first repeated element in sequence.
@@ -286,7 +286,7 @@ def first_repeated(key: Func, seq: Seq):
     raise ValueError('no repeated element in sequence')
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def get(idx, seq: Seq, **kwargs):
     """
     Get element (or elements, if idx is a list) in a sequence or dict.
@@ -302,7 +302,7 @@ def last(seq: Seq):
     return toolz.last(seq)
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def nth(n: int, seq: Seq):
     """
     Return the nth element in a sequence.
@@ -315,7 +315,7 @@ def nth(n: int, seq: Seq):
         return toolz.nth(n, seq)
 
 
-@fn.annotate(3)
+@fn.curry(3)
 def find(pred: Pred, seq: Seq) -> (int, object):
     """
     Return the (position, value) of first element in which predicate is true.
@@ -350,7 +350,7 @@ def rest(seq: Seq) -> Seq:
     yield from seq
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def tail(n: int, seq: Seq) -> tuple:
     """
     Return the last n elements of a sequence.
@@ -358,7 +358,7 @@ def tail(n: int, seq: Seq) -> tuple:
     return toolz.tail(n, seq)
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def take(n: int, seq: Seq) -> Seq:
     """
     Return (at most) the first n elements of a sequence.
@@ -366,7 +366,7 @@ def take(n: int, seq: Seq) -> Seq:
     return toolz.take(n, seq)
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def take_nth(n: int, seq: Seq) -> Seq:
     """
     Return every nth item in sequence.

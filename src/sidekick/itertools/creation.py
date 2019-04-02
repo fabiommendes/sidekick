@@ -56,7 +56,7 @@ def cycle(seq):
     return itertools.cycle(seq)
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def iterate(func, x):
     """
     Repeatedly apply a function func onto an original input.
@@ -141,7 +141,7 @@ def iterate_past(func: Func, init: Seq) -> Seq:
             yield args[-1]
 
 
-@fn.annotate(1)
+@fn.curry(1)
 def repeat(obj, *, times=None):
     """
     repeat(obj [,times]) -> create an iterator which returns the object

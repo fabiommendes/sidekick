@@ -59,7 +59,7 @@ functions corresponding to the expression in which they participate. Hence,
 If you are familiar to any language in the Haskell family, it should resemble
 the `operator section syntax <https://wiki.haskell.org/Section_of_an_infix_operator>`.
 
-:func:`iterate_past` creates an infinite iterator that generate each number
+:func:`iterate_past` creates an infinite iterator that generates each number
 by applying the function in the first argument to the last n elements generated
 by the sequence. ``n`` is given by the size of the initial sequence, which in
 our example is 2.
@@ -70,15 +70,16 @@ in the range of 0 to 10 (not included). ``L[0]`` would create a function that fe
 the first element, ``L[::2]`` would fetch every two elements, and so on.
 
 Finally, the pipe notation passes the argument on the left to the function on
-the right. This obviously only works on sidekick enabled functions and resembles
-the pipe in the unix shell.
+the right. This only works on sidekick enabled functions and resembles
+the pipe in the unix shell. Maybe someday Python can have a native pipe operator
+like `other functional languages <https://elm-lang.org/docs/syntax#operators>`.
 
 
 
 Golden ratio
 ------------
 
-The snippet above only consumed the first 10 Fibonacci numbers. Let us continue
+The snippet above only consumes the first 10 Fibonacci numbers. Let us continue
 to walk the sequence to find a good approximation to the golden ratio.
 
 >>> ratios = (y / x for (x, y) in sk.window(2, fibonacci))
@@ -87,10 +88,11 @@ to walk the sequence to find a good approximation to the golden ratio.
 
 **Explanation**
 
-The window function generates a sliding window of n elements from the
+:func:`window` generates a sliding window of n elements from the
 original sequence, e.g., ``sk.window(2, [1, 2, 3, 4])`` ==> ``(1, 2), (2, 3), (3, 4)``.
-Next, we compute the ratios of the second element over the first and consume
-the list until two consecutive items are equal, returning the last element.
+The next step is to compute the ratios of the second element over the first
+and consume the list until two consecutive items are equal,
+returning the last element.
 
 
 
@@ -121,9 +123,9 @@ Sieve of Eratosthenes
 
 The `Sieve of Eratosthenes <https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes>`
 is a simple algorithm for selecting all primes in an list of consecutive integers.
-The list must start with the first prime p (which is obviously 2), and proceed
-by excluding every p element. The next number will be a prime p', which is
-used to repeat the same procedure until reaching the end of the list.
+The list must start with the first prime p (a.k.a., 2), and proceed by excluding
+every p element. The next valid number will be a prime p'. The
+procedure is repeated with each new prime until reaching the end of the list.
 
 We will do it like so, except that the initial list of numbers is infinite.
 
@@ -138,17 +140,18 @@ We will do it like so, except that the initial list of numbers is infinite.
 **Explanation**
 
 The fist line in the sieve function uses :func:`uncons` to extract the first
-element of sequence and return an iterator over the remaining elements. As we
+element of its argument and return an iterator over the remaining elements. As we
 described before, the first element is a prime, so we just yield it. The
-last line of the function apply the sieve to a sequence that eliminates every
+last line of the function applies the sieve to a sequence that excludes every
 multiple of p.
 
 Finally, we call sieve with ``N[2, 3, ...]``. :cls:`N` is a special object that
 generates numeric sequences. It is very flexible, and in the example above it
 creates natural numbers starting from 2 and proceed indefinitely in steps
-of 1. In fact, we can easily make our sequence of primes twice as fast simply
-initializing the sieve with ``N[2, 3, 5, ...]`` so it moves in steps of two.
-This avoids checking even numbers that we known in advance not be prime.
+of 1. In fact, we could easily make our code operate twice as fast simply
+by initializing the sieve with ``N[2, 3, 5, ...]`` so it moves in steps of two
+rather than one. This would avoid checking even numbers which we known in
+advance not be primes.
 
 
 

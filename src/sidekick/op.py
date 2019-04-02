@@ -5,9 +5,9 @@ import operator as op
 
 from .core import fn as _fn
 
-_fn3 = _fn.annotate(3)
-_fn2 = _fn.annotate(2)
-_fn1 = _fn.annotate(1)
+_fn3 = _fn.curry(3)
+_fn2 = _fn.curry(2)
+_fn1 = _fn.curry(1)
 _flip = lambda f: lambda x, y: f(y, x)
 
 #

@@ -96,7 +96,7 @@ class N:
             yield x
             x += step
 
-    @fn.annotate(3)
+    @fn.curry(3)
     def evenly_spaced(self, a: Real, b: Real, n: int) -> Seq:
         """
         Return a sequence of n evenly spaced numbers from a to b.

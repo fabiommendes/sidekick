@@ -1,5 +1,5 @@
 [run]
-include = src/*
+source = src/
 branch = True
 
 
@@ -26,7 +26,3 @@ exclude_lines =
     while False:
 
 ignore_errors = True
-
-
-[paths]
-source = src/

@@ -1,5 +1,6 @@
 import functools
 from contextlib import AbstractContextManager
+from typing import Iterator
 
 from .union import Union
 from ..core import extract_function, fn
@@ -274,7 +275,7 @@ def rpipeline(*funcs):
         This is similar to :func:`rpipe`, except that it does not require the
         initial argument passed to the functions.
     """
-    funcs = tuple(map(extract_funcs, funcs))
+    funcs = tuple(map(extract_function, funcs))
     return lambda x: _rpipe(x, *funcs)
 
 
@@ -341,4 +342,4 @@ def result_fn(func):
 fn._ok = staticmethod(result)
 fn._err = Err
 
-from .maybe import Maybe, Just, Nothing  # noqa: E402
+from .maybe import Maybe, Just, Nothing, maybe  # noqa: E402

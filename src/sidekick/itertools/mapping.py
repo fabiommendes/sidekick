@@ -7,7 +7,7 @@ _map = map
 _enumerate = enumerate
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def indexed_map(func: Func, *seqs: Seq, start=0) -> Seq:
     """
     Like map, but pass the index of each element as the first argument to

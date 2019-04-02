@@ -9,7 +9,7 @@ __all__ = ['window', 'with_next', 'with_prev',
            'zipper', 'rzipper', 'zip_with']
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def window(n: int, seq: Seq) -> Seq:
     """
     Return a sequence of overlapping sub-sequences of size n.

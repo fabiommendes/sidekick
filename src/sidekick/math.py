@@ -7,7 +7,7 @@ from .core import fn
 #
 # We only define functions that differ from the math module
 #
-@fn.annotate(2)
+@fn.curry(2)
 def copysign(src, target):
     """
     Return a float with the magnitude (absolute value) of source but the sign
@@ -19,7 +19,7 @@ def copysign(src, target):
     return _math.copysign(target, src)
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def fmod(denom, number):
     """
     Return number mod denom keeping the sign of the numerator. (number % denom
@@ -30,7 +30,7 @@ def fmod(denom, number):
     return _math.fmod(number, denom)
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def remainder(denom, number):
     """
     IEEE 754-style remainder of number with respect to denom. (Signal is chosen
@@ -42,7 +42,7 @@ def remainder(denom, number):
     return _math.remainder(number, denom)
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def logb(base, x):
     """
     Return logarithm of x in given base.
@@ -50,7 +50,7 @@ def logb(base, x):
     return _math.log(x, base)
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def pow(n, x):
     """
     Raise x to power n.
@@ -58,7 +58,7 @@ def pow(n, x):
     return _math.pow(x, n)
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def ldexp(n, x):
     """
     Return x * (2**n). This is essentially the inverse of function frexp().

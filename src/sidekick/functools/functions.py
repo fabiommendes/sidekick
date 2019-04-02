@@ -84,7 +84,7 @@ def call_over(*args, **kwargs):
     return transformed
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def do(func, x, *args, **kwargs):
     """
     Runs ``func`` on ``x``, returns ``x``.
@@ -147,7 +147,7 @@ def juxt(*funcs: Callable, first=None, last=None) -> fn:
 #
 # Call filtering
 #
-@fn.annotate(2)
+@fn.curry(2)
 def call_after(n, func, *, result=None):
     """
     Creates a function that invokes func once it's called n or more times.
@@ -173,7 +173,7 @@ def call_after(n, func, *, result=None):
     return after
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def call_at_most(n, func):
     """
     Creates a function that invokes func while it's called less than n times.
@@ -274,7 +274,7 @@ def splice(func):
 #
 # Time control
 #
-@fn.annotate(2)
+@fn.curry(2)
 def throttle(dt, func):
     """
     Limit the rate of execution of func to once at each ``dt`` seconds.
@@ -338,7 +338,7 @@ def background(func, *, timeout=None):
 # unless we accept fragile solutions based on killing threads, multiprocessing
 # and signals
 #
-# @fn.annotate(2)
+# @fn.curry(2)
 # def timeout(*args, **kwargs):
 #     """
 #     Limit the function execution time to the given timeout (in seconds).
@@ -393,7 +393,7 @@ def reversed(func):
     return fn(lambda *args, **kwargs: func(*args[::-1], **kwargs))
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def select_args(idx, func):
     """
     Creates a function that calls func with the arguments reorganized.
@@ -401,7 +401,7 @@ def select_args(idx, func):
     return lambda *args, **kwargs: func(*(args[i] for i in idx), **kwargs)
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def skip_args(n, func):
     """
     Skips the first n positional arguments before calling func.
@@ -409,7 +409,7 @@ def skip_args(n, func):
     return lambda *args, **kwargs: func(*args[n:], **kwargs)
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def keep_args(n, func):
     """
     Uses only the first n positional arguments to call func.
@@ -435,7 +435,7 @@ def error(exc):
         raise ValueError(exc)
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def ignore_error(exception, func, *, handler=always(None)):
     """
     Ignore exception in function. If the exception occurs, it executes the given
@@ -444,7 +444,7 @@ def ignore_error(exception, func, *, handler=always(None)):
     return toolz.excepts(exception, func, handler)
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def retry(n: int, func, *, error=Exception, sleep=None):
     """
     Retry to execute function at least n times before raising an error.

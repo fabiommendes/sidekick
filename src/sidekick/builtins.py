@@ -19,7 +19,7 @@ _dir = dir
 # tuple, type, vars
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def filter(pred: Pred, seq: Seq):
     """
     Return an iterator yielding those items of iterable for which function(item)
@@ -32,7 +32,7 @@ def filter(pred: Pred, seq: Seq):
     return _filter(extract_function(pred), seq)
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def map(func: Func, *seqs: Seq) -> Seq:
     """
     Make an iterator that computes the function using arguments from
@@ -46,7 +46,7 @@ def map(func: Func, *seqs: Seq) -> Seq:
     return _map(func, *seqs)
 
 
-@fn.annotate(2)
+@fn.curry(2)
 def int_base(base, x):
     """
     Convert string x representing a number in some base to integer.
@@ -54,7 +54,7 @@ def int_base(base, x):
     return _builtins.int(x, base)
 
 
-@fn.annotate(3)
+@fn.curry(3)
 def getattr_or(default, attr, obj):
     """
     Return given attribute of object or the default argument if attr is not
@@ -63,7 +63,7 @@ def getattr_or(default, attr, obj):
     return _builtins.getattr(obj, attr, default)
 
 
-@fn.annotate(2)
+@fn.curry(2)
 @_wraps(setattr)
 def setattr(value, attr, obj):
     """

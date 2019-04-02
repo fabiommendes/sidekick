@@ -44,7 +44,7 @@ def reduce(func: Func, seq: Seq):
 #
 # Special reductions
 #
-@fn.annotate(2)
+@fn.curry(2)
 def accumulate(func: Func, seq: Seq) -> Seq:
     """
     Like :func:`scan`, but uses first item of sequence as initial value.
@@ -53,7 +53,7 @@ def accumulate(func: Func, seq: Seq) -> Seq:
     return toolz.accumulate(func, seq)
 
 
-@fn.annotate(3)
+@fn.curry(3)
 def scan(func: Func, init, seq: Seq) -> Seq:
     """
     Returns a sequence of the intermediate folds of seq by func.

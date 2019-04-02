@@ -2,7 +2,7 @@ import collections.abc
 import functools
 
 from sidekick import lazy
-from .list import List, Nil
+from .linkedlist import List, Nil
 
 
 def on_parts(func):
