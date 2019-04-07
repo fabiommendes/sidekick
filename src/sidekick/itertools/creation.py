@@ -1,13 +1,15 @@
 import itertools
 
 from ..magics import L, X, Y
-from ..core import fn, extract_function, Seq, Func
+from ..core import fn, extract_function, Seq, Func, NOT_GIVEN
 
 __all__ = ['cycle', 'iterate', 'iterate_indexed', 'iterate_past',
            'repeat', 'repeatedly', 'singleton', 'unfold']
 
 _enumerate = enumerate
-NOT_GIVEN = object()
+_cycle = itertools.cycle
+_repeat = itertools.repeat
+_count = itertools.count
 
 
 @fn
@@ -22,7 +24,7 @@ def cycle(seq):
         >>> cycle([1, 2, 3]) | L[:10]
         [1, 2, 3, 1, 2, 3, 1, 2, 3, 1]
     """
-    return itertools.cycle(seq)
+    return _cycle(seq)
 
 
 @fn.curry(1)
@@ -36,7 +38,7 @@ def repeat(obj, *, times=None):
         >>> repeat(42, times=5) | L
         [42, 42, 42, 42, 42]
     """
-    return itertools.repeat(obj, times)
+    return _repeat(obj, times)
 
 
 @fn
@@ -178,7 +180,7 @@ def iterate_indexed(func: Func, x, *, idx: Seq = None, start=0) -> Seq:
     """
     func = extract_function(func)
     yield x
-    idx = itertools.count(start) if idx is None else idx
+    idx = _count(start) if idx is None else idx
     for i in idx:
         x = func(i, x)
         yield x

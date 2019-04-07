@@ -32,6 +32,14 @@ def drop_while(pred: Pred, seq: Seq) -> Seq:
     drop_while(pred, seq) ==> seq[n], seq[n + 1], ...
 
     in which n is determined by the first element that pred(seq[n]) == False.
+
+    Examples:
+        >>> drop_while((X < 5), range(10)) | L
+        [5, 6, 7, 8, 9]
+
+    See Also:
+        drop
+        take_while
     """
     return itertools.dropwhile(extract_function(pred), seq)
 
@@ -51,7 +59,12 @@ def random_sample(prob: float, seq: Seq, *, random_state=None) -> Seq:
 @fn.curry(2)
 def remove(pred: Pred, seq: Seq) -> Seq:
     """
-    Return those items of sequence for which pred(item) is False
+    Opposite of filter. Return those items of sequence for which pred(item) 
+    is False
+
+    Examples:
+        >>> remove((X < 5), range(10)) | L
+        [5, 6, 7, 8, 9]
 
     See Also:
         :func:`tools.remove`.
@@ -68,6 +81,14 @@ def take_while(pred: Pred, seq: Seq) -> Seq:
     take_while(pred, seq) => seq[0], seq[1], ..., seq[n - 1]
 
     in which n is determined by the first element that pred(seq[n]) == False.
+
+    Examples:
+        >>> take_while((X < 5), range(10)) | L
+        [0, 1, 2, 3, 4]
+
+    See Also:
+        take
+        drop_while
     """
     return itertools.takewhile(extract_function(pred), seq)
 
@@ -76,6 +97,10 @@ def take_while(pred: Pred, seq: Seq) -> Seq:
 def top_k(k: int, seq: Seq, *, key: Func = None) -> tuple:
     """
     Find the k largest elements of a sequence.
+
+    Examples:
+        >>> top_k(3, "hello world") | L
+        ['w', 'r', 'o']
     """
     return toolz.topk(k, seq, key)
 
@@ -126,6 +151,16 @@ def until_convergence(pred: Pred, seq: Seq) -> Seq:
     """
     Test convergence with the predicate function by passing the last two items
     of sequence. If pred(penultimate, last) returns True, stop iteration.
+
+    Examples:
+        We start with a converging (possibly infinite) sequence and an explicit 
+        criteria
+        >>> seq = sk.iterate((X / 2), 2.0)
+        >>> conv = lambda x, y: abs(x - y) < 0.01
+
+        Run it until convergence
+        >>> until_convergence(conv, seq) | L
+        [2.0, 1.0, 0.5, 0.25, 0.125, 0.0625, 0.03125, 0.015625, 0.0078125]
     """
     seq = iter(seq)
     x = next(seq)
@@ -136,7 +171,7 @@ def until_convergence(pred: Pred, seq: Seq) -> Seq:
             break
         x = y
 
-
+# FIXME: Deprecate?
 @fn.curry(2)
 def without(items, seq: Seq) -> Seq:
     """
@@ -154,6 +189,7 @@ def without(items, seq: Seq) -> Seq:
     return (x for x in seq if x not in items)
 
 
+# FIXME: Deprecate?
 @fn.curry(3)
 def without_keys(items, key: Func, seq: Seq) -> Seq:
     """
@@ -211,7 +247,7 @@ def select_positions(indices: Seq, seq: Seq, *, silent=False) -> Seq:
 def drop_positions(indices: Seq, seq: Seq, *, silent=False) -> Seq:
     """
     Drop all elements in the given positions. Similarly to :func:select_positions`,
-    it requires a (possibly infinite) sorted sequence of items.
+    it requires a (possibly infinite) sorted sequence of indices.
 
     Use ``exclude(fn(set(indices)), seq)`` if the indices are a finite sequence
     in random order.
@@ -243,29 +279,13 @@ def drop_positions(indices: Seq, seq: Seq, *, silent=False) -> Seq:
 
 
 @fn.curry(2)
-def exclude(pred: Func, seq: Seq):
-    """
-    Complement of :func:`filter`. Return a sequence that removes all elements
-    in which predicate is True.
-
-    Examples:
-        >>> exclude(pred.divisible_by(3), range(1, 11)) | L
-        [1, 2, 4, 5, 7, 8, 10]
-
-    See Also:
-        filter
-    """
-    pred = extract_function(pred)
-    return filter(lambda x: not pred(x), seq)
-
-
-@fn.curry(2)
 def separate(pred: Func, seq: Seq) -> (Seq, Seq):
     """
     Split sequence it two. The first consists of items that pass the
     predicate and the second of those items that don't.
 
-    Equivalent to (filter(pred, seq), filter(!pred, seq)).
+    Similar to (filter(pred, seq), filter(!pred, seq)), but only evaluate
+    the predicate once per item.
 
     Examples:
         >>> a, b = separate(X % 2, [1, 2, 3, 4, 5])
@@ -281,8 +301,6 @@ def separate(pred: Func, seq: Seq) -> (Seq, Seq):
 #
 # Extract items from sequence
 #
-
-
 @fn
 def consume(seq: Seq, *, default=None) -> Seq:
     """
@@ -293,6 +311,12 @@ def consume(seq: Seq, *, default=None) -> Seq:
             Any iterable
         default:
             Fallback value returned for empty sequences.
+
+    Examples:
+        >>> consume(print(x) for x in [1, 2, 3])
+        1
+        2
+        3
     """
     for default in seq:
         pass
@@ -303,6 +327,14 @@ def consume(seq: Seq, *, default=None) -> Seq:
 def drop(n: int, seq: Seq) -> Seq:
     """
     Return the sequence following the first n elements.
+
+    Examples:
+        >>> drop(3, [1, 2, 3, 4, 5]) | L
+        [4, 5]
+
+    See Also:
+        take
+        drop_while
     """
     return toolz.drop(n, seq)
 
@@ -314,6 +346,7 @@ def first_repeated(key: Func, seq: Seq):
 
     Raises a ValueError if no repeated element is found.
 
+    Examples:
         >>> first_repeated(None, [1, 2, 3, 1])
         (3, 1)
     """
@@ -333,6 +366,10 @@ def first_repeated(key: Func, seq: Seq):
 def get(idx, seq: Seq, **kwargs):
     """
     Get element (or elements, if idx is a list) in a sequence or dict.
+
+    Examples:
+        >>> get([3, 2, 1], [2, 3, 5, 7, 11, 13, 17])
+        (7, 5, 3)
     """
     return toolz.get(idx, seq, **kwargs)
 
@@ -343,6 +380,10 @@ def find(pred: Pred, seq: Seq) -> (int, object):
     Return the (position, value) of first element in which predicate is true.
 
     Raise ValueError if sequence is exhausted without a match.
+
+    Examples:
+        >>> find((X == 11), [2, 3, 5, 7, 11, 13, 17])
+        (4, 11)
     """
     pred = extract_function(pred)
     for i, x in enumerate(seq):
@@ -357,6 +398,12 @@ def peek(seq: Seq) -> typing.Tuple[object, Seq]:
     Retrieve the next element and retrieve a tuple of (elem, seq).
 
     The resulting sequence *includes* the retrieved element.
+
+    Examples:
+        >>> seq = (x*x for x in range(1, 6))
+        >>> x, seq = peek(seq)
+        >>> x, list(seq)
+        (1, [1, 4, 9, 16, 25])
     """
     return toolz.peek(seq)
 
@@ -365,13 +412,30 @@ def peek(seq: Seq) -> typing.Tuple[object, Seq]:
 def take(n: int, seq: Seq) -> Seq:
     """
     Return (at most) the first n elements of a sequence.
+
+    Examples:
+        >>> take(3, [1, 2, 3, 4, 5]) | L
+        [1, 2, 3]
+
+    See Also:
+        drop
+        take_while
+        take_nth
     """
     return toolz.take(n, seq)
 
 
+# TODO: rename this?
 @fn.curry(2)
 def take_nth(n: int, seq: Seq) -> Seq:
     """
     Return every nth item in sequence.
+
+    Examples:
+        >>> take_nth(2, [1, 2, 3, 4, 5]) | L
+        [1, 3, 5]
+
+    See Also:
+        take
     """
     return toolz.take_nth(n, seq)
