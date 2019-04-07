@@ -1,3 +1,4 @@
+from itertools import tee
 from sidekick.beta.misc import fill
 from ..core import fn, Func, Seq, extract_function
 
@@ -43,3 +44,18 @@ def arg_transformer(*args, **kwargs) -> Func:
         return args, kwargs
 
     return arg_transformer
+
+
+def tee_with(func, seq):
+    """
+    Return a pair of (transformed, seq) in which a copy of seq is transformed
+    by function and another copy is returned as a second argument.
+
+    Examples:
+        >>> nums = iter([1, 2, 3, 4, 5])
+        >>> sqrs, nums = tee_with(sk.map(X * X), nums)
+        >>> list(sqrs), list(nums)
+        ([1, 4, 9, 16, 25], [1, 2, 3, 4, 5])
+    """
+    seq_, seq = tee(seq)
+    return (func(seq_), seq)

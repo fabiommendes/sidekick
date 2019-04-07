@@ -63,7 +63,7 @@ class L(DataMagic, type=list):
 
     @staticmethod
     def count(value, lst):
-        """Count the number of ocurrences of value in list."""
+        """Count the number of occurrences of value in list."""
         try:
             count = lst.count
         except AttributeError:
