@@ -5,9 +5,10 @@ import operator as op
 from sidekick import pipeline
 from .union import Union
 
-flip = lambda f: lambda x, y: f(y, x)
 Seq = collections.abc.Sequence
-
+_chain = itertools.chain
+_repeat = itertools.repeat
+_islice = itertools.islice
 
 # noinspection PyMethodParameters,PyMethodFirstArgAssignment
 class List(Union):
@@ -32,7 +33,7 @@ class List(Union):
     count = Seq.count
 
     @classmethod
-    def __union_constructor__(cls, seq):
+    def __union_constructor__(cls, seq=(), tail=None):
         """
         Examples:
         >>> List([1, 2, 3])
@@ -53,14 +54,14 @@ class List(Union):
             result = last = new(cons)
             set_head(last, next(it))
         except StopIteration:
-            return Nil
+            return tail or Nil
 
         for x in it:
             cell = new(cons)
             set_head(cell, x)
             set_tail(last, cell)
             last = cell
-        set_tail(last, Nil)
+        set_tail(last, tail or Nil)
         return result
 
     # Methods
@@ -103,28 +104,50 @@ class List(Union):
                 return self
             elif other < 0:
                 raise ValueError("negative numbers")
-            return List(itertools.chain(itertools.repeat(self, other)))
+            return List(_chain.from_iterable(_repeat(self, other - 1)), tail=self)
 
         return NotImplemented
 
     __rmul__ = __mul__
 
     # Lexicographical comparisons
-    def _cmp(a, b, stop_op, end_op, on_identity):
+    def __eq__(a, b):
         nil = Nil
         if isinstance(b, List):
             while a is not nil and b is not nil:
                 if a is b:
-                    return on_identity
-                elif stop_op(a.head, b.head):
+                    return True
+                elif a.head != b.head:
                     return False
                 a, b = a.tail, b.tail
-            return end_op(a, b)
+            return a is b
         return NotImplemented
 
-    __eq__ = lambda self, other: self._cmp(other, op.ne, op.is_, True)
-    __ge__ = lambda self, other: self._cmp(other, op.lt, lambda x, y: y is Nil, True)
-    __gt__ = lambda self, other: self._cmp(other, op.gt, lambda x, y: y is Nil, False)
+    def __gt__(a, b):
+        nil = Nil
+        if isinstance(b, List):
+            while a is not nil and b is not nil:
+                if a is b:
+                    return False
+                elif a.head == b.head:
+                    a, b = a.tail, b.tail
+                else:
+                    return a.head > b.head
+            return a is not Nil
+        return NotImplemented
+
+    def __ge__(a, b):
+        nil = Nil
+        if isinstance(b, List):
+            while a is not nil and b is not nil:
+                if a is b:
+                    return True
+                elif a.head == b.head:
+                    a, b = a.tail, b.tail
+                else:
+                    return a.head > b.head
+            return a is b
+        return NotImplemented
 
     #
     # Inserting and removing elements
@@ -140,15 +163,13 @@ class List(Union):
         Return a list with at most n elements taken from the beginning of the
         list.
         """
-
-        return List(itertools.islice(self, n))
+        return List(_islice(self, n))
 
     def drop(lst, n):  # noqa: N805
         """
         Return a list that removes at most n elements from the beginning of the
         list.
         """
-
         for _ in range(n):
             try:
                 lst = lst.tail
@@ -163,30 +184,24 @@ class List(Union):
         """
         Reversed copy of the list.
         """
-
         acc = Nil
         while lst:
             x, lst = lst.uncons
             acc = acc.cons(x)
         return acc
 
-    def sorted(self, **kwargs):
+    def partition_at(lst, pred):
         """
-        A sorted version of the list.
-        """
-        return List(sorted(self, **kwargs))
-
-    def partition(lst, pred):
-        """
-        Partition list on predicate.
+        Separate list on predicate.
         """
         start = []
         append = start.append
 
         while lst:
-            x, lst = lst.uncons
+            x, lst_ = lst.uncons
             if pred(x):
                 break
+            lst = lst_
             append(x)
 
         return List(start), lst
@@ -194,12 +209,10 @@ class List(Union):
     #
     # Monadic interface
     #
-    def map(self, func, *funcs):
+    def map(self, func):
         """
         Maps function into list.
         """
-        if funcs:
-            func = pipeline(func, *funcs)
         return List(map(func, self))
 
     def map_bound(self, func):
@@ -207,11 +220,9 @@ class List(Union):
         Maps a function that return sequences into the list and flatten all
         intermediate results.
         """
-
         def iter_all():
             for x in self:
                 yield from func(x)
-
         return List(iter_all())
 
 
@@ -231,3 +242,4 @@ class Nil(List):
     Represents an empty list.
     """
     __bool__ = lambda x: False
+
