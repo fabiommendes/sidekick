@@ -1,17 +1,11 @@
-from typing import Mapping
+from sidekick.beta.misc import fill
+from ..core import fn, Func, Seq, extract_function
 
-import toolz
-
-from ..core import fn, Function, Seq, extract_function
-
-__all__ = ['accumulate', 'order_by', 'transform', 'transform_map',
-           'products', 'sums', 'accumulate', 'scan', ]
+__all__ = ['order_by', 'transform', 'transform_map']
 
 
-
-
-@fn.annotate(2)
-def order_by(key: Function, seq: Seq, *, indexed=False) -> list:
+@fn.curry(2)
+def order_by(key: Func, seq: Seq) -> list:
     """
     Order sequence by the given function.
 
@@ -20,69 +14,32 @@ def order_by(key: Function, seq: Seq, *, indexed=False) -> list:
             Sort return values of the key function.
         seq:
             Sequence
-        indexed (bool):
-            If true, return list of indexed values.
     """
-    if indexed:
-        key = extract_function(key)
-        seq = list(seq)
-        seq.sort(key=lambda pair: key(pair[1]))
-        return [i for i, x in seq]
-    else:
-        return sorted(seq, key=extract_function(key))
+    key = extract_function(key)
+    return sorted(seq, key=extract_function(key))
 
 
-@fn.annotate(2)
-def transform(funcs: Seq, seq: Seq) -> Seq:
+@fn.curry(2)
+def arg_transformer(*args, **kwargs) -> Func:
     """
-    Similar to :func:`zip_with`, but accepts only single argument functions. If the
-    sequence of arguments is larger than the sequence of functions, the
-    remaining values are returned unchanged.
+    Receive a function arguments and return a function that transform the
+    given arguments by the corresponding functions.
 
-
-    Args:
-        funcs (iterable):
-            An iterable of functions
-        seq (iterable):
-            The respective function arguments
-
-    Returns:
-        An iterator.
+    Examples:
+        >>> transformer = arg_transformer(str.upper, None, str.lower, sep=str.strip)
+        >>> args, kwargs = transformer('Foo', 'Bar', 'Baz', 'Eggs', sep=' : ')
+        >>> args
+        ('FOO', 'Bar', 'baz', 'Eggs')
+        >>> kwargs
+        {'sep': ':'}
     """
-    to_func = extract_function
-    it = iter(seq)
-    yield from (to_func(f)(x) for f, x in zip(funcs, it))
-    yield from it
+    id_ = (lambda x: x)
+    fargs = tuple(extract_function(f or id_) for f in args)
+    fkwargs = {k: extract_function(f or id_) for k, f in kwargs.items()}
 
+    def arg_transformer(*args, **kwargs):
+        args = tuple(f(x) for f, x in zip(fill(id_, fargs), args))
+        kwargs = {k: fkwargs.get(k, id_)(v) for k, v in kwargs.items()}
+        return args, kwargs
 
-# noinspection PyIncorrectDocstring
-def transform_map(funcs: Mapping, mapping: Mapping) -> Mapping:
-    """
-    Similar to transform, but instead of receiving a sequence of values, it
-    expects maps. The function than apply each function in the map of functions
-    to their corresponding values in the second argument.
-
-    >>> transform_map({'foo': str.lower, 'ham': str.upper},
-    ...           {'foo': 'Bar', 'ham': 'Spam', 'baz': 'Other'})
-    {'foo': 'bar', 'ham': 'SPAM', 'baz': 'Other'}
-
-    Args:
-        funcs (Mapping):
-            A mapping from arbitrary keys to functions.
-        mapping (Mapping):
-            Any mapping.
-
-    Returns:
-        dict
-    """
-    to_func = extract_function
-    result = dict(mapping)
-    for k, f in funcs:
-        try:
-            result[k] = to_func(f)(result[k])
-        except KeyError:
-            pass
-    return result
-
-
-
+    return arg_transformer

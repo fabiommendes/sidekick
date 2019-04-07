@@ -1,19 +1,16 @@
-import typing
 from collections import Counter
 from math import sqrt
 
 import toolz
-from sidekick import extract_predicate_function
-from sidekick.itertools.misc import tee
 
-from ..core import fn, Seq, Function, Predicate, extract_function, predicate
+from ..core import fn, Seq, Func, Pred, extract_function
 
 __all__ = ["count_by", "is_distinct", 'is_iterable', 'has']
 NOT_GIVEN = object()
 
 
-@fn.annotate(2)
-def count_by(key: Function, seq: Seq) -> Counter:
+@fn.curry(2)
+def count_by(key: Func, seq: Seq) -> Counter:
     """
     Count elements of a sequence by a key function.
 
@@ -23,17 +20,17 @@ def count_by(key: Function, seq: Seq) -> Counter:
     return Counter(map(extract_function(key), seq))
 
 
-@fn.annotate(2)
-def count(pred: Predicate, seq: Seq) -> int:
+@fn.curry(2)
+def count(pred: Pred, seq: Seq) -> int:
     """
     Count the number of occurrences in which predicate is true.
     """
-    pred = extract_predicate_function(pred)
+    pred = extract_function(pred)
     return sum(1 for x in seq if pred(x))
 
 
-@fn.annotate(2)
-def has(pred: Predicate, seq: Seq) -> bool:
+@fn.curry(2)
+def has(pred: Pred, seq: Seq) -> bool:
     """
     Return True if sequence has at least one item that satisfy the predicate.
     """
@@ -43,7 +40,7 @@ def has(pred: Predicate, seq: Seq) -> bool:
     return False
 
 
-@predicate
+@fn
 def is_distinct(seq: Seq) -> bool:
     """
     Test if all elements in sequence are distinct.
@@ -51,7 +48,7 @@ def is_distinct(seq: Seq) -> bool:
     return toolz.isdistinct(seq)
 
 
-@predicate
+@fn
 def is_iterable(obj) -> bool:
     """
     Test if argument is iterable.
@@ -59,7 +56,7 @@ def is_iterable(obj) -> bool:
     return toolz.isiterable(obj)
 
 
-@predicate.annotate(2)
+@fn.curry(2)
 def is_equal(seq1, seq2):
     """
     Return True if the two sequences are equal.
@@ -77,12 +74,11 @@ def is_equal(seq1, seq2):
                 return False
 
 
-
 #
 # Statistical functions
 #
-@fn.annotate(2)
-def moment(func: Function, seq: Seq) -> float:
+@fn.curry(2)
+def moment(func: Func, seq: Seq) -> float:
     """
     Return the generalized moment computed by the mean of func across all
     values in seq.
