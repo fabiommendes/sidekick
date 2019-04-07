@@ -1,5 +1,4 @@
 import itertools
-
 import typing
 
 from ..core import fn, extract_function, Func, Pred, Seq
@@ -13,12 +12,11 @@ _filter = filter
 
 __all__ = [
     # Filtering
-    *["drop_while", "random_sample", "remove", "take_while", "top_k",
-      "unique", "until_convergence", "without", "without_idx"],
+    *["drop_while", "random_sample", "remove", "separate", "take_while", "top_k",
+      "unique", "until_convergence", "without"],
 
     # Extracting items
-    *["but_last", "consume", "drop", "get", "last", "nth", "peek", "tail",
-      "take", "take_nth"],
+    *["consume", "drop", "get", "peek", "take", "take_nth"],
 ]
 
 
@@ -94,17 +92,22 @@ def unique(seq: Seq, *, key: Func = None, exclude: Seq = ()) -> Seq:
         seq:
             Iterable of objects.
         key:
-            Optional key function.
+            Optional key function. It will return only the first value that
+            evaluate to a unique key by the key function.
         exclude:
-            Optional sequence of keys to exclude from seq.
+            Optional sequence of keys to exclude from seq
+
+    Examples:
+        >>> unique(range(100), key=(X % 5)) | L
+        [0, 1, 2, 3, 4]
 
     Note:
         Elements of a sequence or their keys should be hashable, otherwise it
         uses a slow path.
     """
-    seen = set(exclude)
+    pred = extract_function(key or (lambda x: x))
+    seen = set(map(key,exclude))
     add = seen.add
-    pred = extract_function(key)
 
     for x in seq:
         key = pred(x)
@@ -137,107 +140,147 @@ def until_convergence(pred: Pred, seq: Seq) -> Seq:
 @fn.curry(2)
 def without(items, seq: Seq) -> Seq:
     """
-    Returns sequence without items specified. Preserves order.
+    Return sequence without specified items.
 
     Hint: pass items as a set for greater performance.
-
-    >>> list(without({2, 3, 5, 7}, range(10)))
-    [0, 1, 4, 6, 8, 9]
-    """
-    for x in seq:
-        if x not in items:
-            yield x
-
-
-@fn.curry(2)
-def without_idx(indexes, seq):
-    """
-    Returns sequence without the specified indexes.
-
-    Hint: pass items as a set for greater performance.
-
-    >>> ''.join(without_idx([3, 4, 5], 'foobazbar'))
-    'foobar'
-    """
-    try:
-        indexes = set(indexes)
-    except TypeError:
-        pass
-
-    for i, x in enumerate(seq):
-        if i not in indexes:
-            yield x
-
-
-@fn.curry(2)
-def filter_idx(func: Pred, seq: Seq) -> Seq:
-    """
-    Similar to :func:`filter`, but return selected indexes instead of values.
-    """
-    func = extract_function(func)
-    return (i for (i, x) in enumerate(seq) if func(x))
-
-
-def separate(func, seq):
-    """
-    Similar to the built-in filter() function, but returns two sequences with
-    the (filtered in, filtered out) values.
 
     Examples:
-        >>> separate(lambda x: x % 3, [1, 2, 3, 4, 5, 6])
-        ([1, 2, 4, 5], [3, 6])
+        >>> list(without({2, 3, 5, 7}, range(10)))
+        [0, 1, 4, 6, 8, 9]
 
-        Respect the type of input sequence just as the filter() function
-
-        >>> separate(lambda x: x.islower(), 'FoobAR')
-        ('oob', 'FAR')
+    See Also:
+        without_keys
     """
-    func = bool if func is None else func
-    L1, L2 = [], []
-
-    # Filter elements
-    for x in seq:
-        (L1 if func(x) else L2).append(x)
-
-    # Return the right type
-    if isinstance(seq, str):
-        return ''.join(L1), ''.join(L2)
-    elif isinstance(seq, tuple):
-        return tuple(L1), tuple(L2)
-    else:
-        return L1, L2
+    return (x for x in seq if x not in items)
 
 
-def separate_idx(func, seq):
+@fn.curry(3)
+def without_keys(items, key: Func, seq: Seq) -> Seq:
     """
-    Similar to separate(), but return lists of indexes instead of values.
+    Returns sequence without the values in which key(x) are present in items.
+
+    Hint: pass items as a set for greater performance.
+
+    Examples:
+        >>> "".join(without_keys('aeiou', str.lower, 'foObaR'))
+        'fbR'
+
+    See Also:
+        without_keys
     """
+    key = extract_function(key)
+    return filter(lambda x: key(x) not in items, seq)
 
-    func = bool if func is None else func
-    L1, L2 = [], []
 
+@fn.curry(2)
+def select_positions(indices: Seq, seq: Seq, *, silent=False) -> Seq:
+    """
+    Return a sequence with values in the positions specified by indices.
+
+    Indices must be any non-decreasing increasing sequence. If you have a list
+    of non-ordered indices, use the builtin sorted() function.
+
+    Use get() if you want access random positions. Differently from get(), this
+    function accepts infinite iterators as indices.
+
+    Examples:
+        >>> "".join(select_positions([0, 1, 1, 1, 4, 5, 10], "foo bar baz"))
+        'fooobaz'
+
+    See Also:
+        get
+        drop_positions
+    """
+    indices = iter(indices)
+    idx = next(indices, None)
+    if idx is None:
+        return
     for i, x in enumerate(seq):
-        (L1 if func(x) else L2).append(i)
-    return L1, L2
+        if i == idx:
+            yield x
+            for idx in indices:
+                if i == idx:
+                    yield x
+                else:
+                    break
+        elif i > idx and not silent:
+            raise ValueError('non-decreasing sequence of indices')
+
+
+@fn.curry(2)
+def drop_positions(indices: Seq, seq: Seq, *, silent=False) -> Seq:
+    """
+    Drop all elements in the given positions. Similarly to :func:select_positions`,
+    it requires a (possibly infinite) sorted sequence of items.
+
+    Use ``exclude(fn(set(indices)), seq)`` if the indices are a finite sequence
+    in random order.
+
+    Examples:
+        >>> "".join(drop_positions([1, 2, 4, 10], "foobar"))
+        'fbr'
+
+    See Also:
+        exclude
+        select_positions
+    """
+    indices = iter(indices)
+    seq = iter(seq)
+    idx = next(indices, None)
+    if idx is None:
+        return
+    for i, x in enumerate(seq):
+        if i == idx:
+            try:
+                idx = next(indices)
+            except StopIteration:
+                break
+        elif i > idx and not silent:
+            raise ValueError('non-decreasing sequence of indices')
+        else:
+            yield x
+    yield from seq
+
+
+@fn.curry(2)
+def exclude(pred: Func, seq: Seq):
+    """
+    Complement of :func:`filter`. Return a sequence that removes all elements
+    in which predicate is True.
+
+    Examples:
+        >>> exclude(pred.divisible_by(3), range(1, 11)) | L
+        [1, 2, 4, 5, 7, 8, 10]
+
+    See Also:
+        filter
+    """
+    pred = extract_function(pred)
+    return filter(lambda x: not pred(x), seq)
+
+
+@fn.curry(2)
+def separate(pred: Func, seq: Seq) -> (Seq, Seq):
+    """
+    Split sequence it two. The first consists of items that pass the
+    predicate and the second of those items that don't.
+
+    Equivalent to (filter(pred, seq), filter(!pred, seq)).
+
+    Examples:
+        >>> a, b = separate(X % 2, [1, 2, 3, 4, 5])
+        >>> list(a), list(b)
+        ([1, 3, 5], [2, 4])
+    """
+    pred = extract_function(pred)
+    a, b = itertools.tee((x, pred(x)) for x in seq)
+    return ((x for x, keep in a if keep),
+            (x for x, exclude in b if not exclude))
 
 
 #
 # Extract items from sequence
 #
-@fn
-def but_last(seq: Seq) -> Seq:
-    """
-    Returns an iterator with all elements of the sequence but last.
-    """
-    seq = iter(seq)
-    try:
-        prev = next(seq)
-    except StopIteration:
-        return
-    else:
-        for x in seq:
-            yield prev
-            prev = x
 
 
 @fn
@@ -294,27 +337,6 @@ def get(idx, seq: Seq, **kwargs):
     return toolz.get(idx, seq, **kwargs)
 
 
-@fn
-def last(seq: Seq):
-    """
-    Return last item of sequence.
-    """
-    return toolz.last(seq)
-
-
-@fn.curry(2)
-def nth(n: int, seq: Seq):
-    """
-    Return the nth element in a sequence.
-
-    If seq is an iterator, consume the first n items.
-    """
-    if n == 0:
-        return toolz.first(seq)
-    else:
-        return toolz.nth(n, seq)
-
-
 @fn.curry(3)
 def find(pred: Pred, seq: Seq) -> (int, object):
     """
@@ -337,25 +359,6 @@ def peek(seq: Seq) -> typing.Tuple[object, Seq]:
     The resulting sequence *includes* the retrieved element.
     """
     return toolz.peek(seq)
-
-
-@fn
-def rest(seq: Seq) -> Seq:
-    """
-    Skips first item in the sequence, returning iterator starting just after it.
-    A shortcut for drop(1, seq).
-    """
-    seq = iter(seq)
-    next(seq)
-    yield from seq
-
-
-@fn.curry(2)
-def tail(n: int, seq: Seq) -> tuple:
-    """
-    Return the last n elements of a sequence.
-    """
-    return toolz.tail(n, seq)
 
 
 @fn.curry(2)

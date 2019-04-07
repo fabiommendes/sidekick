@@ -1,7 +1,10 @@
+from .basic import *
 from .creation import *
-from .zipping import *
 from .filtering import *
+from .partitioning import *
 from .reducing import *
+from .zipping import *
+from .transforms import *
 from ..builtins import map, filter, zip
 
 #
@@ -10,11 +13,11 @@ from ..builtins import map, filter, zip
 
 # countby = count_by
 dropwhile = drop_while
-# groupby = group_by
+groupby = group_by
 # isdistinct = is_distinct
 # isiterable = is_iterable
-# partitionby = partition_by
-# reduceby = reduce_by
+partitionby = partition_by
+reduceby = reduce_by
 takewhile = take_while
 topk = top_k
 

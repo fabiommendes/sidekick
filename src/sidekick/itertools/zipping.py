@@ -24,7 +24,7 @@ def with_prev(seq: Seq, *, fill=None) -> Seq:
     """
     Returns an iterator of a pair of each item with one preceding it.
 
-    Yields fill or None as preceding element for first item.
+    Generate fill or None as preceding element for first item.
     """
 
     prev = fill
