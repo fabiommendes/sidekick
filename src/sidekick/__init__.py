@@ -1,5 +1,5 @@
 __author__ = "Fábio Macêdo Mendes"
-__version__ = "0.4.1"
+__version__ = "0.5.0"
 
 try:
     import cytoolz as toolz

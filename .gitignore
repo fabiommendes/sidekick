@@ -35,3 +35,4 @@ src/sidekick/__meta__.py
 .ipynb_checkpoints/
 .nbgrader.log
 pending/
+pip-wheel-metadata/
