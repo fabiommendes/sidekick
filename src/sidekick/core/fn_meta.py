@@ -23,12 +23,12 @@ class FunctionMeta(type):
 
     _curry = None
 
-    def __new__(cls, name, bases, ns):
+    def __new__(mcs, name, bases, ns):
         ns.update(
             __doc__=lazy_property(lambda x: x.__getattr__('__doc__')),
             __module__=lazy_property(lambda x: x.__getattr__('__module__')),
         )
-        return type.__new__(cls, name, bases, ns)
+        return type.__new__(mcs, name, bases, ns)
 
     def __rshift__(self, other):
         if isinstance(other, self):
@@ -133,7 +133,7 @@ def make_xor(f, g):
 
 def arity(func):
     """
-    Return arity of function.
+    Return arity of a function.
     """
     if hasattr(func, 'arity'):
         return func.arity

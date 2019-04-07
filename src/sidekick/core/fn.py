@@ -1,6 +1,5 @@
 import inspect
 from functools import partial
-
 from types import MappingProxyType as mappingproxy
 
 from .fn_meta import FunctionMeta, extract_function, FUNCTION_ATTRIBUTES, make_xor, mixed_accessor, \
@@ -15,9 +14,11 @@ class fn(metaclass=FunctionMeta):
     Base class for function-like objects in Sidekick.
     """
 
-    __slots__ = ("__dict__", "__wrapped__")
+    __slots__ = ("func", "__dict__", "__weakref__")
     __inner_function__: callable = property(lambda self: self.__wrapped__)
     _ok = _err = None
+    args = ()
+    keywords = mappingproxy({})
 
     #
     # Alternate constructors
@@ -29,7 +30,7 @@ class fn(metaclass=FunctionMeta):
 
         If arity is not given, infer from function parameters.
         """
-        return fn.curry(n, self.__wrapped__)
+        return fn.curry(n, self.func)
 
     @curry.classmethod
     def curry(cls, arity, func=None, **kwargs):
@@ -42,9 +43,6 @@ class fn(metaclass=FunctionMeta):
             return Curried(func, arity)
         else:
             raise NotImplementedError
-
-    # TODO: rename annotate to curry
-    annotate = curry
 
     @classmethod
     def wraps(cls, func, fn_obj=None):
@@ -63,31 +61,33 @@ class fn(metaclass=FunctionMeta):
 
     @lazy_property
     def arity(self):
-        return arity(self.__wrapped__)
+        return arity(self.func)
 
     @lazy_property
     def argspec(self):
-        return inspect.getfullargspec(self.__wrapped__)
+        return inspect.getfullargspec(self.func)
 
     @lazy_property
     def signature(self):
-        return inspect.Signature.from_callable(self.__wrapped__)
+        return inspect.Signature.from_callable(self.func)
+
+    __wrapped__ = property(lambda self: self.func)
 
     def __init__(self, func, **kwargs):
-        self.__wrapped__ = extract_function(func)
+        self.func = extract_function(func)
         self.__dict__ = dic = {}
         for k, v in kwargs.items():
             dic[FUNCTION_ATTRIBUTES.get(k, k)] = v
 
     def __repr__(self):
         try:
-            func = self.__wrapped__.__name__
+            func = self.func.__name__
         except AttributeError:
-            func = repr(self.__wrapped__)
-        return f'fn({func})'
+            func = repr(self.func)
+        return f'{self.__class__.__name__}({func})'
 
     def __call__(self, *args, **kwargs):
-        return self.__wrapped__(*args, **kwargs)
+        return self.func(*args, **kwargs)
 
     #
     # Function composition
@@ -99,7 +99,7 @@ class fn(metaclass=FunctionMeta):
 
     def __rrshift__(self, other):
         f = extract_function(other)
-        g = self.__wrapped__
+        g = self.func
         return fn(lambda *args, **kw: g(f(*args, **kw)))
 
     __lshift__ = __rrshift__
@@ -125,11 +125,12 @@ class fn(metaclass=FunctionMeta):
 
     def __ror__(self, f):
         # ror can also be interpreted as arg | func. If lhs is a callable, raise
-        # an value error because of the ambiguous interpretation
+        # an value error because of the ambiguous interpretation. Should it be
+        # piping or composition of predicates via an OR?
         if callable(f):
             raise AmbiguousOperation.default()
         else:
-            return self.__wrapped__(f)
+            return self.func(f)
 
     def __and__(self, g):
         f = self.__inner_function__
@@ -155,13 +156,13 @@ class fn(metaclass=FunctionMeta):
         if instance is None:
             return self
         else:
-            return partial(self.__inner_function__, instance)
+            return partial(self.func, instance)
 
     #
     # Other python interfaces
     #
     def __getattr__(self, attr):
-        return getattr(self.__wrapped__, attr)
+        return getattr(self.func, attr)
 
     #
     # Partial application
@@ -232,14 +233,14 @@ class fn(metaclass=FunctionMeta):
         Exceptions are converted to Err() cases.
         """
         try:
-            return self._ok(self.__wrapped__(*args, **kwargs))
+            return self._ok(self.func(*args, **kwargs))
         except Exception as exc:
             return self._err(exc)
 
 
 # Slightly faster access for slotted object
 # noinspection PyPropertyAccess
-fn.__inner_function__ = fn.__wrapped__
+fn.__inner_function__ = fn.func
 
 
 #
@@ -265,9 +266,9 @@ class Curried(fn):
 
     def __repr__(self):
         try:
-            func = self.__wrapped__.__name__
+            func = self.func.__name__
         except AttributeError:
-            func = repr(self.__wrapped__)
+            func = repr(self.func)
         args = ', '.join(map(repr, self.args))
         kwargs = ', '.join(f'{k}={v!r}' for k, v in self.keywords.items())
         if not args:
@@ -281,7 +282,7 @@ class Curried(fn):
             raise TypeError('curried function cannot be called without arguments')
 
         try:
-            return self.__wrapped__(*(self.args + args), **self.keywords, **kwargs)
+            return self.func(*(self.args + args), **self.keywords, **kwargs)
         except TypeError:
             n = len(args)
             if n == 0 and not kwargs:
@@ -292,16 +293,16 @@ class Curried(fn):
             else:
                 args = self.args + args
                 update_arguments(self.keywords, kwargs)
-                return Curried(self.__wrapped__, self.arity - n, args, kwargs)
+                return Curried(self.func, self.arity - n, args, kwargs)
 
     def partial(self, *args, **kwargs):
         update_arguments(self.keywords, kwargs)
         n_args = self.arity - len(args)
-        return Curried(self.__wrapped__, n_args, args + self.args, kwargs)
+        return Curried(self.func, n_args, args + self.args, kwargs)
 
     def rpartial(self, *args, **kwargs):
         update_arguments(self.keywords, kwargs)
-        wrapped = self.__wrapped__
+        wrapped = self.func
         if self.args:
             wrapped = partial(wrapped, args)
         return fn(wrapped).rpartial(*args, **kwargs)
@@ -331,7 +332,7 @@ class AmbiguousOperation(ValueError):
             '\nUse `fn(lhs) | func` in the former and `lhs > func` in the latter.')
 
 
-def update_arguments(src, dest):
+def update_arguments(src, dest: dict):
     duplicate = set(src).intersection(dest)
     if duplicate:
         raise TypeError(f'duplicated keyword arguments: {duplicate}')
