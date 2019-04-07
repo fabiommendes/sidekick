@@ -136,6 +136,15 @@ def compose(*funcs: Func) -> fn:
     Create function that apply argument from right to left.
 
         compose(f, g, h, ...) ==> f << g << h << ...
+
+    Example:
+        >>> f = compose((X + 1), (X * 2))
+        >>> f(2)  # double than increment
+        5
+
+    See Also:
+        pipe
+        pipeline
     """
     return fn(toolz.compose(*map(extract_function, funcs)))
 
@@ -145,6 +154,15 @@ def pipeline(*funcs: Func) -> fn:
     Similar to compose, but order of application is reversed, i.e.:
 
         pipeline(f, g, h, ...) ==> f >> g >> h >> ...
+
+    Example:
+        >>> f = pipeline((X + 1), (X * 2))
+        >>> f(2)  # increment and double
+        6
+
+    See Also:
+        pipe
+        compose
     """
     return fn(toolz.compose(*map(extract_function, reversed(funcs))))
 
@@ -157,9 +175,16 @@ def pipe(data, *funcs: Callable):
     I.e. ``pipe(data, f, g, h)`` is equivalent to ``h(g(f(data)))`` or
     to ``data | f | g | h``, if ``f, g, h`` are fn objects.
 
-    >>> from math import sqrt
-    >>> pipe(-4, abs, sqrt)
-    2.0
+    Examples:
+        >>> from math import sqrt
+        >>> pipe(-4, abs, sqrt)
+        2.0
+
+    See Also:
+        pipeline
+        compose
+        thread
+        rthread
     """
     if funcs:
         for func in funcs:
@@ -177,9 +202,13 @@ def thread(data, *forms):
     Arguments are passed as tuples and the value is passed as the
     first argument.
 
-    >>> from sidekick import op
-    >>> thread(20, (op.div, 2), (op.mul, 4), (op.add, 2))
-    42.0
+    Examples:
+        >>> thread(20, (op.div, 2), (op.mul, 4), (op.add, 2))
+        42.0
+
+    See Also:
+        pipe
+        rthread
     """
     for form in forms:
         if isinstance(form, tuple):
@@ -196,9 +225,13 @@ def rthread(data, *forms):
     Like thread, but data is passed as last argument to functions,
     instead of first.
 
-    >>> from sidekick import op
-    >>> rthread(2, (op.div, 20), (op.mul, 4), (op.add, 2))
-    42.0
+    Examples:
+        >>> rthread(2, (op.div, 20), (op.mul, 4), (op.add, 2))
+        42.0
+
+    See Also:
+        pipe
+        thread
     """
     for form in forms:
         if isinstance(form, tuple):
@@ -220,6 +253,12 @@ def identity(x: T, *args, **kwargs) -> T:
     The identity function.
 
     Return its first argument unchanged.
+
+    Examples:
+        Identity accepts one or more positional arguments and any number of
+        keyword arguments.
+        >>> identity(1, 2, 3, foo=4)
+        1
     """
     return x
 
@@ -231,6 +270,9 @@ def ridentity(*args, **kwargs):
     Similar to identity, but return the last positional argument and not the
     first. In the case the function receives a single argument, both identity
     functions coincide.
+
+    >>> ridentity(1, 2, 3)
+    3
     """
     if not args:
         raise TypeError('must be called with at least one positional argument.')
@@ -242,6 +284,11 @@ def always(x: T) -> Callable[..., T]:
     """
     Return a function that always return x when called with any number of
     arguments.
+
+    Examples:
+        >>> f = always(42)
+        >>> f('answer', for_what='question of life, the universe ...')
+        42
     """
     return lambda *args, **kwargs: x
 
@@ -253,5 +300,13 @@ def rec(func):
 
     This is a version of the Y-combinator and is useful to implement
     recursion from scratch.
+
+    Examples:
+        In this example, the factorial receive a second argument which is the
+        function it must recurse to. rec pass the function to itself so now
+        the factorial only needs the usual numeric argument.
+        >>> map(rec(lambda f, n: 1 if n == 0 else n * f(f, n - 1)), 
+        ...     range(10)) | L
+        [1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880]
     """
     return fn(lambda *args, **kwargs: func(func, *args, **kwargs))
