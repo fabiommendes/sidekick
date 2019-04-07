@@ -20,23 +20,31 @@ class Result(Union):
     #
     # API methods
     #
-    def map(self, func, *funcs):
+    def map(self, func):
         """
         Apply function if object is in the Ok state and return another Result.
         """
-        if self:
-            if funcs:
-                return rpipe(self.value, func, *funcs)
-            else:
-                return rcall(func, self.value)
-        else:
-            return self
+        return self and rcall(func, self.value)
 
     def map_error(self, func):
         """
         Like the .map(func) method, but modifies the error part of the result.
         """
         return self if self else self.Err(func(self.error))
+
+    def map_exception(self, func):
+        """
+        Similar to map_error, but only apply func (which is usually an Exception
+        subclass, if the error is not an Exception.
+        """
+        if self:
+            return self
+        else:
+            err = self.error
+            if isinstance(err, Exception) \
+                    or isinstance(err, type) and issubclass(err, Exception):
+                return self
+            return self.Err(func(err))
 
     def get_value(self, default=None):
         """
@@ -92,7 +100,7 @@ class Result(Union):
             >>> Just(1 + 2j).attr('real')
             Just(1.0)
         """
-        return self and maybe(getattr(self.value, attr))
+        return self and result(getattr(self.value, attr))
 
     def iter(self):
         """
@@ -129,6 +137,14 @@ class Err(Result):
     is_failure = True
     __bool__ = lambda _: False
 
+    def __eq__(self, other):
+        if isinstance(other, type) and issubclass(other, Exception):
+            e = self.error
+            return (e == other
+                    or isinstance(e, other)
+                    or issubclass(e, type) and issubclass(e, other))
+        return super().__eq__(other)
+
 
 class Ok(Result):
     """
@@ -151,6 +167,12 @@ def result(obj):
     Objects and exceptions:
         result(obj)        -> Ok(obj)
         result(result_obj) -> result_obj
+
+    Examples:
+        >>> result(Err("error"))
+        Err('error')
+        >>> result(42)
+        Ok(42)
     """
     if isinstance(obj, Result):
         return obj
@@ -168,11 +190,11 @@ def first_error(*args):
     """
     if len(args) == 1:
         args, = args
-    cls = Result
+    cls = (Err, Exception)
     for x in args:
-        if isinstance(x, cls) and x.is_err:
-            return x.error
-        elif isinstance(x, Exception):
+        if isinstance(x, cls):
+            return x.error if x.__class__ is Err else x
+        elif isinstance(x, type) and issubclass(x, Exception):
             return x
     return None
 
@@ -236,6 +258,12 @@ def rpipe(obj, *funcs):
         *funcs:
             List of functions in application order.
 
+    Examples:
+        >>> rpipe(Ok(20), (X + 1), (X * 2))
+        Ok(42)
+        >>> rpipe(2, (X - 2), (1 / X))
+        Err(ZeroDivisionError('division by zero'))
+
     Returns:
         A Result value.
     """
@@ -271,12 +299,21 @@ def rpipeline(*funcs):
     Returns:
         A function that return Results.
 
+    Examples:
+        >>> f = rpipeline((X + 1), (X * 2))
+        >>> f(20)
+        Ok(42)
+
     See Also:
         This is similar to :func:`rpipe`, except that it does not require the
         initial argument passed to the functions.
     """
-    funcs = tuple(map(extract_function, funcs))
-    return lambda x: _rpipe(x, *funcs)
+    func, *funcs = map(extract_function, funcs)
+    rpipe = _rpipe
+
+    if not funcs:
+        return fn(lambda *args, **kwargs: rapply(func, *args, **kwargs))
+    return fn(lambda *args, **kwargs: rpipe(rapply(func, *args, **kwargs), funcs))
 
 
 # noinspection PyPep8Naming
@@ -286,40 +323,48 @@ class catch_exceptions(AbstractContextManager):
     block and stores them in the result variable.
 
     Examples:
-
         In the block of code bellow, the ``result`` thunk would be set to
         ``Ok(x / y)`` if everything runs smoothly and store the error
         otherwise.
 
-        >>> x_data, y_data = '42', '3,14'
-        >>> with catch_exceptions() as ptr:
+        >>> x_data, y_data = '42', '3;14'
+        >>> with catch_exceptions() as err:
         ...     x = int(x_data)
         ...     y = int(y_data)
-        ...     ptr(Ok(x / y))
+        ...     err.put(x / y)
 
         The final result can be extracted by calling ptr
 
-        >>> ptr()
+        >>> err.get()
         Err(ValueError(...))
     """
 
-    def __init__(self, value=None):
-        self.value = value
-        self.result = None
+    def __init__(self, *args, value=None):
+        self._value = value
+        self._result = Ok(None)
+        self._catch = args
+        self._has_error = False
+
+    def __bool__(self):
+        return self._has_error
 
     def __enter__(self):
-        self.result = Ok(self.value)
+        self._result = Ok(self._value)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type is not None:
-            self.result = Err(exc_val)
-            return True
+            self._has_error = True
+            self._result = Err(exc_val)
+            if not self._catch or isinstance(exc_val, self._catch):
+                return True
+            raise exc_val
 
-    def __call__(self, *args):
-        if args:
-            self.result, = args
-        return self.result
+    def put(self, value):
+        self._result = result(value)
+
+    def get(self):
+        return self._result
 
 
 def result_fn(func):
@@ -332,8 +377,8 @@ def result_fn(func):
             The wrapped function.
 
     Examples:
-        >>> safe_float = result_fn(float)
-        >>> safe_float("3.14")
+        >>> parse_float = result_fn(float)
+        >>> parse_float("3.14")
         Ok(3.14)
     """
     return fn(functools.partial(rcall, func))
@@ -342,4 +387,4 @@ def result_fn(func):
 fn._ok = staticmethod(result)
 fn._err = Err
 
-from .maybe import Maybe, Just, Nothing, maybe  # noqa: E402
+from .maybe import Maybe, Just, Nothing  # noqa: E402
