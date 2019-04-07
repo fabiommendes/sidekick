@@ -47,7 +47,7 @@ Fibonacci numbers
 
 Easily generate infinite sequences of Fibonacci numbers
 
->>> fibonacci = sk.iterate_past(X + Y, [1, 1])
+>>> fibonacci = sk.iterate_past((X + Y), [1, 1])
 >>> fibonacci | L[:10]
 [1, 1, 2, 3, 5, 8, 13, 21, 34, 55]
 
@@ -101,9 +101,9 @@ Euler number
 
 We are using Taylor formula to compute the Euler number from exp(1)
 
->>> factorials = sk.iterate_indexed(X * Y, 1, start=1)
->>> partial_sums = sk.sums(map(1 / X, factorials))
->>> sk.until_convergence(X == Y, partial_sums) | sk.last
+>>> factorials = sk.iterate_indexed((X * Y), 1, start=1)
+>>> partial_sums = sk.sums(map((1 / X), factorials))
+>>> sk.until_convergence((X == Y), partial_sums) | sk.last
 2.7182818284590455
 
 **Explanation**

@@ -25,4 +25,7 @@ exclude_lines =
     while 0:
     while False:
 
+omit = 
+    src/sidekick/beta/*
+
 ignore_errors = True
