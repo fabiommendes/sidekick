@@ -1,9 +1,17 @@
+import operator
+
 import pytest
 
-from sidekick import placeholder as _, fn, F, record, lazy
+from sidekick import placeholder as _, fn, F, record, lazy, Placeholder
+from sidekick.core.placeholder import simplify_ast, Call, Cte, GetAttr, Call, compile_ast
+
+func = lambda x: x.__inner_function__
 
 
 class TestPlaceholder:
+    def test_basic_properties(self):
+        assert str(+(_.method(42 + _))) == '(+_.method(42 + _))'
+
     def test_with_math_operators(self):
         inc = fn(_ + 1)
         assert inc(1) == 2
@@ -43,6 +51,9 @@ class TestPlaceholder:
         f = fn(F(abs, _))
         assert f(-1) == 1
 
+        f = fn(F(dict, [], foo=_))
+        assert f('bar') == {'foo': 'bar'}
+
     def test_nested_attribute_access(self):
         x = record(foo=record(bar=42))
 
@@ -62,6 +73,20 @@ class TestPlaceholder:
         f = fn(_.real / (_.real * _.real))
         assert f(2) == 0.5
         assert f(2 + 2j) == 0.5
+
+        f = fn(-_)
+        assert f(2) == -2
+
+        f = fn(-(2 * _))
+        assert f(2) == -4
+
+        f = fn((2 * _).imag)
+        assert f(2) == 0
+
+
+class TestPlaceholderCompiler:
+    def test_compiler_simplifications(self):
+        assert simplify_ast(Placeholder(Cte(42)).imag._ast) == Cte(0)
 
 
 class TestThisPlaceholder:

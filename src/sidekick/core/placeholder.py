@@ -6,7 +6,7 @@ from .operators import UNARY, BINARY, COMPARISON, METHODS, SYMBOLS, NAMES
 
 flip = lambda f: lambda x, y: f(y, x)
 named = lambda name, obj: setattr(obj, "__name__", name) or obj
-__all__ = ["placeholder", "Placeholder", "F"]
+__all__ = ["placeholder", "Placeholder"]
 
 
 #
@@ -79,8 +79,6 @@ class Placeholder:
         return f"{type(self).__name__}({self})"
 
     def __str__(self):
-        if self._ast is None:
-            return "_"
         return source(self._ast)
 
     def __getattr__(self, attr):
@@ -91,17 +89,6 @@ class Placeholder:
         kwargs = {k: to_ast(v) for k, v in kwargs.items()}
         return Placeholder(Call(self._ast, args, kwargs))
 
-
-# noinspection PyPep8Naming
-def F(func, *args, **kwargs):  # noqa: N802
-    """
-    A helper object that can be used to define function calls on a placeholder
-    object.
-    """
-
-    args = tuple(to_ast(x) for x in args)
-    kwargs = {k: to_ast(x) for k, x in kwargs.items()}
-    return Placeholder(Call(Cte(func), args, kwargs))
 
 
 # ------------------------------------------------------------------------------
@@ -141,7 +128,7 @@ def call_node(func, *args, **kwargs):
 #
 # Rendering ASTs
 #
-OP_SYMBOLS = {k: " %s " % v for k, v in SYMBOLS.items()}
+OP_SYMBOLS = dict(SYMBOLS)
 OP_SYMBOLS[operator.attrgetter] = "."
 
 
@@ -159,25 +146,34 @@ source.register = source.register
 @source.register(BinOp)
 def _(node):
     op, lhs, rhs = node
-    return "(%s %s %s)" % (source(lhs), op_symbol(op), source(rhs))
+    lhs_src = source(lhs)
+    rhs_src = source(rhs)
+    if isinstance(lhs, BinOp):
+        lhs_src = f'({lhs_src})'
+    if isinstance(rhs, BinOp):
+        rhs_src = f'({rhs_src})'
+    return "%s %s %s" % (lhs_src, op_symbol(op), rhs_src)
 
 
 @source.register(UnaryOp)
 def _(node):
     op, value = node
-    return "(%s %s)" % (op_symbol(op), source(value))
+    return "(%s%s)" % (op_symbol(op), source(value))
 
 
 @source.register(Call)
 def _(node):
     obj, args, kwargs = node
-    return "%s(*%s, **%s)" % (obj, args, kwargs)
+    args = list(map(source, args))
+    args.extend(f'{k}=source(v)' for k, v in kwargs.items())
+    args = ', '.join(args)
+    return "%s(%s)" % (source(obj), args)
 
 
 @source.register(GetAttr)
 def _(node):
     attr, obj = node
-    return "%s.%s" % (obj, attr)
+    return "%s.%s" % (source(obj), attr)
 
 
 @source.register(Cte)
@@ -239,7 +235,7 @@ def _(ast):
     caller = compile_ast(caller)
     args = tuple(map(compile_ast, args))
     kwargs = {k: compile_ast(v) for k, v in kwargs.items()}
-    return lambda x: caller(x)(*(f(x) for f in args), **{k: v(x) for k, v in kwargs})
+    return lambda x: caller(x)(*(f(x) for f in args), **{k: v(x) for k, v in kwargs.items()})
 
 
 @compiler(GetAttr)
