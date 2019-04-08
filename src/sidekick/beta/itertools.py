@@ -230,10 +230,16 @@ def alternate(*seqs):
     'a1,b2,'
     """
     nexts = [iter(it).__next__ for it in seqs]
+    buffer = []
+    append = buffer.append
+
     while True:
+        buffer.clear()
         try:
-            yield from tuple(f() for f in nexts)
-        except RuntimeError:
+            for f in nexts:
+                append(f())
+            yield from buffer
+        except StopIteration:
             break
 
 

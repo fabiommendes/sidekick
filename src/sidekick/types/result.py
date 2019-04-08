@@ -84,7 +84,7 @@ class Result(Union):
 
         Examples:
             >>> Ok('Hello {name}!').method('format', 'world')
-            Err(KeyError('name'))
+            Err(KeyError(...))
         """
         if self:
             method = getattr(self.value, method)
@@ -144,6 +144,11 @@ class Err(Result):
                     or isinstance(e, other)
                     or issubclass(e, type) and issubclass(e, other))
         return super().__eq__(other)
+
+    def __repr__(self):
+        if isinstance(self.error, type):
+            return f'Err({self.error.__name__})'
+        return super().__repr__()
 
 
 class Ok(Result):
@@ -234,7 +239,7 @@ def rcall(func, *args, **kwargs):
 
     Examples:
         >>> rcall(float, "3,14")
-        Err(ValueError("could not convert string to float: '3,14'"))
+        Err(ValueError(...))
     """
     func = extract_function(func)
     return _rcall(func, *args, **kwargs)
@@ -262,7 +267,7 @@ def rpipe(obj, *funcs):
         >>> rpipe(Ok(20), (X + 1), (X * 2))
         Ok(42)
         >>> rpipe(2, (X - 2), (1 / X))
-        Err(ZeroDivisionError('division by zero'))
+        Err(ZeroDivisionError(...))
 
     Returns:
         A Result value.

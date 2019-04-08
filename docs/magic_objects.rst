@@ -80,7 +80,7 @@ It also accepts conversion using the pipe notation:
 3
 
 .. autoclass:: sidekick.L
-:members:
+   :members:
 
 
 Magic set (S)
@@ -92,7 +92,7 @@ Same with sets.
 {0, 1, 2, 3, 4}
 
 .. autoclass:: sidekick.S
-:members:
+   :members:
 
 
 Magic dictionary (D)
@@ -105,7 +105,7 @@ Magic dictionary (D)
 'bar'
 
 .. autoclass:: sidekick.D
-:members:
+   :members:
 
 
 Magic string (T)
@@ -118,7 +118,7 @@ Magic string (T)
 ['42', '0']
 
 .. autoclass:: sidekick.T
-:members:
+   :members:
 
 
 Magic bytes (B)
@@ -127,11 +127,11 @@ Magic bytes (B)
 >>> 42.0 | B
 b'42.0'
 
->>> sk.map(B.split(b'.'), [b'42.0', b'3.14']) | L
+>>> map(B.split(b'.'), [b'42.0', b'3.14']) | L
 [[b'42', b'0'], [b'3', b'14']]
 
 .. autoclass:: sidekick.B
-:members:
+   :members:
 
 
 

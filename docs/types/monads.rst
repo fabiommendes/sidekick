@@ -32,6 +32,7 @@ instances? Consider the example bellow:
 .. code-block:: python
 
     import math
+    from sidekick import Result, Ok, Err
 
     def sqrt(x: float) -> Result:
         if x < 0:
@@ -44,7 +45,9 @@ be used immediately: it is necessary to unwrap the value and select a different
 path for the Ok and Err cases (pass the value to sqrt or propagate the error).
 A better method is to use the .map monadic interface:
 
->>> x.map(sqrt)
+>>> x = Ok(4.0)
+>>> bad = Err(ZeroDivisionError)
+>>> x.map(math.sqrt)
 Ok(2.0)
->>> bad.map(sqrt)
-Err(ZeroDivisionError())
+>>> bad.map(math.sqrt)
+Err(ZeroDivisionError)
