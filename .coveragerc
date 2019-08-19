@@ -1,5 +1,5 @@
 [run]
-source = src/
+source = sidekick/
 branch = True
 
 
@@ -26,6 +26,7 @@ exclude_lines =
     while False:
 
 omit = 
-    src/sidekick/beta/*
+    sidekick/beta/*
+    tests/*
 
 ignore_errors = True

@@ -1,4 +1,8 @@
+from pathlib import Path
+import sys
 import pytest
+
+sys.path.append(str(Path(__file__).parent.parent))
 
 
 @pytest.fixture(params=[tuple, lambda: iter(())])
@@ -17,8 +21,10 @@ def nums(request):
     if request.param:
         def sequence():
             return range(1, 6)
+
         return sequence
     else:
         def iterator():
             return iter(range(1, 6))
+
         return iterator
