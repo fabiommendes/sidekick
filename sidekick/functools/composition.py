@@ -1,6 +1,6 @@
 from functools import partial as _partial
 
-import toolz
+from .. import _toolz as toolz
 from typing import Callable, TypeVar
 
 from ..core import fn, extract_function, Func

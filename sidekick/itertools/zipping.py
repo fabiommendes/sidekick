@@ -1,6 +1,6 @@
 import itertools
 
-import toolz
+from .. import _toolz as toolz
 from typing import Union
 
 from ..core import fn, Seq, Func, extract_function

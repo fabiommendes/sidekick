@@ -1,10 +1,9 @@
 import operator
-from itertools import chain, cycle, islice, tee, product
+from itertools import chain, cycle, islice, tee
 
-from toolz import take, first
-
-from sidekick import uncons, unique, Func, NOT_GIVEN, cons, reduce
+from .._toolz import take, first
 from ..core import fn, Pred, Seq, SeqT, extract_function, NOT_GIVEN
+from ..itertools import uncons, unique, Func, cons, reduce
 
 
 @fn.curry(2)
@@ -167,11 +166,13 @@ def intersect(*seqs, eq=operator.eq):
     >>> intersect([1, 2, 3], [3, 4, 5], eq=lambda x, y: abs(x - y) <= 1) | L
     [2, 3]
     """
+
     def reducer(a, b):
         for x in a:
             b, ys = tee(b)
             if any(x for y in ys if eq(x, y)):
                 yield x
+
     return reduce(reducer, seqs)
 
 

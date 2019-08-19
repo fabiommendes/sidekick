@@ -1,12 +1,8 @@
 import itertools
 import typing
 
+from .. import _toolz as toolz
 from ..core import fn, extract_function, Func, Pred, Seq
-
-try:
-    import cytoolz as toolz
-except ImportError:
-    import toolz
 
 _filter = filter
 
@@ -131,7 +127,7 @@ def unique(seq: Seq, *, key: Func = None, exclude: Seq = ()) -> Seq:
         uses a slow path.
     """
     pred = extract_function(key or (lambda x: x))
-    seen = set(map(key,exclude))
+    seen = set(map(key, exclude))
     add = seen.add
 
     for x in seq:
@@ -170,6 +166,7 @@ def until_convergence(pred: Pred, seq: Seq) -> Seq:
         if pred(x, y):
             break
         x = y
+
 
 # FIXME: Deprecate?
 @fn.curry(2)

@@ -1,12 +1,8 @@
+"""
+A companion library that enhance your functional superpowers.
+"""
 __author__ = "Fábio Macêdo Mendes"
-__version__ = "0.5.1"
-
-try:
-    import cytoolz as toolz
-    import cytoolz.curried as ctoolz
-except ImportError:
-    import toolz  # noqa: F401
-    import toolz.curried as ctoolz
+__version__ = "0.6.0b0"
 
 from . import op
 from .core import *
@@ -14,9 +10,10 @@ from .functools import *
 from .itertools import *
 from .lazytools import *
 from .magics import *
+from .misc import misc
 from .types import *
 from .types import json
-from .misc import misc
+
 
 @call()
 def _fix():

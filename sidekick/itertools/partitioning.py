@@ -1,7 +1,7 @@
 import itertools
 from typing import Union
 
-import toolz
+from .. import _toolz as toolz
 
 from ..core import fn, Seq, Func, extract_function, Pred
 

@@ -53,7 +53,7 @@ Fibonacci numbers
 
 **Explanation**
 
-:func:`iterate_past` creates an infinite iterator that generates each number
+``iterate_past`` creates an infinite iterator that generates each number
 by applying the function in the first argument to the last n elements generated
 by the sequence. ``n`` is given by the size of the initial sequence, which in
 our example is 2. The Fibonacci sequence is obviously created by always adding
@@ -62,10 +62,8 @@ the last two elements.
 We construct our summation function using the magic objects ``X`` and ``Y``.
 They are function factories that return lambdas corresponding to the expression
 in which they participate. Hence, ``X + 1`` corresponds to ``lambda x: x +1``
-and ``X + Y`` to ``lambda x, y: x + y.
-If you are familiar to any language in the Haskell family, it should resemble
-the `operator section syntax <https://wiki.haskell.org/Section_of_an_infix_operator>`.
-
+and ``X + Y`` to ``lambda x, y: x + y``. If you are familiar to any language in the
+Haskell family, it should resemble the `operator section syntax <https://wiki.haskell.org/Section_of_an_infix_operator>`.
 
 In a similar vein, the ``L`` magic object that wraps many useful operations on lists.
 In the example above, L[:10] creates a function that return a list slice
@@ -116,7 +114,7 @@ $\exp(x) = \sum_{n=0}^{\infty} \frac {x^n} {n!}$to compute the Euler number
 
 **Explanation**
 
-:func:`iterate_indexed` iterates a function ``f(i, x)`` passing both the index
+``iterate_indexed`` iterates a function ``f(i, x)`` passing both the index
 of iteration and the last evaluation of x to generate the next result. By writing
 write down a few examples it is easy to see that the given arguments produce a
 sequence of factorials.
@@ -148,14 +146,14 @@ We will do it like so, except that the initial list of numbers is infinite.
 
 **Explanation**
 
-The fist line in the sieve function uses :func:`uncons` to extract the first
+The fist line in the sieve function uses ``uncons`` to extract the first
 element and return an iterator over the remaining ones. As we
 described before, the first element is a prime, so we just yield it. The
 last line of the function applies the sieve to a sequence that excludes every
 multiple of p.
 
 Finally, we call sieve with the numbers ``2, 3, ...``. The numbers are created
-by the special object :class:`N`, specialized in creating numeric sequences.
+by the special object `N`, specialized in creating numeric sequences.
 It is very flexible, and in the example above it
 creates natural numbers starting from 2 and proceed indefinitely in steps
 of 1. In fact, we could easily make our code operate twice as fast simply
@@ -173,7 +171,7 @@ languages. Most notably,
 * `toolz`_: excellent utility library focused on handling iterators.
 * `placeholder`_, `fn.py`_, `funcy`_, `Pyrsistent`_: other functional programming libraries for Python.
 * `Haskell`_: an essential inspiration to functional programming. You will see many ideas stolen
-directly from Haskell. If you want to learn Haskell, however, I recommend learning `Elm`_ first ;)
+  directly from Haskell. If you want to learn Haskell, however, I recommend learning `Elm`_ first ;)
 * `Clojure`_ and `Elixir`_: inspiration for many parts of the API.
 * `Lodash`_: a practical functional Javascript library.
 

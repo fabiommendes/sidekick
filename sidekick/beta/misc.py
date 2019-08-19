@@ -2,7 +2,7 @@ import itertools
 import typing
 from typing import Iterable
 
-import toolz
+from .. import _toolz as toolz
 
 from sidekick import extract_function
 from ..core import fn, Seq, Func as Func

@@ -1,6 +1,6 @@
 from functools import reduce as _reduce
 
-import toolz
+from .. import _toolz as toolz
 
 from ..core import fn, Func, Seq, extract_function, Pred
 

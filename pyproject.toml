@@ -1,22 +1,37 @@
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["flit"]
+build-backend = "flit.buildapi"
 
 
-[tool.poetry]
-name = "sidekick"
-version = "0.4.2"
-description = "The companion that gives you functional superpowers"
-authors = ["Fábio Macêdo Mendes <fabiomacedomendes@gmail.com>"]
-license = "MIT"
+[tool.flit.metadata]
+module = "sidekick"
+author = "Fábio Macêdo Mendes"
+author-email = "fabiomacedomendes@gmail.com"
+home-page = "http://github.com/fabiommendes/sidekick/"
+requires-python = ">=3.6"
+description-file = "README.rst"
+classifiers = [
+    "Intended Audience :: Developers",
+	"Development Status :: 4 - Beta",
+	"License :: OSI Approved :: MIT License",
+	"Operating System :: OS Independent",
+	"Programming Language :: Python",
+	"Programming Language :: Python :: 3",
+	"Programming Language :: Python :: 3.6",
+	"Programming Language :: Python :: 3.7",
+	"Topic :: Software Development :: Libraries",
+]
+requires = [ "toolz >= 0.9.0" ]
 
 
-[tool.poetry.dependencies]
-python = "^3.6"
-toolz = "^0.9.0"
+[tool.flit.metadata.requires-extra]
+test = [ "pytest", "pytest-cov", "mock", "manuel" ]
+doc = [ "sphinx" ]
+dev = [ "flake8", "black", "readme_renderer" ]
 
 
-[tool.poetry.dev-dependencies]
+[tool.flit.metadata.urls]
+Documentation = "https://sidekick.readthedocs.io/en/latest/"
 
 
 [tool.black]
@@ -35,9 +50,5 @@ exclude = '''
     | build
     | dist
   )/
-  | foo.py           # also separately exclude a file named foo.py in
-                     # the root of the project
 )
 '''
-
-

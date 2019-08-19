@@ -1,7 +1,7 @@
 from collections import Counter
 from math import sqrt
 
-import toolz
+from .. import _toolz as toolz
 
 from ..core import fn, Seq, Func, Pred, extract_function
 

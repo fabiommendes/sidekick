@@ -6,7 +6,7 @@ import types
 from typing import Callable, TypeVar
 
 from .composition import always
-from .. import toolz
+from .. import _toolz as toolz
 from ..core import Placeholder, fn, extract_function
 
 NOT_GIVEN = object()

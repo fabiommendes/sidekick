@@ -1,24 +1,28 @@
 language: python
 cache: pip
 sudo: false
-
-# Test environments
+env:
+  global:
+    secure: O58HTKNo2maB28F4Sl514fLmFiLOof/UZGYqs9DQ6QcQgit/Hy1qvU7srh/A92zAhfwcmCgN12RcrTCagu2lT4e+pMU4wZi26XvamhK79IyHOIzi0QKSJPiVwGHzJA8/+d2uMSfWIIM+mqu8NH1spg1UvwZPxRSeanf1wKu1lCHiRw2COJZM5mdq/IN9vlVvZX6LZM3IA2CJ6WhOcabYAVPCqeyc5wumlL3wZn1GtpuCjXry/bxBzxBw5S8PzFi9ZrafdHXcaoQjSTcDxKqIlt5myDwwkQs4UDwYrianFNVdH5TldC5b4QGqAP/BceoeEEOQYwZCU0m1ZzK9R7m3ppJZYv2YJMHFGYgHj5rDAuzRQky3owzdN4ZFr7LBRICbW5Nj2UL6DXMQy7ApzIWeRGkYbTpPAiKO3OV7hJKsZCXWDKeqslaNwu8/DRlZklXn8a5A1nBtZtvYHTE7Lmc+z5/2jjpGl8rN7gnuKyTrOiXBa80Kz34BYFo/t3FjoYabYDBtsOjEIKBgvMQCRYDfMcDj4NOoCikxnFpOYhfx6GW+F0llSZ4EeLbgdcsSb7wC9sdsHiFqsCiv+wDAC4Qs1bmVNF6tpjZdMQYk8691vo8BG9h4YWobnUciQAw+A02izcRkAO1jzC4zE52CSoF5hMn9d2QS/XI3nnum+JxnAkA=
 matrix:
   include:
-   - env: TOXENV=py36
-     python: 3.6
-   - env: TOXENV=py37
-     python: 3.7
-     dist: xenial
-
-# Package installation
+    - env: TOXENV=py36
+      python: 3.6
+      dist: xenial
+    - env: TOXENV=py37
+      python: 3.7
+      dist: xenial
+    - env: TOXENV=py38
+      python: 3.8
+      dist: xenial
 install:
-  - pip install tox codecov
-
-# Run tests
+  - pip install flit tox
 script:
-  tox
+  - tox
+before_script:
+  - "curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter"
+  - "chmod +x ./cc-test-reporter"
+  - "./cc-test-reporter before-build"
 
-# Register code coverage in coveralls
-after_success:
-  codecov
+after_script:
+  - "./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT"
