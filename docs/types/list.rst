@@ -4,7 +4,7 @@ List
 
 **WARNING:** Work in progress.
 
-Sidekick implements singly linked lists as the Union type bellow:
+Sidekick implements singly linked lists as a Union type:
 
 .. code-block:: python
 
@@ -16,12 +16,12 @@ Sidekick implements singly linked lists as the Union type bellow:
         Cons: Case('head', 'tail')
 
 
-On top of that, of course you can expect a standard sequence interface and
-a few methods for better handling those types.
+On top of that, of course, there are many methods and you can expect a standard
+sequence interface and a few methods for better handling those types.
 
 Sidekick's lists are immutable and are efficient for first element
 insertion/deletion. You have to consider this when implementing algorithms
-with those singly linked lists.
+with singly linked lists.
 
 .. ignore-next-block
 .. code-block:: python

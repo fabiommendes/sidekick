@@ -19,6 +19,7 @@ class InvMap(MutableMapping):
         (http://pypi.python.org/pypi/bidict)
     """
     EMPTY = object()
+    inv: 'InvMap'
 
     @classmethod
     def named(cls, class_name, direct, inverse):

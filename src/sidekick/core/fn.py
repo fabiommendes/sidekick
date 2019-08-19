@@ -313,9 +313,9 @@ class Curried(fn):
 #
 def as_fn(func):
     """
-    Convert callable to an :cls:`fn` object.
+    Convert callable to an :class:`fn` object.
 
-    If func is already an :cls:`fn` instance, it is passed as is.
+    If func is already an :class:`fn` instance, it is passed as is.
     """
     return func if isinstance(func, fn) else fn(func)
 

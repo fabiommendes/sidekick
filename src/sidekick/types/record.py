@@ -47,7 +47,7 @@ class RecordMeta(type):
                 (name, default) pairs if values are instances.
             bases:
                 An optional list of base classes for the derived class. By
-                default, it has a single base of :cls:`sidekick.Record`.
+                default, it has a single base of :class:`sidekick.Record`.
             ns:
                 An optional dictionary of additional methods and properties
                 the resulting record class declares.

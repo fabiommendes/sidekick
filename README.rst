@@ -12,7 +12,6 @@ Sidekick is a library that gives you functional superpowers.
     :target: https://codeclimate.com/github/fabiommendes/sidekick
 .. image:: https://codeclimate.com/github/fabiommendes/sidekick/badges/issue_count.svg?
     :target: https://codeclimate.com/github/fabiommendes/sidekick
-.. module:: sidekick
 
 
 Sidekick implements a functional standard library of functions and types designed
@@ -38,14 +37,15 @@ Install it from pip...
 
 >>> from sidekick.all import sk, op, X, Y, L, N
 
-Walk through the examples bellow to get a taste of what you can do.
+The examples bellow show a taste of what you can do.
 
 
 
 Fibonacci numbers
 -----------------
 
-Easily generate infinite sequences of Fibonacci numbers
+Let us start with the classics. This produces an infinite sequences of
+Fibonacci numbers
 
 >>> fibonacci = sk.iterate_past((X + Y), [1, 1])
 >>> fibonacci | L[:10]
@@ -53,24 +53,27 @@ Easily generate infinite sequences of Fibonacci numbers
 
 **Explanation**
 
-The magic objects ``X`` and ``Y`` are function factories that return Python
-functions corresponding to the expression in which they participate. Hence,
-``X + 1`` corresponds to ``lambda x: x +1`` and ``X + Y`` to ``lambda x, y: x + y.
-If you are familiar to any language in the Haskell family, it should resemble
-the `operator section syntax <https://wiki.haskell.org/Section_of_an_infix_operator>`.
-
 :func:`iterate_past` creates an infinite iterator that generates each number
 by applying the function in the first argument to the last n elements generated
 by the sequence. ``n`` is given by the size of the initial sequence, which in
-our example is 2.
+our example is 2. The Fibonacci sequence is obviously created by always adding
+the last two elements.
 
-``L`` is another magic object that wraps many useful operations on lists.
-In the example above, the L[:10] creates a function that return a list slice
+We construct our summation function using the magic objects ``X`` and ``Y``.
+They are function factories that return lambdas corresponding to the expression
+in which they participate. Hence, ``X + 1`` corresponds to ``lambda x: x +1``
+and ``X + Y`` to ``lambda x, y: x + y.
+If you are familiar to any language in the Haskell family, it should resemble
+the `operator section syntax <https://wiki.haskell.org/Section_of_an_infix_operator>`.
+
+
+In a similar vein, the ``L`` magic object that wraps many useful operations on lists.
+In the example above, L[:10] creates a function that return a list slice
 in the range of 0 to 10 (not included). ``L[0]`` would create a function that fetches
 the first element, ``L[::2]`` would fetch every two elements, and so on.
 
 Finally, the pipe notation passes the argument on the left to the function on
-the right. This only works on sidekick enabled functions and resembles
+the right. This only works on sidekick enabled functions and mimics
 the pipe in the unix shell. Maybe someday Python can have a native pipe operator
 like `other functional languages <https://elm-lang.org/docs/syntax#operators>`.
 
@@ -83,23 +86,28 @@ The snippet above only consumes the first 10 Fibonacci numbers. Let us continue
 to walk the sequence to find a good approximation to the golden ratio.
 
 >>> ratios = (y / x for (x, y) in sk.window(2, fibonacci))
->>> sk.until_convergence(X == Y, ratios) | sk.last
+>>> sk.until_convergence((X == Y), ratios) | sk.last
 1.618033988749895
 
 **Explanation**
 
-:func:`window` generates a sliding window of n elements from the
+``window`` produces a sliding window of n elements from the
 original sequence, e.g., ``sk.window(2, [1, 2, 3, 4])`` ==> ``(1, 2), (2, 3), (3, 4)``.
-The next step is to compute the ratios of the second element over the first
-and consume the list until two consecutive items are equal,
-returning the last element.
+The generator comprehension then compute ratios using those consecutive elements.
+
+Finally, the second line iterate over a sequence until the predicate function
+in the first argument of ``sk.until_convergence`` returns True. Rather than
+setting up some small interval of variation, we test for equality and wait
+for the difference between two evaluations be smaller than floating point
+precision.
 
 
 
 Euler number
 ------------
 
-We are using Taylor formula to compute the Euler number from exp(1)
+The following snippet uses Taylor formula for exponentials
+$\exp(x) = \sum_{n=0}^{\infty} \frac {x^n} {n!}$to compute the Euler number
 
 >>> factorials = sk.iterate_indexed((X * Y), 1, start=1)
 >>> partial_sums = sk.sums(map((1 / X), factorials))
@@ -108,13 +116,14 @@ We are using Taylor formula to compute the Euler number from exp(1)
 
 **Explanation**
 
-This code uses the Taylor series for exponentials $\exp(x) = \sum_{n=0}^{\infty} \frac {x^n} {n!}$.
+:func:`iterate_indexed` iterates a function ``f(i, x)`` passing both the index
+of iteration and the last evaluation of x to generate the next result. By writing
+write down a few examples it is easy to see that the given arguments produce a
+sequence of factorials.
 
-The first line create an infinite sequence of factorials by using :func:`iterate_indexed`
-to multiply the last item in sequence to its corresponding index. The second
-step creates a sequence of partial sums of the reciprocal of each
-factorial. Finally, we iterate until this sequence converge by testing if two
-consecutive elements are equal.
+The second step creates a sequence of partial sums of the reciprocal of each
+factorial. Finally, we iterate until convergence, testing if two consecutive
+elements are equal.
 
 
 
@@ -140,19 +149,19 @@ We will do it like so, except that the initial list of numbers is infinite.
 **Explanation**
 
 The fist line in the sieve function uses :func:`uncons` to extract the first
-element of its argument and return an iterator over the remaining elements. As we
+element and return an iterator over the remaining ones. As we
 described before, the first element is a prime, so we just yield it. The
 last line of the function applies the sieve to a sequence that excludes every
 multiple of p.
 
-Finally, we call sieve with ``N[2, 3, ...]``. :cls:`N` is a special object that
-generates numeric sequences. It is very flexible, and in the example above it
+Finally, we call sieve with the numbers ``2, 3, ...``. The numbers are created
+by the special object :class:`N`, specialized in creating numeric sequences.
+It is very flexible, and in the example above it
 creates natural numbers starting from 2 and proceed indefinitely in steps
 of 1. In fact, we could easily make our code operate twice as fast simply
-by initializing the sieve with ``N[2, 3, 5, ...]`` so it moves in steps of two
-rather than one. This would avoid checking even numbers which we known in
+by initializing the sieve with ``N[2, 3, 5, ...]`` so it would moves in steps
+of two rather than one. This would avoid checking even numbers which we known in
 advance not be primes.
-
 
 
 See also

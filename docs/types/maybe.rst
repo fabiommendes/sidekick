@@ -26,9 +26,6 @@ encodes the two different success/error states:
     Just(x) -- Produced "just" x.
 
 
-
-
-
 API reference
 =============
 

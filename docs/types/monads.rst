@@ -11,14 +11,14 @@ method in the Result type. Haskellers and type theorists like to call it a
 "Functor". Traditional examples of functors are the Maybe type, the Result type,
 and lists. In an ideal world, all functors would have
 a .map method that applies a function to its contents. However, it is not
-possible to change Python's builtin types and, even when it is possible, it is
+possible to change Python's builtins and, even when it is possible, it is
 probably not a good idea to monkey patch types written by others willy and nilly.
 Sidekick provides an :func:`sidekick.fmap` function that performs this "Functor"
 mapping over any Functor type.
 
 Half way to a full monad, we have the "Applicative functor" interface: it means
 that it has a method that can compose over functions that receive more than
-one argument. This is acomplished by the .apply class method of applicative
+one argument. This is accomplished by the .apply class method of applicative
 types. Like before, many builtin Python types could be valid applicative
 functors, but we just can't add a new "apply" method in order to provide a
 consistent interface. Likewise, sidekick provides a toplevel :func:`sidekick.fapply`

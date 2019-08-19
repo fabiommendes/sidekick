@@ -139,8 +139,7 @@ Deferred computations
 =====================
 
 Until now, we were concerned with the deferred computation of instance
-attributes. Sometimes, we just want to defer some expensive computation or the
-initialization of an entire object.
+attributes. Sometimes, we just want to defer the full initialization of an object.
 
 
 Lazy imports
@@ -168,7 +167,7 @@ Proxy and zombie objects
 
 Sidekick also provides two similar kinds of deferred objects: :mcs:`sidekick.Deferred`
 and :mcs:`sidekick.Zombie`. They are both initialized from a callable with
-arbitrary arguments and delay the execution of the callable until the result is
+arbitrary arguments and delay the execution of that callable until the result is
 needed:
 
 >>> class User:
@@ -207,7 +206,8 @@ A slightly safer version of :func:`zombie` allows specifying the return type of
 the resulting object. This opens up a few additional types (e.g., types that
 use __slots__) and produces checks if conversion is viable or not.
 
-Use the constructor function output type as an index:
+This works by using the result type as an index before declaring the constructor
+function:
 
 >>> rec = sk.zombie[sk.record](sk.record, x=1, y=2)
 >>> type(rec)                                               # doctest: +ELLIPSIS

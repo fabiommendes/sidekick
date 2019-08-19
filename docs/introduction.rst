@@ -8,9 +8,9 @@ organizing code with classes or even relying too much on standard control flow
 structures such as ``for``, ``if``'s, ``with``, etc.
 
 Python is a multi-paradigm language that allows functional programming but was not
-conceived specifically for it. For this approach to work in Python, we need
+conceived specifically for it. Functional programming is only practical if we have
 means of easily creating new functions and using them in cooperation. Python's
-syntax for creating functions, however, is far ideal: ``def``' statements
+syntax, however, is far from ideal: ``def``' statements
 cannot be used inside expressions and ``lambda``'s are artificially constrained
 to a single line of code. It also uses an odd choice of keyword
 that seems out of place in this otherwise very approachable language [#lambda]_.
@@ -21,16 +21,16 @@ typeset it more elegantly as λ so it would look more like lambda functions
 in academic papers. We contend that this syntax should be unappealing for both
 audiences.
 
-Given that we cannot change Python's own syntax and get better lambdas, there are
-a few options left:
+Given that we cannot change Python's own syntax and get better anonymous
+functions, there are a few options left:
 
 1) Design a library of factory functions that can generate the most common lambdas.
 2) Embed a domain specific language that for creating functions with less
 syntactic overhead.
 3) Accept some level of clumsiness and use what Python give us out of the box.
 
-Sidekick proposes a mixture of options 1 and 2, and hopefully we are left to deal
-with option 3 only in the edge cases.
+Sidekick proposes a mixture of options 1 and 2, and hopefully we are left with
+option 3 only in the edge cases.
 
 
 Creating functions from other functions
@@ -47,7 +47,7 @@ Consider a simple function:
 
 
 It seems like it is only a function declaration, but in reality it does a few
-things more: it gives the function a name, defines its documentation string and
+more things: it gives the function a name, defines its documentation string and
 sets an implicit scope for global variables. For top level functions of your
 public API, in which it is useful to declare all those properties, this is an
 efficient syntax.
@@ -65,7 +65,7 @@ Put the same function in a different context and ``def`s` start to feel verbose:
 Not only this code spends two whole lines to define such a trivial function, it
 forces us to explicitly come up with a name which does not clarify its intent
 anymore than seeing ``n + 1`` in the body of the function. `Naming is hard`_,
-and we should avoid doing it, if it has no purpose clarifying some code.
+and we should avoid doing it if it has no purpose clarifying some piece of code.
 
 .. _Naming is hard: https://martinfowler.com/bliki/TwoHardThings.html
 
@@ -95,7 +95,7 @@ standard lib for the same effect.
 
 I wouldn't say it provides any tangible advantage over the previous case, but
 this code illustrates a powerful technique that can be really useful in other
-situations. We now want to take the good ideas from the previous code and make
+situations. We now want to take the good ideas from this example and make
 them more idiomatic and easy to use.
 
 
@@ -103,7 +103,7 @@ The magic X
 -----------
 
 Operators like ``+, -, *, /``, etc are functions recognized as being so useful
-that they deserve special syntax. They are obvious candidates for creating a
+that they deserve an special syntax. They are obvious candidates for creating a
 library of factory functions such as:
 
 
@@ -128,7 +128,7 @@ functional programming libraries such as `fn.py`_ and `placeholder`_. It exposes
 the "magic argument object" ``X`` that creates
 those simple one-liners using a very straightforward syntax: every operation
 we do with the magic object X, returns a function that would perform the same
-operation on its argument. For instance, to tell the F object to create a
+operation if X was the argument. For instance, to tell the F object to create a
 function that adds some number to its argument, just add this number to F:
 
 .. code-block:: python
@@ -143,7 +143,7 @@ function that adds some number to its argument, just add this number to F:
 #TODO: limitations, function calling, attributes, recipes, remove the call function?
 #TODO: bitwise operators?
 
-In a similar vein, we can add a second operator Y for creating functions of
+In a similar spirit, we can add a second operator Y for creating functions of
 two arguments:
 
 .. code-block:: python
@@ -172,10 +172,9 @@ An alternate approach to this is to construct a syntax tree that represents a Py
 expression and then construct/compile the corresponding function on demand.
 This only makes sense if it is easier and more readable to write such
 expressions than declaring the corresponding lambda. Fortunately, Python is
-flexible enough that this is very much possible.
+flexible enough that this technique is can be used to create many simple functions.
 
-We can construct those expressions by manipulating the placeholder object in
-sidekick. For convenience, we import it with an alias:
+For convenience, let us import the placehoder object with an alias:
 
 .. code-block:: python
 
@@ -217,13 +216,13 @@ work.
 Auto-currying
 -------------
 
-When academics analyze programs and demonstrate theorems, they commonly assume
-that all functions receive a single argument and return a single result. There
-are two common ways to convert a multi-argument function to one that receive
-a single argument without any loss of generality. The most obvious, perhaps, is
+When analyzing programs, it is useful to assume that all functions receive a
+single argument and return a single result. There
+are two common ways to convert any multi-argument function to one that receive
+a single argument and return a single value. The most obvious, perhaps, is
 to think that arguments are passed as a single tuple, so a function of two
 arguments becomes equivalent to a function that receive a tuple with two
-elements.
+elements and return some value.
 
 The second approach is to think that a multi-argument function is just a function
 that returns a second function that receives the remaining arguments. The function
@@ -273,8 +272,7 @@ True
 One nice thing about auto-currying is that it doesn't break preexisting
 interfaces. This new add function continues to be useful in contexts that the
 standard implementation could be applied, but it now also accepts receiving an
-incomplete set of arguments transforming add in a convenient factory of
-functions.
+incomplete set of arguments transforming add in a convenient factory.
 
 Even for only two arguments, implementing auto-currying this way already
 seems like a lot of trouble. Fortunately, the :func:`sidekick.curry` decorator
@@ -290,7 +288,7 @@ with very little extra work:
         return x + y
 
 Ok, it is good that we can automatically curry functions. But why would anyone
-want to do that in any real world programming?
+want to do that in any real world programming problem?
 
 Remember when we said that the increment function (``lambda x: x + 1``) was just
 a special case of addition when one of the arguments is was fixed to 1? This kind of

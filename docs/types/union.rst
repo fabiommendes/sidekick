@@ -105,13 +105,13 @@ While this is fine, it is a lot of work. Sidekick implements some convenient
 factories to declare new types with very little overhead. We might as well
 use those resources to ease our task.
 
-The first obvious choice would be to use :cls:`Record`s or namedtuples to
+The first obvious choice would be to use :class:`Record`s or namedtuples to
 declare the variants. This saves the trouble of declaring ``__init__``,
 ``__repr__``, ``__eq__`` and probably a few other methods we had missed. Besides
 that, the machinery around the ``is_ok``, ``is_err`` attributes can be
 easily automated and it seems kind of dull and error prone to do by hand.
 
-The :cls:`union` type constructor does exactly this:
+The :class:`union` type constructor does exactly this:
 
 .. code-block:: python
 
