@@ -1,7 +1,7 @@
 import pytest
 from hypothesis import given
 
-from sidekick import common_ancestor, common_ancestors
+from sidekick import common_ancestor, common_ancestors, walk
 from sidekick.hypothesis import trees, leaves
 
 
@@ -37,6 +37,14 @@ class TestNode:
 
         assert common_ancestor(b, c) is bc
         assert common_ancestors(b, c) == [tree, bc]
+
+    def test_walk_tree(self, tree, tree_parts):
+        a, bc, b, c = tree_parts
+        assert walk(a, a) == ((), a, ())
+        assert walk(a, tree) == ((a,), tree, ())
+        assert walk(tree, a) == ((), tree, (a,))
+        assert walk(a, c) == ((a,), tree, (bc, c))
+        assert walk(b, c) == ((b,), bc, (c,))
 
     def test_simple_tree_api(self, tree):
         assert tree.height == 2
