@@ -23,7 +23,7 @@ class Row(NamedTuple):
             return Row("", "", node)
         items = [(style.vertical if cont else style.empty) for cont in extra]
         indent = "".join(items[:-1])
-        branch = style.cont if extra[-1] else style.end
+        branch = style.horizontal if extra[-1] else style.end
         pre = indent + branch
         fill = "".join(items)
         return Row(pre, fill, node)
@@ -39,7 +39,7 @@ class Style(NamedTuple):
     Style of pretty printed tree.
     """
     vertical: str = ''
-    cont: str = ''
+    horizontal: str = ''
     end: str = ''
     empty = property(lambda self: " " * len(self.end))
 

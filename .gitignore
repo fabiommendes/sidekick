@@ -36,3 +36,4 @@ src/sidekick/__meta__.py
 .nbgrader.log
 pending/
 pip-wheel-metadata/
+.hypothesis

@@ -36,11 +36,11 @@ class NodeOrLeaf:
         if value is None:
             self._parent = None
         elif not isinstance(value, Node):
-            raise TreeError(f"Parent node {value!r} is not of type 'Node'.")
+            raise TypeError(f"Parent node {value!r} is not of type 'Node'.")
         elif value is not self._parent:
             if self.is_ancestor_of(value) or value.is_ancestor_of(self) or self is value:
                 msg = f"Setting parent to {value} would create a dependency loop"
-                raise TreeError(msg)
+                raise ValueError(msg)
             self.detach()
             value.children.append(self)
 
@@ -62,7 +62,8 @@ class NodeOrLeaf:
     #
 
     #: Number of edges on the longest path to a leaf `Node`.
-    height = property(lambda self: max(c.height for c in self._children) + 1)
+    height = property(lambda self: max((c.height for c in self._children), default=0) + 1)
+
     #: Number of edges to the root `Node`.
     depth = property(lambda self: len(self.path) - 1)
 
@@ -149,8 +150,19 @@ class NodeOrLeaf:
         """
         return any(self is ancestor for ancestor in node.iter_ancestors())
 
-    def pretty(self, **kwargs):
-        return self._pretty_printer(self, **kwargs)
+    def pretty(self, style='line', renderer=None) -> str:
+        """
+        Pretty-printed representation of tree.
+
+        Args:
+            style:
+                One of 'ascii', 'line', 'rounded', or 'double'. It can also
+                be a 3-string tuple with the (vertical, horizontal, end) prefixes
+                for each rendered line.
+            renderer:
+                A function that renders row omitting its children.
+        """
+        return self._pretty_printer(self, tree_style=style, node_renderer=renderer)
 
 
 class Leaf(NodeOrLeaf):
@@ -235,7 +247,7 @@ class Node(NodeOrLeaf):
             self._children[:] = old_children
             raise
 
-    def __init__(self, children, *, parent=None, **kwargs):
+    def __init__(self, children=(), *, parent=None, **kwargs):
         super().__init__(parent=parent, **kwargs)
         self._children = []
 
