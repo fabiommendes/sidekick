@@ -44,8 +44,18 @@ class NodeOrLeaf:
             self.detach()
             value.children.append(self)
 
+    @property
+    def path(self):
+        """Path from root to node"""
+        path = []
+        node = self
+        while node:
+            path.append(node)
+            node = node._parent
+        return tuple(reversed(path))
+
     #
-    # Children nodes
+    # Children and sibling nodes
     #
 
     #: List of children nodes
@@ -56,6 +66,36 @@ class NodeOrLeaf:
 
     #: Children and children of children.
     descendants = property(lambda self: tuple(self.iter_descendants()))
+
+    def _sibling(self, delta):
+        if self._parent is not None:
+            siblings = self._parent.children
+            for idx, sibling in enumerate(siblings):
+                if self is sibling:
+                    try:
+                        new_idx = idx + delta
+                        if new_idx < 0:
+                            return None
+                        return siblings[new_idx]
+                    except IndexError:
+                        break
+        return None
+
+    #: Left siblings or None
+    left_sibling = property(lambda self: self._sibling(-1))
+
+    #: Right siblings or None
+    right_sibling = property(lambda self: self._sibling(+1))
+
+    @property
+    def siblings(self):
+        """
+        Tuple of nodes with the same parent.
+        """
+        if self._parent is None:
+            return ()
+        else:
+            return tuple(node for node in self._parent._children if node is not self)
 
     #
     # Properties of node or tree
@@ -204,29 +244,6 @@ class Node(NodeOrLeaf):
     #: All child nodes
     children = property(lambda self: Children(self, self._children))
 
-    @property
-    def path(self):
-        """Path from root to this `Node`"""
-        path = []
-        node = self
-        while node:
-            path.append(node)
-            node = node.parent
-        return tuple(reversed(path))
-
-    @property
-    def siblings(self):
-        """
-        Tuple of nodes with the same parent.
-        """
-        if self._parent is None:
-            return ()
-        else:
-            return tuple(node for node in self._parent.children if node != self)
-
-    #
-    # Property setters
-    #
     @children.deleter
     def children(self):
         for child in self.children:

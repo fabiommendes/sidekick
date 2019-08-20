@@ -1,8 +1,11 @@
 from keyword import iskeyword
 
+import pytest
 from hypothesis import given, strategies as st
 
 from sidekick.hypothesis import atoms, identifiers, kwargs
+
+pytestmark = pytest.mark.slow()
 
 
 class TestBaseStrategies:

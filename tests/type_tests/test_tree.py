@@ -1,6 +1,7 @@
 import pytest
 from hypothesis import given
 
+from sidekick import common_ancestor, common_ancestors
 from sidekick.hypothesis import trees, leaves
 
 
@@ -27,6 +28,16 @@ class TestNode:
         assert tree.is_root
         assert not tree.is_leaf
 
+    def test_simple_tree_siblings(self, tree, tree_parts):
+        a, bc, b, c = tree_parts
+        assert bc.left_sibling is a
+        assert bc.right_sibling is None
+        assert b.left_sibling is None
+        assert b.right_sibling is c
+
+        assert common_ancestor(b, c) is bc
+        assert common_ancestors(b, c) == [tree, bc]
+
     def test_simple_tree_api(self, tree):
         assert tree.height == 2
         assert tree.depth == 0
@@ -48,6 +59,7 @@ class TestErrors:
             tree.parent = tree.children[1]
 
 
+@pytest.mark.slow()
 class TestHypothesis:
     @given(leaves(allow_attrs=False))
     def test_leaf(self, leaf):
