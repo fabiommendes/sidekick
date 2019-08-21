@@ -1,7 +1,10 @@
 import operator as op
+from itertools import chain
 from typing import MutableSequence, List, Sequence, TypeVar, Optional, Iterator, Callable
 
 T = TypeVar('T')
+INF = float('inf')
+TRUE = (lambda x: True)
 
 
 class NodeOrLeaf:
@@ -92,10 +95,13 @@ class NodeOrLeaf:
         """
         Tuple of nodes with the same parent.
         """
-        if self._parent is None:
+        parent = self._parent
+        if parent is None:
             return ()
         else:
-            return tuple(node for node in self._parent._children if node is not self)
+            parent: NodeOrLeaf
+            generation = parent._children
+            return tuple(node for node in generation if node is not self)
 
     #
     # Properties of node or tree
@@ -162,24 +168,91 @@ class NodeOrLeaf:
             yield root
             root = root._parent
 
-    def iter_children(self, how='dfs', **kwargs) -> Iterator['NodeOrLeaf']:
+    # noinspection PyMethodParameters
+    def iter_children(node, how=None, *, self=None, **kwargs) -> Iterator['NodeOrLeaf']:
         """
         Iterate over child nodes.
         """
+        if how is None and not kwargs:
+            return node._iter_children_simple(self)
         try:
-            method = getattr(self, f'_iter_children_{how}')
+            how = how or "pre-order"
+            attr = how.replace('-', '_')
+            method = getattr(node, f'_iter_children_{attr}')
         except AttributeError as exc:
             msg = f'invalid iteration method: {how}'
             raise ValueError(msg) from exc
-        else:
-            return method(**kwargs)
 
-    # noinspection PyMethodParameters
-    def _iter_children_dfs(node, self=False):
-        if self:
-            yield node
-        for child in node._children:
-            yield from child._iter_children_dfs(True)
+        return method(self, **kwargs)
+
+    def _iter_children_simple(self, yield_self):
+        if yield_self:
+            yield self
+        for child in self._children:
+            yield from child._iter_children_simple(True)
+
+    def _iter_children_level_order(self, this, keep=TRUE, max_depth=INF):
+        if not keep(self) or max_depth == 0:
+            return
+
+        children = self._children
+        children = filter(keep, children) if keep is not TRUE else children
+
+        if this:
+            yield self
+        while children and max_depth > 0:
+            yield from children
+            max_depth -= 1
+            level = chain(*(child.children for child in children))
+            children = list(filter(keep, level) if keep is not TRUE else level)
+
+    def _iter_children_pre_order(self, this, keep=TRUE, max_depth=INF):
+        if not keep(self) or max_depth < 0:
+            return
+        if this:
+            yield self
+        for child in self._children:
+            yield from child._iter_children_pre_order(True, keep, max_depth - 1)
+
+    def _iter_children_post_order(self, this, keep=TRUE, max_depth=INF):
+        if not keep(self) or max_depth < 0:
+            return
+        for child in self._children:
+            yield from child._iter_children_post_order(True, keep, max_depth - 1)
+        if this:
+            yield self
+
+    def _iter_children_in_order(self, this, keep=TRUE, max_depth=INF):
+        if not keep(self) or max_depth < 0:
+            return
+
+        children: Sequence[NodeOrLeaf] = self._children
+        if children:
+            lhs: NodeOrLeaf
+            lhs, *children = children
+            yield from lhs._iter_children_in_order(True, keep, max_depth - 1)
+        if this is not False:
+            yield self
+        for child in children:
+            yield from child._iter_children_in_order(True, keep, max_depth - 1)
+
+    def _iter_children_out_order(self, this, keep=TRUE, max_depth=INF):
+        if not keep(self) or max_depth < 0:
+            return
+
+        children: Sequence[NodeOrLeaf] = self._children
+        if children:
+            rhs: NodeOrLeaf
+            *children, rhs = children
+            yield from rhs._iter_children_out_order(True, keep, max_depth - 1)
+        if this is not False:
+            yield self
+        for child in children:
+            yield from child._iter_children_out_order(True, keep, max_depth - 1)
+
+    @staticmethod
+    def _keep(keep, lst):
+        return lst if keep is TRUE else list(filter(keep, lst))
 
     #
     # Api

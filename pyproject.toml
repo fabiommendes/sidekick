@@ -25,9 +25,10 @@ requires = [ "toolz >= 0.9.0" ]
 
 
 [tool.flit.metadata.requires-extra]
-test = [ "pytest", "pytest-cov", "mock", "manuel" ]
+test = [ "pytest", "pytest-cov", "mock", "manuel", "hypothesis" ]
 doc = [ "sphinx" ]
 dev = [ "flake8", "black", "readme_renderer" ]
+hypothesis = [ "hypothesis" ]
 
 
 [tool.flit.metadata.urls]

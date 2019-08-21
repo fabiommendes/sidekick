@@ -8,7 +8,7 @@ tree_gen = trees()
 
 @pytest.fixture
 def tree():
-    return Node(['a', Node(['b', 'c'])])
+    return Node([Node(['a', 'b']), 'c'])
 
 
 @pytest.fixture
@@ -19,8 +19,8 @@ def random_tree():
 @pytest.fixture
 def tree_parts(tree):
     c1, c2 = tree.children
-    g1, g2 = c2.children
-    return c1, c2, g1, g2
+    g1, g2 = c1.children
+    return c1, g1, g2, c2
 
 
 @pytest.fixture
