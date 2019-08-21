@@ -3,7 +3,8 @@ import json
 import pytest
 from hypothesis import given
 
-from sidekick import common_ancestor, common_ancestors, walk, import_tree, Leaf
+import sidekick as sk
+from sidekick import Leaf, common_ancestor, common_ancestors, walk
 from sidekick.hypothesis import trees, leaves
 
 
@@ -113,12 +114,35 @@ class TestIterators:
 class TestImportExport:
     def test_dict_importer(self, tree):
         data = {'children': [{'children': ['a', 'b']}, 'c']}
-        assert tree == import_tree(data, how='dict')
+        assert tree == sk.import_tree(data, how='dict')
 
     def test_json_importer(self, tree):
         data = {'children': [{'children': ['a', 'b']}, 'c']}
         data = json.dumps(data)
-        assert tree == import_tree(data, how='json')
+        assert tree == sk.import_tree(data, how='json')
+
+    def test_dict_exporter(self, tree):
+        data = {'children': [{'children': ['a', 'b']}, 'c']}
+        assert sk.export_tree(tree, format='dict') == data
+
+    def test_json_exporter(self, tree):
+        data = {'children': [{'children': ['a', 'b']}, 'c']}
+        assert sk.export_tree(tree, format='json') == json.dumps(data)
+
+    def test_dot_exporter(self, tree):
+        assert sk.export_tree(tree, format='dot') == (
+            """digraph tree {\n"""
+            """    "Node()";\n"""
+            """    "Node()";\n"""
+            """    "'a'";\n"""
+            """    "'b'";\n"""
+            """    "'c'";\n"""
+            """    "Node()" -> "Node()";\n"""
+            """    "Node()" -> "'c'";\n"""
+            """    "Node()" -> "'a'";\n"""
+            """    "Node()" -> "'b'";\n"""
+            """}"""
+        )
 
 
 class TestErrors:
