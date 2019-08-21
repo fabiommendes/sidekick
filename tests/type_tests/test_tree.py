@@ -11,24 +11,24 @@ from sidekick.hypothesis import trees, leaves
 class TestNode:
     def test_render_tree(self, tree):
         assert tree.pretty().splitlines() == [
-            'Node()',
-            '├── Node()',
+            "Node()",
+            "├── Node()",
             "│   ├── 'a'",
             "│   └── 'b'",
-            "└── 'c'"
+            "└── 'c'",
         ]
-        assert tree.pretty(style='ascii').splitlines() == [
-            'Node()',
-            '|-- Node()',
+        assert tree.pretty(style="ascii").splitlines() == [
+            "Node()",
+            "|-- Node()",
             "|   |-- 'a'",
             "|   +-- 'b'",
-            "+-- 'c'"
+            "+-- 'c'",
         ]
 
     def test_equality(self):
-        assert Leaf('a') == Leaf('a')
-        assert Leaf('a') != Leaf('b')
-        assert Leaf('a') != Leaf('a', prop=True)
+        assert Leaf("a") == Leaf("a")
+        assert Leaf("a") != Leaf("b")
+        assert Leaf("a") != Leaf("a", prop=True)
 
     def test_simple_tree_properties(self, tree):
         assert tree.height == 2
@@ -71,66 +71,66 @@ class TestIterators:
 
     def test_level_order(self, tree, tree_parts):
         ab, a, b, c = tree_parts
-        assert tuple(tree.iter_children('level-order')) == (ab, c, a, b)
-        assert tuple(tree.iter_children('level-order', max_depth=1)) == (ab, c)
+        assert tuple(tree.iter_children("level-order")) == (ab, c, a, b)
+        assert tuple(tree.iter_children("level-order", max_depth=1)) == (ab, c)
 
     def test_pre_order(self, tree, tree_parts):
         ab, a, b, c = tree_parts
-        assert tuple(tree.iter_children('pre-order')) == tree_parts
-        assert tuple(tree.iter_children('pre-order', max_depth=1)) == (ab, c)
+        assert tuple(tree.iter_children("pre-order")) == tree_parts
+        assert tuple(tree.iter_children("pre-order", max_depth=1)) == (ab, c)
 
     def test_post_order(self, tree, tree_parts):
         ab, a, b, c = tree_parts
-        assert tuple(tree.iter_children('post-order')) == (a, b, ab, c)
-        assert tuple(tree.iter_children('post-order', max_depth=1)) == (ab, c)
+        assert tuple(tree.iter_children("post-order")) == (a, b, ab, c)
+        assert tuple(tree.iter_children("post-order", max_depth=1)) == (ab, c)
 
     def test_in_order(self, tree, tree_parts):
         ab, a, b, c = tree_parts
-        assert tuple(tree.iter_children('in-order')) == (a, ab, b, tree, c)
-        assert tuple(tree.iter_children('in-order', max_depth=1)) == (ab, tree, c)
+        assert tuple(tree.iter_children("in-order")) == (a, ab, b, tree, c)
+        assert tuple(tree.iter_children("in-order", max_depth=1)) == (ab, tree, c)
 
     def test_out_order(self, tree, tree_parts):
         ab, a, b, c = tree_parts
-        assert tuple(tree.iter_children('out-order')) == (c, tree, b, ab, a)
-        assert tuple(tree.iter_children('out-order', max_depth=1)) == (c, tree, ab)
+        assert tuple(tree.iter_children("out-order")) == (c, tree, b, ab, a)
+        assert tuple(tree.iter_children("out-order", max_depth=1)) == (c, tree, ab)
 
     def test_group_level(self, tree, tree_parts):
         ab, a, b, c = tree_parts
-        assert tuple(tree.iter_group('level-order')) == ((ab, c), (a, b))
-        assert tuple(tree.iter_group('level-order', max_depth=1)) == ((ab, c),)
+        assert tuple(tree.iter_group("level-order")) == ((ab, c), (a, b))
+        assert tuple(tree.iter_group("level-order", max_depth=1)) == ((ab, c),)
 
     def test_group_zigzag(self, tree, tree_parts):
         ab, a, b, c = tree_parts
-        assert tuple(tree.iter_group('zig-zag')) == ((ab, c), (b, a))
-        assert tuple(tree.iter_group('zig-zag', max_depth=1)) == ((ab, c),)
+        assert tuple(tree.iter_group("zig-zag")) == ((ab, c), (b, a))
+        assert tuple(tree.iter_group("zig-zag", max_depth=1)) == ((ab, c),)
 
     def test_search(self, tree, tree_parts):
         ab, a, b, c = tree_parts
-        assert tree.find_all(lambda x: x.value in ['b', 'c']) == (b, c)
-        assert tree.find(lambda x: x.value in ['b', 'c']) == b
-        assert tree.find(lambda x: x.value == 'd', default=None) is None
+        assert tree.find_all(lambda x: x.value in ["b", "c"]) == (b, c)
+        assert tree.find(lambda x: x.value in ["b", "c"]) == b
+        assert tree.find(lambda x: x.value == "d", default=None) is None
 
 
 class TestImportExport:
     def test_dict_importer(self, tree):
-        data = {'children': [{'children': ['a', 'b']}, 'c']}
-        assert tree == sk.import_tree(data, how='dict')
+        data = {"children": [{"children": ["a", "b"]}, "c"]}
+        assert tree == sk.import_tree(data, how="dict")
 
     def test_json_importer(self, tree):
-        data = {'children': [{'children': ['a', 'b']}, 'c']}
+        data = {"children": [{"children": ["a", "b"]}, "c"]}
         data = json.dumps(data)
-        assert tree == sk.import_tree(data, how='json')
+        assert tree == sk.import_tree(data, how="json")
 
     def test_dict_exporter(self, tree):
-        data = {'children': [{'children': ['a', 'b']}, 'c']}
-        assert sk.export_tree(tree, format='dict') == data
+        data = {"children": [{"children": ["a", "b"]}, "c"]}
+        assert sk.export_tree(tree, format="dict") == data
 
     def test_json_exporter(self, tree):
-        data = {'children': [{'children': ['a', 'b']}, 'c']}
-        assert sk.export_tree(tree, format='json') == json.dumps(data)
+        data = {"children": [{"children": ["a", "b"]}, "c"]}
+        assert sk.export_tree(tree, format="json") == json.dumps(data)
 
     def test_dot_exporter(self, tree):
-        assert sk.export_tree(tree, format='dot') == (
+        assert sk.export_tree(tree, format="dot") == (
             """digraph tree {\n"""
             """    "Node()";\n"""
             """    "Node()";\n"""
@@ -150,7 +150,7 @@ class TestErrors:
         ab, a, b, c = tree_parts
         # Bad parent type
         with pytest.raises(TypeError):
-            tree.parent = 'bad parent'
+            tree.parent = "bad parent"
         # Leaves cannot be parents
         with pytest.raises(TypeError):
             tree.parent = b

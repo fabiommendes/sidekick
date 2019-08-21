@@ -3,14 +3,21 @@ import operator
 import pytest
 
 from sidekick import placeholder as _, fn, F, record, lazy, Placeholder
-from sidekick.core.placeholder import simplify_ast, Call, Cte, GetAttr, Call, compile_ast
+from sidekick.core.placeholder import (
+    simplify_ast,
+    Call,
+    Cte,
+    GetAttr,
+    Call,
+    compile_ast,
+)
 
 func = lambda x: x.__inner_function__
 
 
 class TestPlaceholder:
     def test_basic_properties(self):
-        assert str(+(_.method(42 + _))) == '(+_.method(42 + _))'
+        assert str(+(_.method(42 + _))) == "(+_.method(42 + _))"
 
     def test_with_math_operators(self):
         inc = fn(_ + 1)
@@ -52,7 +59,7 @@ class TestPlaceholder:
         assert f(-1) == 1
 
         f = fn(F(dict, [], foo=_))
-        assert f('bar') == {'foo': 'bar'}
+        assert f("bar") == {"foo": "bar"}
 
     def test_nested_attribute_access(self):
         x = record(foo=record(bar=42))

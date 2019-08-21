@@ -12,10 +12,14 @@ class TestObservableSeq:
         seq = misc.ObservableSeq([1, 2, 3])
 
         # Register events
-        seq.register(['pre-setitem', 'pre-delitem', 'pre-insert'],
-                     lambda i, x: pre_events.append((i, x)))
-        seq.register(['post-setitem', 'post-delitem', 'post-insert'],
-                     lambda i, x: post_events.append((i, x)))
+        seq.register(
+            ["pre-setitem", "pre-delitem", "pre-insert"],
+            lambda i, x: pre_events.append((i, x)),
+        )
+        seq.register(
+            ["post-setitem", "post-delitem", "post-insert"],
+            lambda i, x: post_events.append((i, x)),
+        )
 
         # Interact and check
         clear()

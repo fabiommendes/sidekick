@@ -17,7 +17,7 @@ class TestLinkedLists:
         assert lst == List([1, 2, 3])
         assert lst != List([1, 2, 3, 4])
         assert lst != List([2, 3, 4])
-        assert repr(lst) == 'List([1, 2, 3])'
+        assert repr(lst) == "List([1, 2, 3])"
         assert len(lst) == 3
         assert lst[0] == 1
         assert lst[2] == 3
@@ -46,22 +46,22 @@ class TestLinkedLists:
         assert lst.drop(1) == List([2, 3])
         assert lst.drop(1) is lst.tail
         assert lst.drop(5) is List()
-        
+
         # Sort/partition
         assert lst.reversed() == List([3, 2, 1])
         assert lst.partition_at(lambda x: x % 2 == 0) == (List([1]), List([2, 3]))
         assert empty.partition_at((X % 2)) == (empty, empty)
-        
+
         # Mapping
         assert lst.map((X * 2)) == List([2, 4, 6])
-        assert lst.map((X * "-")) == List(['-', '--', '---'])
-        assert lst.map_bound((X * "-")) == List(['-', '-', '-', '-', '-', '-'])
+        assert lst.map((X * "-")) == List(["-", "--", "---"])
+        assert lst.map_bound((X * "-")) == List(["-", "-", "-", "-", "-", "-"])
 
     def test_empty_list(self):
         empty = List()
         assert empty is List()
 
-        tests = {len: 0, repr: 'List([])'}
+        tests = {len: 0, repr: "List([])"}
         for f, v in tests.items():
             assert f(empty) == v
 
@@ -69,10 +69,12 @@ class TestLinkedLists:
         empty = List()
 
         tests = {
-            getattr('uncons'): ValueError,
-            X[0]: IndexError, X[-1]: IndexError, X * (-1): ValueError,
+            getattr("uncons"): ValueError,
+            X[0]: IndexError,
+            X[-1]: IndexError,
+            X * (-1): ValueError,
         }
         for f, e in tests.items():
             with pytest.raises(e):
                 res = f(empty)
-                print('result:', res)
+                print("result:", res)

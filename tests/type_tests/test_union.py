@@ -8,7 +8,7 @@ UnionMeta = type(Union)
 
 class TestCreateUnionType:
     def test_case_constructor(self):
-        assert issubclass(Case('foo'), Record)
+        assert issubclass(Case("foo"), Record)
         assert issubclass(Case(), SingletonMixin)
         assert not issubclass(Case(), Record)
         assert isinstance(Case(), SingletonMeta)
@@ -17,7 +17,7 @@ class TestCreateUnionType:
     def test_union_type_hierarchy(self):
         class ADT(Union):
             Foo: Case()
-            Bar: Case('value')
+            Bar: Case("value")
 
         assert ADT.__name__ == "ADT"
 
@@ -44,9 +44,9 @@ class TestCreateUnionType:
 
     def test_construct_composite_adt_with_more_than_two_states(self):
         class ADT(Union):
-            Foo: Case('value')
-            Bar: Case('value')
-            Ham: Case('value')
+            Foo: Case("value")
+            Bar: Case("value")
+            Ham: Case("value")
 
         assert isinstance(ADT.Foo(1), ADT)
         assert isinstance(ADT.Bar(2), ADT)
@@ -62,18 +62,19 @@ class TestCreateUnionType:
             Spam: Case()
 
         with pytest.raises(TypeError):
+
             class ADT(FooBar, HamSpam):
                 pass
 
-    # def test_forbids_multiple_levels_of_inheritance(self):
-    #     class ADT(Union):
-    #         Foo: Case()
-    #         Bar: Case()
-    #
-    #     ADT.__module__ = "not_the_same_module_as_child"
-    #
-    #     with pytest.raises(TypeError):
-    #         class Child(ADT):
+                # def test_forbids_multiple_levels_of_inheritance(self):
+                #     class ADT(Union):
+                #         Foo: Case()
+                #         Bar: Case()
+                #
+                #     ADT.__module__ = "not_the_same_module_as_child"
+                #
+                #     with pytest.raises(TypeError):
+                #         class Child(ADT):
                 ...
 
     def test_can_define_case_classes_outside_the_class_body(self):
@@ -82,7 +83,7 @@ class TestCreateUnionType:
             Bar: Case()
 
         class Child(ADT):
-            args: Case('value')
+            args: Case("value")
 
         assert ADT.Child is Child
 

@@ -10,24 +10,26 @@ class EqList(list):
             other = sk.take(len(self) - 1, other)
             self = self[:-1]
         other = list(other)
-        assert list.__eq__(self, other), f'Different outputs: {other} != {self}'
+        assert list.__eq__(self, other), f"Different outputs: {other} != {self}"
         return True
 
+
 LL = lambda *args: EqList(args)
-VALUE = type('VALUE', (), {'__repr__': lambda self: 'VALUE'})()
+VALUE = type("VALUE", (), {"__repr__": lambda self: "VALUE"})()
 
 
 # ==============================================================================
 # ITERTOOLS: basic.py
 # ==============================================================================
 
+
 class TestBasicFunctions:
     def test_fail_with_empty_lists(self, empty):
         fail = [sk.uncons, sk.first, sk.second, sk.last, sk.nth(0), sk.nth(1)]
-        
+
         for func in fail:
             with pytest.raises(ValueError):
-                print('not failed:', func, func(empty()))
+                print("not failed:", func, func(empty()))
 
     def test_succeed_with_empty_lists(self, empty):
         success = {
@@ -69,16 +71,17 @@ class TestBasicFunctions:
 
     def test_fail_seq_of_numbers(self, nums):
         fail = [sk.nth(5), sk.nth(10)]
-        
+
         for func in fail:
             with pytest.raises(ValueError):
                 v = func(nums())
-                print('not failed:', func, v)
+                print("not failed:", func, v)
 
 
 # ==============================================================================
 # ITERTOOLS: creation.py
 # ==============================================================================
+
 
 class TestCreation:
     def test_unfold(self):
@@ -90,12 +93,14 @@ class TestCreation:
         assert sk.iterate_past(lambda: 42, ()) == LL(42, 42, 42, ...)
         assert sk.iterate_past(lambda x: x + 1, [1]) == LL(1, 2, 3, ...)
         assert sk.iterate_past(lambda x, y: x + y, [1, 3]) == LL(1, 3, 4, 7, ...)
-        
-        assert sk.iterate_past(lambda x, y, z: x + y + z, [1, 1, 1]) \
-            == LL(1, 1, 1, 3, 5, 9, 17, ...)
-        
-        assert sk.iterate_past(lambda x, y, z, w: x + y + z + w, [1, 1, 1, 1]) \
-            == LL(1, 1, 1, 1, 4, 7, 13, 25, ...)
+
+        assert sk.iterate_past(lambda x, y, z: x + y + z, [1, 1, 1]) == LL(
+            1, 1, 1, 3, 5, 9, 17, ...
+        )
+
+        assert sk.iterate_past(lambda x, y, z, w: x + y + z + w, [1, 1, 1, 1]) == LL(
+            1, 1, 1, 1, 4, 7, 13, 25, ...
+        )
 
     def test_iterate_indexed(self, nums):
         assert sk.iterate_indexed((X + Y), 1, idx=nums()) == LL(1, 2, 4, 7, 11, 16)

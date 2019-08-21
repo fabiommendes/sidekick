@@ -17,13 +17,13 @@ class TestLazySingleDispatch:
         def _str(x):
             return x
 
-        @foo.register('collections.OrderedDict')
+        @foo.register("collections.OrderedDict")
         def _map(x):
             return dict(x)
 
-        d = OrderedDict({3: 'three'})
+        d = OrderedDict({3: "three"})
         assert foo(1) == 42
-        assert foo('two') == 'two'
+        assert foo("two") == "two"
         assert foo(d) == d
         assert type(foo(d)) is dict
 

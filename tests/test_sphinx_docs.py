@@ -52,13 +52,14 @@ def make_manuel_suite(ns):
 
 
 def safe(obj):
-    name = str(obj)[len(path) + 1:]
-    return name \
-        .replace('-', '_') \
-        .replace(' ', '_') \
-        .replace('/', '__') \
-        .replace('\\', '__') \
-        .replace('.', '_')
+    name = str(obj)[len(path) + 1 :]
+    return (
+        name.replace("-", "_")
+        .replace(" ", "_")
+        .replace("/", "__")
+        .replace("\\", "__")
+        .replace(".", "_")
+    )
 
 
 make_manuel_suite(globals())

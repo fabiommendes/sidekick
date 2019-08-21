@@ -8,7 +8,7 @@ tree_gen = trees()
 
 @pytest.fixture
 def tree():
-    return Node([Node(['a', 'b']), 'c'])
+    return Node([Node(["a", "b"]), "c"])
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def tree_parts(tree):
 
 @pytest.fixture
 def abc_sexpr():
-    return SExpr("abc", [SExpr("a"), SExpr("b"), SExpr('c')])
+    return SExpr("abc", [SExpr("a"), SExpr("b"), SExpr("c")])
 
 
 @pytest.fixture
@@ -56,7 +56,9 @@ def ai_id_tree():
                 children=[
                     SExpr("e", id="e"),
                     SExpr("f", id="f"),
-                    SExpr("g", id="g", children=[SExpr("h", id="h"), SExpr("i", id="i")]),
+                    SExpr(
+                        "g", id="g", children=[SExpr("h", id="h"), SExpr("i", id="i")]
+                    ),
                 ],
             ),
         ],
