@@ -2,7 +2,7 @@ from collections.abc import MutableMapping
 
 from sidekick import lazy
 
-__all__ = ['InvMap']
+__all__ = ["InvMap"]
 
 
 class InvMap(MutableMapping):
@@ -18,8 +18,9 @@ class InvMap(MutableMapping):
         Inspired on Josh Bronson's ``bidict`` module
         (http://pypi.python.org/pypi/bidict)
     """
+
     EMPTY = object()
-    inv: 'InvMap'
+    inv: "InvMap"
 
     @classmethod
     def named(cls, class_name, direct, inverse):
@@ -35,8 +36,7 @@ class InvMap(MutableMapping):
             >>> x.realms
             InvMap({'soccer': 'Pele', "rock'n'roll": 'Elvis'})
         """
-        ns = {direct: property(lambda x: x),
-              inverse: property(lambda x: x.inv)}
+        ns = {direct: property(lambda x: x), inverse: property(lambda x: x.inv)}
         return type(class_name, (InvMap,), ns)
 
     @lazy
@@ -51,7 +51,7 @@ class InvMap(MutableMapping):
         self._inverse = invert_map(self._direct)
 
     def __repr__(self):
-        return '%s(%s)' % (type(self).__name__, repr(self._direct))
+        return "%s(%s)" % (type(self).__name__, repr(self._direct))
 
     def __getitem__(self, key):
         return self._direct[key]
@@ -68,7 +68,7 @@ class InvMap(MutableMapping):
         if value in self._inverse:
             self._direct[key] = old_value
             self._inverse[old_value] = key
-            raise ValueError('value exists: %s' % value)
+            raise ValueError("value exists: %s" % value)
         else:
             self._direct[key] = value
             self._inverse[value] = key
@@ -89,5 +89,5 @@ def invert_map(map):
     """
     inv = {v: k for k, v in map.items()}
     if len(inv) != len(map):
-        raise ValueError('map not invertible!')
+        raise ValueError("map not invertible!")
     return inv

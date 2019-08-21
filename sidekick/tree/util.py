@@ -11,7 +11,7 @@ def common_ancestors(*nodes: NodeOrLeaf) -> List[Node]:
     If arguments are not in the same tree, return an empty list.
     """
     common = []
-    for parents in zip(*map(op.attrgetter('ancestors'), nodes)):
+    for parents in zip(*map(op.attrgetter("ancestors"), nodes)):
         parent = parents[0]
         if all([parent is p for p in parents[1:]]):
             common.append(parent)
@@ -28,7 +28,7 @@ def common_ancestor(*nodes: NodeOrLeaf, raises=True) -> Optional[Node]:
         return common_ancestors(*nodes)[-1]
     except IndexError as exc:
         if raises:
-            raise ValueError('not in the same tree') from exc
+            raise ValueError("not in the same tree") from exc
         return None
 
 
@@ -50,6 +50,6 @@ def walk(start, end):
 
     common = [x for x, y in zip(xs, ys) if x is y]
     n_common = len(common)
-    up = () if start is common[-1] else xs[:n_common - 1:-1]
+    up = () if start is common[-1] else xs[: n_common - 1 : -1]
     down = () if end is common[-1] else ys[n_common:]
     return up, common[-1], down

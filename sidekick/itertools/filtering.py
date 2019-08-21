@@ -8,9 +8,17 @@ _filter = filter
 
 __all__ = [
     # Filtering
-    *["drop_while", "random_sample", "remove", "separate", "take_while", "top_k",
-      "unique", "until_convergence", "without"],
-
+    *[
+        "drop_while",
+        "random_sample",
+        "remove",
+        "separate",
+        "take_while",
+        "top_k",
+        "unique",
+        "until_convergence",
+        "without",
+    ],
     # Extracting items
     *["consume", "drop", "get", "peek", "take", "take_nth"],
 ]
@@ -237,7 +245,7 @@ def select_positions(indices: Seq, seq: Seq, *, silent=False) -> Seq:
                 else:
                     break
         elif i > idx and not silent:
-            raise ValueError('non-decreasing sequence of indices')
+            raise ValueError("non-decreasing sequence of indices")
 
 
 @fn.curry(2)
@@ -269,7 +277,7 @@ def drop_positions(indices: Seq, seq: Seq, *, silent=False) -> Seq:
             except StopIteration:
                 break
         elif i > idx and not silent:
-            raise ValueError('non-decreasing sequence of indices')
+            raise ValueError("non-decreasing sequence of indices")
         else:
             yield x
     yield from seq
@@ -291,8 +299,7 @@ def separate(pred: Func, seq: Seq) -> (Seq, Seq):
     """
     pred = extract_function(pred)
     a, b = itertools.tee((x, pred(x)) for x in seq)
-    return ((x for x, keep in a if keep),
-            (x for x, exclude in b if not exclude))
+    return ((x for x, keep in a if keep), (x for x, exclude in b if not exclude))
 
 
 #
@@ -356,7 +363,7 @@ def first_repeated(key: Func, seq: Seq):
         if tag in seen:
             return i, x
         add(tag)
-    raise ValueError('no repeated element in sequence')
+    raise ValueError("no repeated element in sequence")
 
 
 @fn.curry(2)
@@ -386,7 +393,7 @@ def find(pred: Pred, seq: Seq) -> (int, object):
     for i, x in enumerate(seq):
         if pred(x):
             return i, x
-    raise ValueError('did not encounter any matching items.')
+    raise ValueError("did not encounter any matching items.")
 
 
 @fn

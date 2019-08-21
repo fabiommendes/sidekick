@@ -25,7 +25,7 @@ make_rop = lambda op: lambda _, value: lambda x: op(value, x)
 
 class X(base_operator_magic(make_op, make_rop, bitwise=False)):
     def __repr__(self):
-        return 'X'
+        return "X"
 
     def __call__(self, x):
         return x
@@ -57,7 +57,7 @@ make_rop = lambda op: lambda _, value: lambda x, y: op(value, y)
 
 class Y(base_operator_magic(make_op, make_rop, bitwise=False)):
     def __repr__(self):
-        return 'Y'
+        return "Y"
 
     def __call__(self, x, y):
         return y
@@ -74,7 +74,7 @@ make_rop = lambda op: lambda _, cte: lambda f: lambda x: op(cte, f(x))
 
 class F(base_operator_magic(make_op, make_rop, bitwise=False)):
     def __repr__(self):
-        return 'F'
+        return "F"
 
     def __call__(self, *args, **kwargs):
         values = [*args, *kwargs.values()]
@@ -97,7 +97,7 @@ make_rop = lambda op: lambda _, cte: lambda v: fmap(lambda x: op(cte, x), v)
 
 class X_i(base_operator_magic(make_op, make_rop, bitwise=False)):
     def __repr__(self):
-        return 'X_i'
+        return "X_i"
 
 
 del make_op, make_rop

@@ -233,6 +233,7 @@ def iterator_transform(func):
         wrapper = start_wrapper(func, args)
         while True:
             yield wrapper.pop()
+
     return wrapped
 
 
@@ -241,6 +242,7 @@ def coroutine_transform(func):
         wrapper = start_wrapper(func, args)
         while True:
             wrapper.push((yield))
+
     return wrapped
 
 
@@ -285,10 +287,9 @@ async def map(func, obj):
         await obj.send(func(await obj.recv()))
 
 
-
 from collections import namedtuple
 
-out = namedtuple('out', ['value'])
+out = namedtuple("out", ["value"])
 
 
 async def cmap(func, send, recv):
@@ -310,7 +311,6 @@ async def cdrop(n, send, recv):
         await send(await recv())
 
 
-
 def iterator(func, *args):
     *args, it = args
 
@@ -329,6 +329,7 @@ def iterator(func, *args):
 
         except StopIteration:
             break
+
 
 from types import coroutine
 from asyncio import coroutine, sleep

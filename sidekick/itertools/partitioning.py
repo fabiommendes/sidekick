@@ -7,8 +7,13 @@ from ..core import fn, Seq, Func, extract_function, Pred
 
 not_given = object()
 __all__ = [
-    'chunks', 'partition', 'partition_by',
-    'fold_by', 'reduce_by', 'group_by', 'partition_at',
+    "chunks",
+    "partition",
+    "partition_by",
+    "fold_by",
+    "reduce_by",
+    "group_by",
+    "partition_at",
 ]
 
 
@@ -65,7 +70,7 @@ def partition(n: int, seq: Seq, *, pad=not_given) -> Seq:
         [(0, 1), (2, 3), (4, None)]
 
     """
-    kwargs = {} if pad is not_given else {'pad': pad}
+    kwargs = {} if pad is not_given else {"pad": pad}
     return toolz.partition(n, seq, **kwargs)
 
 
@@ -144,5 +149,7 @@ def partition_at(sep: Union[int, Pred], seq: Seq) -> (Seq, Seq):
         pred = extract_function(sep)
         a, b = itertools.tee((pred(x), x) for x in seq)
         value = lambda x: x[1]
-        return (map(value, itertools.takewhile(lambda x: not x[0], a)),
-                map(value, itertools.dropwhile(lambda x: not x[0], b)))
+        return (
+            map(value, itertools.takewhile(lambda x: not x[0], a)),
+            map(value, itertools.dropwhile(lambda x: not x[0], b)),
+        )

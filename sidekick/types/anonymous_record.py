@@ -61,7 +61,7 @@ class MapView(collections.abc.Mapping):
     A dict-like interface for record objects.
     """
 
-    __slots__ = ('_record',)
+    __slots__ = ("_record",)
 
     def __init__(self, data):
         self._record = data
@@ -102,6 +102,7 @@ class MetaMixin:
     """
     Common implementations of Meta for anonymous and class based records.
     """
+
     __slots__ = ()
 
     def __iter__(self):
@@ -130,6 +131,7 @@ class Meta(MetaMixin):
     """
     Implements the _meta attribute of anonymous records.
     """
+
     defaults = MappingProxyType({})
     fields = property(lambda self: tuple(self))
     types = property(lambda self: {k: object for k in self})

@@ -4,12 +4,13 @@ from functools import lru_cache
 from .record import Record, clean_field, normalize_field_mapping, RecordMeta
 from ..utils import snake_case
 
-__all__ = ['union', 'Case', 'Union']
+__all__ = ["union", "Case", "Union"]
 
 
 # ------------------------------------------------------------------------------
 # UNION TYPE METACLASSES
 # ------------------------------------------------------------------------------
+
 
 class union(type):
     """
@@ -37,8 +38,8 @@ class union(type):
         bases = mcs.check_bases(bases)
 
         if all(not isinstance(cls, union) for cls in bases):
-            ns.setdefault('__slots__', ())
-            kwargs.update(ns.get('__annotations__', {}))
+            ns.setdefault("__slots__", ())
+            kwargs.update(ns.get("__annotations__", {}))
             new = mcs.create_root(name, bases, ns, kwargs)
             for item in kwargs.items():
                 new.create_case(*item)
@@ -47,7 +48,7 @@ class union(type):
             return mcs.create_record_case(name, bases, ns, **kwargs)
 
     @classmethod
-    def create_root(mcs, name, bases, ns, cases) -> 'union':
+    def create_root(mcs, name, bases, ns, cases) -> "union":
         """
         Create base class of a union type.
         """
@@ -61,7 +62,7 @@ class union(type):
         if bases == (Union,):
             return ()
         if sum(1 for cls in bases if isinstance(cls, union)) > 1:
-            raise TypeError('cannot inherit from different union types')
+            raise TypeError("cannot inherit from different union types")
         return tuple(cls for cls in bases if cls is not Union)
 
     @classmethod
@@ -71,18 +72,18 @@ class union(type):
         """
 
         root, = (cls for cls in bases if isinstance(cls, union))
-        annotations = ns.get('__annotations__', {})
+        annotations = ns.get("__annotations__", {})
 
         # Record-based class
         if annotations:
-            ns.setdefault('__slots__', tuple(annotations))
+            ns.setdefault("__slots__", tuple(annotations))
             metaclass = case_metaclass(type(Record))
             new = RecordMeta.__new__(metaclass, name, (*bases, Record), ns, **kwargs)
             result = new
 
         # Singleton classes
         else:
-            ns['__slots__'] = ()
+            ns["__slots__"] = ()
             new = SingletonMeta(name, (*bases, SingletonMixin), ns, **kwargs)
             result = new()
 
@@ -94,10 +95,10 @@ class union(type):
         Create case class with given base for a union type.
         """
         if base is SingletonCase:
-            new = CaseType(name, (base, cls), {'__slots__': ()})
+            new = CaseType(name, (base, cls), {"__slots__": ()})
         else:
             metaclass = case_metaclass(type(base))
-            new = type.__new__(metaclass, name, (base, cls), {'__slots__': ()})
+            new = type.__new__(metaclass, name, (base, cls), {"__slots__": ()})
 
         is_singleton = isinstance(new, SingletonMeta)
         cls._union.add_case(name, new, singleton=is_singleton)
@@ -208,8 +209,8 @@ def Case(*args, **kwargs):
 @lru_cache(None)
 def fetch_case(attrs: tuple):
     if not attrs:
-        return SingletonMeta('Case', (SingletonMixin,), {})
-    return Record.define('Case', list(attrs))
+        return SingletonMeta("Case", (SingletonMixin,), {})
+    return Record.define("Case", list(attrs))
 
 
 @lru_cache(None)
@@ -217,21 +218,21 @@ def case_metaclass(typ):
     """
     Creates a compatible metaclass for the given type.
     """
-    assert issubclass(typ, type), f'Not a type: {typ}'
+    assert issubclass(typ, type), f"Not a type: {typ}"
     if issubclass(typ, CaseType):
         return CaseType
-    return type(typ.__name__ + 'Case', (CaseType, typ), {})
+    return type(typ.__name__ + "Case", (CaseType, typ), {})
 
 
 def query_name(name):
-    name = 'is_' + snake_case(name)
+    name = "is_" + snake_case(name)
     if not name.isidentifier() or not name:
-        raise ValueError('invalid python identifier' + name)
+        raise ValueError("invalid python identifier" + name)
     return name
 
 
 # We have to declare union a generic value since the meta-type constructor
 # explicity checks for the presence of a Union base class.
 Union = NotImplemented
-Union = union('Union')
+Union = union("Union")
 SingletonCase = Case()

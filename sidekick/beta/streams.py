@@ -13,7 +13,7 @@ class Stream:
     def __call__(self):
         value = self._value
         if value is SKIP:
-            raise ValueError('stream was not initialized')
+            raise ValueError("stream was not initialized")
         return value
 
     def __iter__(self):
@@ -52,7 +52,6 @@ class Stream:
         coro = constructor(stream)
         self.register(coro, func)
         return coro, stream
-
 
 
 def combine(func, *streams, default=SKIP):
@@ -128,6 +127,7 @@ def filter(pred, stream):
 
 def map(func, stream):
     return stream(map, func)
+
 
 def ifte(cond, then, else_):
     res = Stream()

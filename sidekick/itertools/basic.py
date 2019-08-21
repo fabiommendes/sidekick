@@ -5,10 +5,10 @@ from ..core import fn, Seq, T, NOT_GIVEN
 from ..magics import L, N  # used in doctests
 
 __all__ = [
-    *['cons', 'uncons'],
-    *['first', 'second', 'nth', 'last'],
-    *['rest', 'init', 'last_n'],
-    *['is_empty', 'length'],
+    *["cons", "uncons"],
+    *["first", "second", "nth", "last"],
+    *["rest", "init", "last_n"],
+    *["is_empty", "length"],
 ]
 
 
@@ -51,7 +51,7 @@ def uncons(seq: Seq[T], default=NOT_GIVEN) -> (T, Seq[T]):
         return next(seq), seq
     except StopIteration:
         if default is NOT_GIVEN:
-            raise ValueError('Cannot deconstruct empty sequence.')
+            raise ValueError("Cannot deconstruct empty sequence.")
         return default, iter(())
 
 
@@ -270,5 +270,5 @@ def length(seq: Seq, *, limit=None) -> int:
 
 def _assure_given(x, not_given=NOT_GIVEN):
     if x is not_given:
-        raise ValueError('not enough elements in sequence')
+        raise ValueError("not enough elements in sequence")
     return x

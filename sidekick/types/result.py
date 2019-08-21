@@ -6,8 +6,19 @@ from .union import Union
 from ..core import extract_function, fn
 from ..functools import error
 
-__all__ = ['Result', 'Err', 'Ok', 'result', 'rapply', 'rcall', 'rpipe',
-           'rpipeline', 'result_fn', 'catch_exceptions', 'first_error']
+__all__ = [
+    "Result",
+    "Err",
+    "Ok",
+    "result",
+    "rapply",
+    "rcall",
+    "rpipe",
+    "rpipeline",
+    "result_fn",
+    "catch_exceptions",
+    "first_error",
+]
 
 
 class Result(Union):
@@ -41,8 +52,11 @@ class Result(Union):
             return self
         else:
             err = self.error
-            if isinstance(err, Exception) \
-                    or isinstance(err, type) and issubclass(err, Exception):
+            if (
+                isinstance(err, Exception)
+                or isinstance(err, type)
+                and issubclass(err, Exception)
+            ):
                 return self
             return self.Err(func(err))
 
@@ -132,6 +146,7 @@ class Err(Result):
     """
     An error state of a Result.
     """
+
     error: object
     value = property(lambda self: self.check_error())
     is_failure = True
@@ -140,14 +155,17 @@ class Err(Result):
     def __eq__(self, other):
         if isinstance(other, type) and issubclass(other, Exception):
             e = self.error
-            return (e == other
-                    or isinstance(e, other)
-                    or issubclass(e, type) and issubclass(e, other))
+            return (
+                e == other
+                or isinstance(e, other)
+                or issubclass(e, type)
+                and issubclass(e, other)
+            )
         return super().__eq__(other)
 
     def __repr__(self):
         if isinstance(self.error, type):
-            return f'Err({self.error.__name__})'
+            return f"Err({self.error.__name__})"
         return super().__repr__()
 
 
@@ -155,6 +173,7 @@ class Ok(Result):
     """
     A success state of a Result.
     """
+
     value: object
     error = None
     is_success = True
@@ -164,6 +183,7 @@ class Ok(Result):
 # ------------------------------------------------------------------------------
 # Public API Functions
 # ------------------------------------------------------------------------------
+
 
 def result(obj):
     """

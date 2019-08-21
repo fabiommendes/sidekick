@@ -3,8 +3,8 @@ from collections.abc import MutableSequence
 
 from typing import Callable
 
-__all__ = ['LazyList']
-INF = float('inf')
+__all__ = ["LazyList"]
+INF = float("inf")
 
 
 class LazyList(MutableSequence, list):
@@ -22,7 +22,7 @@ class LazyList(MutableSequence, list):
             length=float('inf').
     """
 
-    __slots__ = ('_iter', '_tail', '_missing')
+    __slots__ = ("_iter", "_tail", "_missing")
 
     def __new__(cls, iterable, *, size=None):
         return list.__new__(cls)
@@ -32,7 +32,7 @@ class LazyList(MutableSequence, list):
         self._iter = iter(iterable)
         self._tail = []
         self._missing = size
-        if size == 'inf' or size == float('inf'):
+        if size == "inf" or size == float("inf"):
             self._missing = INF
         if self._missing not in [None, INF]:
             self._iter = itertools.islice(self._iter, self._missing)
@@ -66,7 +66,7 @@ class LazyList(MutableSequence, list):
         if isinstance(idx, int):
             return self._index_operation(list.__getitem__, idx)
         elif isinstance(idx, slice):
-            raise TypeError('slices are not supported yet')
+            raise TypeError("slices are not supported yet")
         else:
             raise TypeError
 
@@ -88,13 +88,13 @@ class LazyList(MutableSequence, list):
     def __repr__(self):
         tname = type(self).__name__
         if self._iter is None:
-            return f'{tname}({super().__repr__()})'
+            return f"{tname}({super().__repr__()})"
         else:
             pre_data = list.__repr__(self)[1:-1]
             pos_data = repr(self._tail)[1:-1]
-            data = '...' if not pre_data else pre_data + ', ...'
-            data = data if not pos_data else '%s, %s' % (data, pos_data)
-            return '%s([%s])' % (tname, data)
+            data = "..." if not pre_data else pre_data + ", ..."
+            data = data if not pos_data else "%s, %s" % (data, pos_data)
+            return "%s([%s])" % (tname, data)
 
     def __eq__(self, other):
         if not isinstance(other, list):
@@ -126,7 +126,7 @@ class LazyList(MutableSequence, list):
         if self._iter is None:
             return list.__len__(self)
         elif self._missing == INF:
-            raise OverflowError('cannot get the size of an infinite iterator')
+            raise OverflowError("cannot get the size of an infinite iterator")
         elif self._missing is not None:
             return list.__len__(self) + self._missing + len(self._tail)
         else:
@@ -146,7 +146,7 @@ class LazyList(MutableSequence, list):
 
         if self._iter is not None:
             if self._missing is INF:
-                raise OverflowError('cannot consume an infinite iterator')
+                raise OverflowError("cannot consume an infinite iterator")
             list.extend(self, self._iter)
             list.extend(self, self._tail)
             self._tail.clear()
@@ -160,7 +160,7 @@ class LazyList(MutableSequence, list):
 
         head_size = list.__len__(self)
         if n < 0:
-            raise ValueError('negative values are not accepted')
+            raise ValueError("negative values are not accepted")
         if head_size >= n or self._iter is None:
             return
 

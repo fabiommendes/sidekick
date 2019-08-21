@@ -2,11 +2,18 @@ import inspect
 from functools import partial
 from types import MappingProxyType as mappingproxy
 
-from .fn_meta import FunctionMeta, extract_function, FUNCTION_ATTRIBUTES, make_xor, mixed_accessor, \
-    lazy_property, arity
+from .fn_meta import (
+    FunctionMeta,
+    extract_function,
+    FUNCTION_ATTRIBUTES,
+    make_xor,
+    mixed_accessor,
+    lazy_property,
+    arity,
+)
 from .placeholder import compile_ast, call_node
 
-__all__ = ['fn', 'as_fn']
+__all__ = ["fn", "as_fn"]
 
 
 class fn(metaclass=FunctionMeta):
@@ -53,7 +60,7 @@ class fn(metaclass=FunctionMeta):
             return lambda f: cls.wraps(func, f)
         if not isinstance(fn_obj, fn):
             fn_obj = fn(fn_obj)
-        for attr in ('__name__', '__qualname__', '__doc__', '__annotations__'):
+        for attr in ("__name__", "__qualname__", "__doc__", "__annotations__"):
             value = getattr(func, attr, None)
             if value is not None:
                 setattr(fn_obj, attr, value)
@@ -84,7 +91,7 @@ class fn(metaclass=FunctionMeta):
             func = self.func.__name__
         except AttributeError:
             func = repr(self.func)
-        return f'{self.__class__.__name__}({func})'
+        return f"{self.__class__.__name__}({func})"
 
     def __call__(self, *args, **kwargs):
         return self.func(*args, **kwargs)
@@ -173,18 +180,14 @@ class fn(metaclass=FunctionMeta):
         applied.
         """
         func = self.__inner_function__
-        return fn(
-            lambda *xs, **kw: func(*args, *xs, **kwargs, **kw)
-        )
+        return fn(lambda *xs, **kw: func(*args, *xs, **kwargs, **kw))
 
     def rpartial(self, *args, **kwargs):
         """
         Like partial, but fill positional arguments from right to left.
         """
         func = self.__inner_function__
-        return fn(
-            lambda *xs, **kw: func(*xs, *args, **update_arguments(kwargs, kw))
-        )
+        return fn(lambda *xs, **kw: func(*xs, *args, **update_arguments(kwargs, kw)))
 
     def single(self, *args, **kwargs):
         """
@@ -250,15 +253,21 @@ class Curried(fn):
     """
     Curried function with known arity.
     """
-    __slots__ = ('args', 'arity', 'keywords')
+
+    __slots__ = ("args", "arity", "keywords")
 
     @property
     def __inner_function__(self):
         return self
 
-    def __init__(self, func: callable, arity: int,
-                 args: tuple = (),
-                 keywords: dict = mappingproxy({}), **kwargs):
+    def __init__(
+        self,
+        func: callable,
+        arity: int,
+        args: tuple = (),
+        keywords: dict = mappingproxy({}),
+        **kwargs,
+    ):
         super().__init__(func, **kwargs)
         self.args = args
         self.keywords = keywords
@@ -269,24 +278,24 @@ class Curried(fn):
             func = self.func.__name__
         except AttributeError:
             func = repr(self.func)
-        args = ', '.join(map(repr, self.args))
-        kwargs = ', '.join(f'{k}={v!r}' for k, v in self.keywords.items())
+        args = ", ".join(map(repr, self.args))
+        kwargs = ", ".join(f"{k}={v!r}" for k, v in self.keywords.items())
         if not args:
             args = kwargs
         elif kwargs:
-            args = ', '.join([args, kwargs])
+            args = ", ".join([args, kwargs])
         return f"<curry {func}({args})>"
 
     def __call__(self, *args, **kwargs):
         if not args and not kwargs:
-            raise TypeError('curried function cannot be called without arguments')
+            raise TypeError("curried function cannot be called without arguments")
 
         try:
             return self.func(*(self.args + args), **self.keywords, **kwargs)
         except TypeError:
             n = len(args)
             if n == 0 and not kwargs:
-                msg = f'function receives between 1 and {self.arity} arguments'
+                msg = f"function receives between 1 and {self.arity} arguments"
                 raise TypeError(msg)
             elif n >= self.arity:
                 raise
@@ -328,13 +337,14 @@ class AmbiguousOperation(ValueError):
     @classmethod
     def default(cls):
         return cls(
-            'do you want to compose predicates or pass argument to function?'
-            '\nUse `fn(lhs) | func` in the former and `lhs > func` in the latter.')
+            "do you want to compose predicates or pass argument to function?"
+            "\nUse `fn(lhs) | func` in the former and `lhs > func` in the latter."
+        )
 
 
 def update_arguments(src, dest: dict):
     duplicate = set(src).intersection(dest)
     if duplicate:
-        raise TypeError(f'duplicated keyword arguments: {duplicate}')
+        raise TypeError(f"duplicated keyword arguments: {duplicate}")
     dest.update(src)
     return dest

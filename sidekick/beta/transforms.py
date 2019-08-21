@@ -2,7 +2,7 @@ from itertools import tee
 from sidekick.beta.misc import fill
 from ..core import fn, Func, Seq, extract_function
 
-__all__ = ['order_by', 'transform', 'transform_map']
+__all__ = ["order_by", "transform", "transform_map"]
 
 
 @fn.curry(2)
@@ -34,7 +34,7 @@ def arg_transformer(*args, **kwargs) -> Func:
         >>> kwargs
         {'sep': ':'}
     """
-    id_ = (lambda x: x)
+    id_ = lambda x: x
     fargs = tuple(extract_function(f or id_) for f in args)
     fkwargs = {k: extract_function(f or id_) for k, f in kwargs.items()}
 

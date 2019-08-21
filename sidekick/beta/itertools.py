@@ -101,7 +101,7 @@ def lookup_by(pred, seq, default=NOT_GIVEN):
         if pred(x):
             return x
     if default is NOT_GIVEN:
-        raise KeyError('no elements satisfy predicate')
+        raise KeyError("no elements satisfy predicate")
     return default
 
 
@@ -109,7 +109,7 @@ def index(x, seq):
     try:
         return first(i for i, y in enumerate(seq) if x == y)
     except ValueError:
-        raise IndexError('element not found in sequence')
+        raise IndexError("element not found in sequence")
 
 
 def indexes(x, seq):

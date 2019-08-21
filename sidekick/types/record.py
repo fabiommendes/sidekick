@@ -6,19 +6,20 @@ from typing import Mapping
 from .anonymous_record import MutableMapView, MapView, record, namespace, MetaMixin
 
 NOT_GIVEN = object()
-Field = collections.namedtuple('Field', ['name', 'type', 'default'])
+Field = collections.namedtuple("Field", ["name", "type", "default"])
 
 
 # ------------------------------------------------------------------------------
 # Record meta type
 # ------------------------------------------------------------------------------
 
+
 class RecordMeta(type):
     """
     Metaclass for Record types.
     """
 
-    _meta: 'Meta' = NOT_GIVEN
+    _meta: "Meta" = NOT_GIVEN
 
     def __new__(mcs, name, bases, ns, use_invalid=False, **kwargs):
         if Namespace is NotImplemented:
@@ -33,7 +34,9 @@ class RecordMeta(type):
     def __prepare__(cls, bases, **kwargs):
         return collections.OrderedDict()
 
-    def define(self, name: str, fields: list, bases=(), ns: dict = None, use_invalid=False):
+    def define(
+        self, name: str, fields: list, bases=(), ns: dict = None, use_invalid=False
+    ):
         """
         Declare a new record class.
 
@@ -70,19 +73,28 @@ class RecordMeta(type):
             bases = (*bases, Record)
         return new_record_type(name, fields, bases, ns or {}, use_invalid)
 
-    def namespace(self, name: str, fields: list, bases=(), ns: dict = None, use_invalid=False):
+    def namespace(
+        self, name: str, fields: list, bases=(), ns: dict = None, use_invalid=False
+    ):
         """
         Like meth:`sidekick.Record.define`, but declares a mutable record
         (a.k.a, namespace).
         """
         if Namespace not in bases:
             bases = (*bases, Namespace)
-        kwargs = {'use_invalid': use_invalid, 'is_mutable': True}
+        kwargs = {"use_invalid": use_invalid, "is_mutable": True}
         return new_record_type(name, fields, bases, ns or {}, **kwargs)
 
 
-def new_record_type(name: str, fields: list, bases: tuple, ns: dict,
-                    use_invalid=False, is_mutable=False, mcs: type = RecordMeta) -> type:
+def new_record_type(
+    name: str,
+    fields: list,
+    bases: tuple,
+    ns: dict,
+    use_invalid=False,
+    is_mutable=False,
+    mcs: type = RecordMeta,
+) -> type:
     """
     Create new record type.
     """
@@ -161,7 +173,7 @@ def safe_names(names):
 
 def make_record_namespace(bases, meta_info, is_mutable=False):
     fields = meta_info.fields
-    ns = {'__slots__': tuple(fields)}
+    ns = {"__slots__": tuple(fields)}
 
     if not is_mutable:
         ns.setdefault("__hash__", lambda self: hash(tuple(self)))
@@ -171,10 +183,10 @@ def make_record_namespace(bases, meta_info, is_mutable=False):
 
 def extract_fields_from_annotations(bases, ns):
     annotations = {}
-    annotations.update(ns.get('__annotations__', ()))
+    annotations.update(ns.get("__annotations__", ()))
     for base in bases:
         if isinstance(base, RecordMeta):
-            step = base.__dict__.get('__annotations__', {})
+            step = base.__dict__.get("__annotations__", {})
             step.update(annotations)
             annotations = step
 
@@ -266,18 +278,20 @@ def get_slot(cls, name):
     try:
         return getattr(cls, name)
     except AttributeError:
-        return property(lambda x: x.__dict__[name],
-                        lambda x, v: x.__dict__.__setitem__(name, v))
+        return property(
+            lambda x: x.__dict__[name], lambda x, v: x.__dict__.__setitem__(name, v)
+        )
 
 
 class Meta(MetaMixin):
-    __slots__ = ('fields', 'types', 'defaults')
+    __slots__ = ("fields", "types", "defaults")
 
     def __init__(self, fields):
         self.fields = tuple(f.name for f in fields)
         self.types = tuple(f.type for f in fields)
         self.defaults = MappingProxyType(
-            {f.name: f.default for f in fields if f.default is not NOT_GIVEN})
+            {f.name: f.default for f in fields if f.default is not NOT_GIVEN}
+        )
 
     def __iter__(self):
         yield from self.fields

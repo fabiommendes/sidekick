@@ -5,8 +5,8 @@ from .. import _toolz as toolz
 from ..core import fn, Func, Seq, extract_function, Pred
 
 __all__ = [
-    *['fold', 'reduce'],  # base reducers
-    *['accumulate', 'products', 'sums', 'accumulate', 'scan'],  # special
+    *["fold", "reduce"],  # base reducers
+    *["accumulate", "products", "sums", "accumulate", "scan"],  # special
 ]
 
 
@@ -71,6 +71,7 @@ def scan(func: Func, init, seq: Seq) -> Seq:
 #
 # Special reductions
 #
+
 
 @fn
 def product(seq: Seq, *, init=1):

@@ -3,8 +3,8 @@ from keyword import iskeyword
 
 from hypothesis import strategies as st
 
-IDENTIFIER_RE = re.compile(r'[^\d\W]\w*', re.ASCII)
-PUBLIC_IDENTIFIER_RE = re.compile(r'[^\d\W_]\w*', re.ASCII)
+IDENTIFIER_RE = re.compile(r"[^\d\W]\w*", re.ASCII)
+PUBLIC_IDENTIFIER_RE = re.compile(r"[^\d\W_]\w*", re.ASCII)
 
 
 def identifiers(allow_private=True, exclude=None):
@@ -23,11 +23,7 @@ def atoms():
     """
     Return atomic Python types.
     """
-    return st.one_of(
-        st.text(),
-        st.floats(allow_nan=False),
-        st.integers(),
-    )
+    return st.one_of(st.text(), st.floats(allow_nan=False), st.integers())
 
 
 # noinspection PyShadowingNames

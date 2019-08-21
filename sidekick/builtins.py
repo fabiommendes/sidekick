@@ -79,11 +79,12 @@ print = fn(print)
 
 # What should we do with those functions?
 def _raise(*args, **kwargs):
-    raise NotImplementedError('use the builtin function for now!')
+    raise NotImplementedError("use the builtin function for now!")
 
 
-bytearray = bytes = compile = eval = exec = pow = open = property = \
-    range = slice = super = zip = _raise
+bytearray = (
+    bytes
+) = compile = eval = exec = pow = open = property = range = slice = super = zip = _raise
 
 
 #
@@ -92,21 +93,29 @@ bytearray = bytes = compile = eval = exec = pow = open = property = \
 @_execute_with(
     mod=_builtins,
     ns=globals(),
-    arities={
-        'complex': 2, 'divmod': 2, 'globals': 0, 'locals': 0, 'object': 0
-    },
+    arities={"complex": 2, "divmod": 2, "globals": 0, "locals": 0, "object": 0},
     flipped={
-        'delattr', 'enumerate', 'format', 'getattr', 'hasattr', 'isinstance',
-        'issubclass',
+        "delattr",
+        "enumerate",
+        "format",
+        "getattr",
+        "hasattr",
+        "isinstance",
+        "issubclass",
     },
     blacklist={
-        'breakpoint', 'copyright', 'credits', 'display', 'get_ipython',
-        'license',
-    })
+        "breakpoint",
+        "copyright",
+        "credits",
+        "display",
+        "get_ipython",
+        "license",
+    },
+)
 def _create_fn_functions(mod, ns, arities=None, flipped=(), blacklist=()):
     arities = arities or {}
     for k in _dir(mod):
-        if k.startswith('_') or k in ns or k in blacklist:
+        if k.startswith("_") or k in ns or k in blacklist:
             continue
         v = _getattr(mod, k)
 

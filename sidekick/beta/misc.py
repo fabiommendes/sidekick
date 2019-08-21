@@ -8,8 +8,17 @@ from sidekick import extract_function
 from ..core import fn, Seq, Func as Func
 
 __all__ = [
-    'append', 'concat', 'insert', 'interleave', 'interpose', 'mapcat',
-    'diff', 'join', 'merge_sorted', 'pluck']
+    "append",
+    "concat",
+    "insert",
+    "interleave",
+    "interpose",
+    "mapcat",
+    "diff",
+    "join",
+    "merge_sorted",
+    "pluck",
+]
 
 
 @fn.curry(2)
@@ -107,7 +116,7 @@ def diff(seqs, *, key=None, **kwargs):
     Return those items that differ in a pairwise comparison between sequences.
     """
     if key is not None:
-        kwargs['key'] = extract_function(key)
+        kwargs["key"] = extract_function(key)
     return toolz.diff(*seqs, **kwargs)
 
 

@@ -48,6 +48,7 @@ def cond(test, then, else_):
 # Predicate factories
 #
 
+
 def any_of(*predicates):
     """
     Return a new predicate that performs a logic AND to all predicate

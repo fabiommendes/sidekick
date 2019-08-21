@@ -96,7 +96,7 @@ class Queue(collections.abc.Sequence):
         raise TypeError(i)
 
     def __repr__(self):
-        return f'Queue({list(self)})'
+        return f"Queue({list(self)})"
 
     def __contains__(self, value):
         return value in self._left or value in self._right

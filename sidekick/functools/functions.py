@@ -74,9 +74,9 @@ def call_over(*args, **kwargs):
         @fn
         def wrapped(*args, **kwargs):
             try:
-                extra = args[len(f_args):]
+                extra = args[len(f_args) :]
             except IndexError:
-                raise TypeError('not enough arguments')
+                raise TypeError("not enough arguments")
             args = (f(x) for f, x in zip(f_args, args))
             for k, v in kwargs.items():
                 kwargs[k] = f_kwargs.get(k, identity)(v)
@@ -225,7 +225,7 @@ def call_at_most(n, func):
     """
 
     if n <= 0:
-        raise ValueError('n must be positive')
+        raise ValueError("n must be positive")
 
     result = None
 
@@ -349,7 +349,8 @@ def throttle(dt, func):
         [42, 42, 42, 42]
     """
     from time import time
-    last_time = -float('inf')
+
+    last_time = -float("inf")
     last_result = None
 
     @fn.wraps(func)
@@ -626,7 +627,7 @@ def _fmap(f, x):
         fmap = x.map
     except AttributeError:
         tname = type(x).__name__
-        raise NotImplementedError(f'no map function implemented for {tname}')
+        raise NotImplementedError(f"no map function implemented for {tname}")
     else:
         return fmap(f)
 
@@ -653,7 +654,7 @@ fmap.dispatch = _fmap.dispatch
 
 @fmap.register(str)
 def _(f, st):
-    return ''.join(map(f, st))
+    return "".join(map(f, st))
 
 
 @fmap.register(list)
@@ -684,6 +685,7 @@ def _(f, obj):
 @fmap.register(Iterable)
 def _(f, obj):
     return ((k, f(v)) for k, v in obj.items())
+
 
 #
 # Removed functions

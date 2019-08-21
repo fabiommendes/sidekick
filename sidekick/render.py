@@ -9,6 +9,7 @@ class PrintContext(NamedTuple):
     """
     Store context for pretty printing operation.
     """
+
     printer: BasePrinter
     stream: IO = sys.stdout
     indent: int = 0
@@ -38,12 +39,12 @@ class PrintContext(NamedTuple):
         """
         Return a copy of context setting the given attributes.
         """
-        printer = kwargs.pop('printer', self.printer)
-        stream = kwargs.pop('stream', self.stream)
-        indent = kwargs.pop('indent', self.indent)
-        allowance = kwargs.pop('allowance', self.allowance)
-        context = kwargs.pop('context', self.context)
-        level = kwargs.pop('level', self.level)
+        printer = kwargs.pop("printer", self.printer)
+        stream = kwargs.pop("stream", self.stream)
+        indent = kwargs.pop("indent", self.indent)
+        allowance = kwargs.pop("allowance", self.allowance)
+        context = kwargs.pop("context", self.context)
+        level = kwargs.pop("level", self.level)
         return PrintContext(printer, stream, indent, allowance, context, level)
 
     def change(self, indent=0, level=0, allowance=0, **kwargs):
@@ -51,9 +52,9 @@ class PrintContext(NamedTuple):
         Like with_attr(), but increment/decrement integer values indent, level,
         and allowance.
         """
-        kwargs['indent'] = max(0, self.indent + indent)
-        kwargs['level'] = max(0, self.level + level)
-        kwargs['allowance'] = max(0, self.allowance + allowance)
+        kwargs["indent"] = max(0, self.indent + indent)
+        kwargs["level"] = max(0, self.level + level)
+        kwargs["allowance"] = max(0, self.allowance + allowance)
         return self.with_attr(**kwargs)
 
     def format(self, obj: Any, **kwargs) -> str:
@@ -71,6 +72,7 @@ class PrettyPrinter(BasePrinter):
     """
     Sidekick-enabled pretty printer.
     """
+
     _dispatch = BasePrinter._dispatch
 
     def __init__(self, *args, options=None, **kwargs):
@@ -89,10 +91,12 @@ class PrettyPrinter(BasePrinter):
         return func
 
 
-def pprint(obj, stream=None, indent=1, width=80, depth=None, *, compact=False, **options):
+def pprint(
+    obj, stream=None, indent=1, width=80, depth=None, *, compact=False, **options
+):
     """Pretty-print a Python object to a stream [default is sys.stdout]."""
     kwargs = locals()
-    obj = kwargs.pop('obj')
+    obj = kwargs.pop("obj")
     printer = PrettyPrinter(**kwargs)
     printer.pprint(obj)
 
@@ -100,7 +104,7 @@ def pprint(obj, stream=None, indent=1, width=80, depth=None, *, compact=False, *
 def pformat(obj, indent=1, width=80, depth=None, *, compact=False, **options) -> str:
     """Format a Python object into a pretty-printed representation."""
     kwargs = locals()
-    obj = kwargs.pop('obj')
+    obj = kwargs.pop("obj")
     printer = PrettyPrinter(**kwargs)
     return printer.pformat(obj)
 
@@ -113,6 +117,7 @@ def pregister(cls, func=None):
     necessary to assemble the final representation.
     """
     if func is None:
+
         def decorator(fn):
             f"""Register pretty-formatter function for{cls.__name__}"""
             return pregister(cls, fn)

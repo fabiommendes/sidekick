@@ -3,20 +3,20 @@ import json
 from .node import Node, Leaf
 
 
-def import_tree(obj, how='dict', **kwargs):
+def import_tree(obj, how="dict", **kwargs):
     """
     Import tree from data source.
     """
-    if how == 'dict':
+    if how == "dict":
         return _from_dict(obj, **kwargs)
-    elif how == 'json':
+    elif how == "json":
         if isinstance(obj, str):
             data = json.loads(obj)
         else:
             data = json.load(obj)
         return _from_dict(data, **kwargs)
     else:
-        raise ValueError(f'invalid import method: {how!r}')
+        raise ValueError(f"invalid import method: {how!r}")
 
 
 def _from_dict(data, node_class=Node, leaf_class=Leaf, parent=None):

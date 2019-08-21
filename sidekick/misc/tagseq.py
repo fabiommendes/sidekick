@@ -3,7 +3,7 @@ from collections.abc import MutableSequence
 
 from ..core import extract_function
 
-tagged = namedtuple('tagged', ['value', 'tag'])
+tagged = namedtuple("tagged", ["value", "tag"])
 NOT_GIVEN = object()
 
 
@@ -11,7 +11,8 @@ class TagSeq(MutableSequence):
     """
     A list in which each element can be optionally tagged.
     """
-    __slots__ = ('tags', 'data', '_default')
+
+    __slots__ = ("tags", "data", "_default")
 
     def __init__(self, data=None, default=None):
         self.data = [] if data is None else data
@@ -31,7 +32,7 @@ class TagSeq(MutableSequence):
         self.data[idx] = value
 
     def __repr__(self):
-        return '%s(%r)' % (type(self).__name__, self.data)
+        return "%s(%r)" % (type(self).__name__, self.data)
 
     def append(self, value, tag=NOT_GIVEN):
         tag = self._default if tag is NOT_GIVEN else tag
@@ -91,7 +92,7 @@ class TagSeq(MutableSequence):
         """Stable sort by tag value *IN PLACE*"""
 
         if items and key is None:
-            raise ValueError('must set key function when items=True')
+            raise ValueError("must set key function when items=True")
         if items:
             func = lambda x: key(*x)
         else:

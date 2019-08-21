@@ -63,7 +63,7 @@ class Placeholder:
 
     @property
     def __wrapped__(self):
-        raise AttributeError('__wrapped__')
+        raise AttributeError("__wrapped__")
 
     @property
     def __inner_function__(self):
@@ -88,7 +88,6 @@ class Placeholder:
         args = tuple(map(to_ast, args))
         kwargs = {k: to_ast(v) for k, v in kwargs.items()}
         return Placeholder(Call(self._ast, args, kwargs))
-
 
 
 # ------------------------------------------------------------------------------
@@ -149,9 +148,9 @@ def _(node):
     lhs_src = source(lhs)
     rhs_src = source(rhs)
     if isinstance(lhs, BinOp):
-        lhs_src = f'({lhs_src})'
+        lhs_src = f"({lhs_src})"
     if isinstance(rhs, BinOp):
-        rhs_src = f'({rhs_src})'
+        rhs_src = f"({rhs_src})"
     return "%s %s %s" % (lhs_src, op_symbol(op), rhs_src)
 
 
@@ -165,8 +164,8 @@ def _(node):
 def _(node):
     obj, args, kwargs = node
     args = list(map(source, args))
-    args.extend(f'{k}=source(v)' for k, v in kwargs.items())
-    args = ', '.join(args)
+    args.extend(f"{k}=source(v)" for k, v in kwargs.items())
+    args = ", ".join(args)
     return "%s(%s)" % (source(obj), args)
 
 
@@ -235,7 +234,9 @@ def _(ast):
     caller = compile_ast(caller)
     args = tuple(map(compile_ast, args))
     kwargs = {k: compile_ast(v) for k, v in kwargs.items()}
-    return lambda x: caller(x)(*(f(x) for f in args), **{k: v(x) for k, v in kwargs.items()})
+    return lambda x: caller(x)(
+        *(f(x) for f in args), **{k: v(x) for k, v in kwargs.items()}
+    )
 
 
 @compiler(GetAttr)

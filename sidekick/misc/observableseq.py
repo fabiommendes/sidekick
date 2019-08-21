@@ -2,9 +2,15 @@ from collections.abc import MutableSequence
 
 from ..core import extract_function
 
-SIGNALS = {'pre-setitem', 'pre-delitem', 'pre-insert', 'post-setitem',
-           'post-delitem', 'post-insert'}
-ARGUMENTS = set(map(lambda x: x.replace('-', '_'), SIGNALS))
+SIGNALS = {
+    "pre-setitem",
+    "pre-delitem",
+    "pre-insert",
+    "post-setitem",
+    "post-delitem",
+    "post-insert",
+}
+ARGUMENTS = set(map(lambda x: x.replace("-", "_"), SIGNALS))
 
 
 class ObservableSeq(MutableSequence):
@@ -33,10 +39,10 @@ class ObservableSeq(MutableSequence):
                 else:
                     callbacks.extend(map(extract_function, v))
             else:
-                raise TypeError(f'invalid parameter: {k}')
+                raise TypeError(f"invalid parameter: {k}")
 
     def __repr__(self):
-        return '%s(%s)' % (type(self).__name__, repr(self.data))
+        return "%s(%s)" % (type(self).__name__, repr(self.data))
 
     def __delitem__(self, idx):
         value = self.data[idx]
@@ -145,9 +151,9 @@ class ObservableSeq(MutableSequence):
             return
 
         if signal not in SIGNALS:
-            raise ValueError('signal not recognized: %r' % signal)
+            raise ValueError("signal not recognized: %r" % signal)
 
-        callbacks = getattr(self, signal.replace('-', '_'))
+        callbacks = getattr(self, signal.replace("-", "_"))
         if clear:
             callbacks.clear()
         callbacks.append(callback)

@@ -5,7 +5,7 @@ from .. import _toolz as toolz
 
 from ..core import fn, Seq, Func, Pred, extract_function
 
-__all__ = ["count_by", "is_distinct", 'is_iterable', 'has']
+__all__ = ["count_by", "is_distinct", "is_iterable", "has"]
 NOT_GIVEN = object()
 
 

@@ -14,7 +14,7 @@ def leaves(data=atoms(), allow_attrs=True, attrs=None):
     if allow_attrs:
         return data.map(Leaf)
     else:
-        kwds = kwargs(attrs or data, allow_private=False, exclude=('value', 'parent'))
+        kwds = kwargs(attrs or data, allow_private=False, exclude=("value", "parent"))
         return fcall(Leaf, [data], kwds)
 
 
@@ -30,10 +30,10 @@ def trees(*args, max_depth=None, allow_attrs=True, **kwargs):
     Return random trees.
     """
     attrs = st.just([])
-    kwargs['allow_attrs'] = allow_attrs
+    kwargs["allow_attrs"] = allow_attrs
     if allow_attrs:
-        keys = identifiers(allow_private=False, exclude=('children', 'parent'))
-        attr = st.tuples(keys, kwargs.get('attrs') or atoms())
+        keys = identifiers(allow_private=False, exclude=("children", "parent"))
+        attr = st.tuples(keys, kwargs.get("attrs") or atoms())
         attrs = st.lists(attr)
     fn = partial(shape_tree, max_depth)
     return st.builds(fn, attrs, st.lists(leaves(*args, **kwargs)))
@@ -44,15 +44,15 @@ def trees(*args, max_depth=None, allow_attrs=True, **kwargs):
 #
 def shape_tree(max_depth, attrs, leaves):
     mk_attrs = mk_random_attrs(attrs)
-    strategy = random.choice(['shallow', 'deep', 'random'])
+    strategy = random.choice(["shallow", "deep", "random"])
     root = Node(**mk_attrs())
 
-    if strategy == 'shallow':
+    if strategy == "shallow":
         root.children = leaves
-    elif strategy == 'deep':
+    elif strategy == "deep":
         node = root
         if max_depth is not None:
-            leaves = leaves[:max_depth - 1]
+            leaves = leaves[: max_depth - 1]
         for leaf in leaves:
             node = Node([leaf], **mk_attrs(), parent=node)
     else:

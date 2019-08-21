@@ -1,6 +1,6 @@
 from collections.abc import MutableMapping
 
-__all__ = ['IdMap']
+__all__ = ["IdMap"]
 dict_delitem = dict.__delitem__
 dict_getitem = dict.__getitem__
 dict_setitem = dict.__setitem__
@@ -41,8 +41,8 @@ class IdMap(MutableMapping, dict):
 
     def __repr__(self):
         name = type(self).__name__
-        data = ', '.join('%r: %r' % item for item in self.items())
-        return '%s({%s})' % (name, data)
+        data = ", ".join("%r: %r" % item for item in self.items())
+        return "%s({%s})" % (name, data)
 
     def __contains__(self, key):
         return dict_contains(self, id(key))

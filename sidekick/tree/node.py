@@ -1,26 +1,35 @@
 import operator as op
 from itertools import chain, cycle, islice
-from typing import MutableSequence, List, Sequence, TypeVar, Optional, Iterator, Callable
+from typing import (
+    MutableSequence,
+    List,
+    Sequence,
+    TypeVar,
+    Optional,
+    Iterator,
+    Callable,
+)
 
 from ..itertools import filter as _filter
 
-T = TypeVar('T')
+T = TypeVar("T")
 ID = lambda x: x
-INF = float('inf')
-TRUE = (lambda x: True)
+INF = float("inf")
+TRUE = lambda x: True
 NOT_GIVEN = object()
-Nodes = Sequence['NodeOrLeaf']
-iNodes = Iterator['NodeOrLeaf']
+Nodes = Sequence["NodeOrLeaf"]
+iNodes = Iterator["NodeOrLeaf"]
 
 
 class NodeOrLeaf:
     """
     Abstract base class for leaf or node types.
     """
+
     __slots__ = ("_parent", "__dict__")
     value = None
-    _parent: Optional['Node']
-    _children: Sequence['NodeOrLeaf']
+    _parent: Optional["Node"]
+    _children: Sequence["NodeOrLeaf"]
     _pretty_printer: Callable[..., str] = None
 
     #
@@ -39,7 +48,7 @@ class NodeOrLeaf:
     ancestors = property(lambda self: self.path[:-1])
 
     #: Parent Node.
-    parent = property(op.attrgetter('_parent'))
+    parent = property(op.attrgetter("_parent"))
 
     @parent.setter
     def parent(self, value):
@@ -48,7 +57,11 @@ class NodeOrLeaf:
         elif not isinstance(value, Node):
             raise TypeError(f"Parent node {value!r} is not of type 'Node'.")
         elif value is not self._parent:
-            if self.is_ancestor_of(value) or value.is_ancestor_of(self) or self is value:
+            if (
+                self.is_ancestor_of(value)
+                or value.is_ancestor_of(self)
+                or self is value
+            ):
                 msg = f"Setting parent to {value} would create a dependency loop"
                 raise ValueError(msg)
             self.detach()
@@ -115,7 +128,9 @@ class NodeOrLeaf:
     #
 
     #: Number of edges on the longest path to a leaf `Node`.
-    height = property(lambda self: max((c.height for c in self._children), default=0) + 1)
+    height = property(
+        lambda self: max((c.height for c in self._children), default=0) + 1
+    )
 
     #: Number of edges to the root `Node`.
     depth = property(lambda self: len(self.path) - 1)
@@ -139,10 +154,12 @@ class NodeOrLeaf:
             return self._is_equal(other)
         return NotImplemented
 
-    def _is_equal(self, other: 'NodeOrLeaf'):
-        return self.value == other.value \
-               and self._children == other._children \
-               and self.__dict__ == other.__dict__
+    def _is_equal(self, other: "NodeOrLeaf"):
+        return (
+            self.value == other.value
+            and self._children == other._children
+            and self.__dict__ == other.__dict__
+        )
 
     def __repr__(self):
         return self._repr(parent=False)
@@ -152,17 +169,19 @@ class NodeOrLeaf:
 
     def _repr(self, parent=True, children=True):
         data = self._repr_meta(parent)
-        return f'{self.__class__.__name__}({data})'
+        return f"{self.__class__.__name__}({data})"
 
     def _repr_meta(self, parent=True):
-        parts = [f'parent={self._parent!r}' if parent and self._parent else '',
-                 ', '.join(f'{k}={v!r}' for k, v in self.__dict__.items())]
-        return ', '.join(filter(None, parts))
+        parts = [
+            f"parent={self._parent!r}" if parent and self._parent else "",
+            ", ".join(f"{k}={v!r}" for k, v in self.__dict__.items()),
+        ]
+        return ", ".join(filter(None, parts))
 
     #
     # Tree shaping
     #
-    def detach(self) -> 'NodeOrLeaf':
+    def detach(self) -> "NodeOrLeaf":
         """
         Detach itself from tree.
 
@@ -186,7 +205,7 @@ class NodeOrLeaf:
             root = root._parent
 
     # noinspection PyMethodParameters
-    def iter_children(node, how=None, *, self=None, **kwargs) -> Iterator['NodeOrLeaf']:
+    def iter_children(node, how=None, *, self=None, **kwargs) -> Iterator["NodeOrLeaf"]:
         """
         Iterate over child nodes.
         """
@@ -194,10 +213,10 @@ class NodeOrLeaf:
             return node._iter_children_simple(self)
         try:
             how = how or "pre-order"
-            attr = how.replace('-', '_')
-            method = getattr(node, f'_iter_children_{attr}')
+            attr = how.replace("-", "_")
+            method = getattr(node, f"_iter_children_{attr}")
         except AttributeError as exc:
-            msg = f'invalid iteration method: {how}'
+            msg = f"invalid iteration method: {how}"
             raise ValueError(msg) from exc
         return method(self, **kwargs)
 
@@ -208,10 +227,10 @@ class NodeOrLeaf:
         """
         try:
             how = how or "level-order"
-            attr = how.replace('-', '_')
-            method = getattr(node, f'_iter_group_{attr}')
+            attr = how.replace("-", "_")
+            method = getattr(node, f"_iter_group_{attr}")
         except AttributeError as exc:
-            msg = f'invalid iteration method: {how}'
+            msg = f"invalid iteration method: {how}"
             raise ValueError(msg) from exc
         return method(self, **kwargs)
 
@@ -278,8 +297,9 @@ class NodeOrLeaf:
         for child in children:
             yield from child._iter_children_out_order(True, keep, max_depth - 1)
 
-    def _iter_group_level_order(self, this, keep=TRUE, max_depth=INF,
-                                seq: Callable[[iNodes], Nodes] = tuple):
+    def _iter_group_level_order(
+        self, this, keep=TRUE, max_depth=INF, seq: Callable[[iNodes], Nodes] = tuple
+    ):
         if not keep(self) or max_depth == 0:
             return
         if this:
@@ -356,7 +376,7 @@ class NodeOrLeaf:
             return node
         except ValueError as exc:
             if default is NOT_GIVEN:
-                raise ValueError('no element found') from exc
+                raise ValueError("no element found") from exc
             return default
 
     #
@@ -368,7 +388,7 @@ class NodeOrLeaf:
         """
         return any(self is ancestor for ancestor in node.iter_ancestors())
 
-    def pretty(self, style='line', renderer=None) -> str:
+    def pretty(self, style="line", renderer=None) -> str:
         """
         Pretty-printed representation of tree.
 
@@ -387,7 +407,8 @@ class Leaf(NodeOrLeaf):
     """
     Container element for the leaf node of tree.
     """
-    __slots__ = ('value',)
+
+    __slots__ = ("value",)
     _children = ()
     is_leaf = True
     height = 0
@@ -398,12 +419,12 @@ class Leaf(NodeOrLeaf):
 
     def _repr(self, parent=True, children=True):
         data = filter(None, [repr(self.value), self._repr_meta(parent)])
-        data = ', '.join(data)
-        return f'{self.__class__.__name__}({data})'
+        data = ", ".join(data)
+        return f"{self.__class__.__name__}({data})"
 
     def _repr_data(self):
         if self.has_data:
-            return f'{self.value!r} ({self._repr_meta(parent=False)})'
+            return f"{self.value!r} ({self._repr_meta(parent=False)})"
         else:
             return repr(self.value)
 
@@ -415,6 +436,7 @@ class Node(NodeOrLeaf):
     Node store a reference to its parent and children. Children can be other
     nodes or Leaves.
     """
+
     __slots__ = ("_children",)
     _separator = "."
     _children: List[NodeOrLeaf]
@@ -468,23 +490,23 @@ class Node(NodeOrLeaf):
                 parts.append(repr(child.value))
             else:
                 parts.append(child._repr(False))
-        parts = ', '.join(parts)
-        return f'[{parts}]' if parts else ''
+        parts = ", ".join(parts)
+        return f"[{parts}]" if parts else ""
 
     def _repr(self, parent=True, children=True):
         data = self._repr_meta(parent)
         if data and children:
-            data += f', children={self._repr_children()}'
+            data += f", children={self._repr_children()}"
         elif children:
             data = self._repr_children()
-        return f'{self.__class__.__name__}({data})'
+        return f"{self.__class__.__name__}({data})"
 
     def _check_child(self, child):
         if not isinstance(child, Node):
             return Leaf(child)
         for c in self._children:
             if c is child:
-                raise ValueError('node already present in tree.')
+                raise ValueError("node already present in tree.")
         return child
 
     #
@@ -499,7 +521,7 @@ class Node(NodeOrLeaf):
                 break
         else:
             if raises:
-                raise TreeError('child not present in tree')
+                raise TreeError("child not present in tree")
             return
         del self._children[idx]
 
@@ -513,7 +535,7 @@ class Node(NodeOrLeaf):
                 break
         else:
             if raises:
-                raise TreeError('child not present in tree')
+                raise TreeError("child not present in tree")
             if append:
                 self._children.append(other)
             return
@@ -524,7 +546,8 @@ class SExpr(Node, Sequence):
     """
     Generic S-Expression
     """
-    __slots__ = ('tag',)
+
+    __slots__ = ("tag",)
 
     def __init__(self, tag, children=None, parent=None, **kwargs):
         self.tag = tag
@@ -546,22 +569,24 @@ class SExpr(Node, Sequence):
         yield self.tag
         yield from self._children
 
-    def _is_equal(self, other: 'SExpr'):
-        return self.tag == other.tag \
-               and self.value == other.value \
-               and self._children == other._children \
-               and self.__dict__ == other.__dict__
+    def _is_equal(self, other: "SExpr"):
+        return (
+            self.tag == other.tag
+            and self.value == other.value
+            and self._children == other._children
+            and self.__dict__ == other.__dict__
+        )
 
     def _repr(self, parent=True, children=True):
         data = self._repr_meta(parent)
         if data and children:
-            data += f', children={self._repr_children()}'
+            data += f", children={self._repr_children()}"
         elif children:
             data = self._repr_children()
         args = repr(self.tag)
         if data:
-            args += ', ' + data
-        return f'{self.__class__.__name__}({args})'
+            args += ", " + data
+        return f"{self.__class__.__name__}({args})"
 
 
 class TreeError(ValueError):
@@ -575,7 +600,7 @@ class Children(MutableSequence):
     List of children nodes of tree.
     """
 
-    __slots__ = ('_owner', '_data')
+    __slots__ = ("_owner", "_data")
     _data: List[NodeOrLeaf]
     _owner: Node
 
@@ -592,7 +617,7 @@ class Children(MutableSequence):
         elif isinstance(i, slice):
             obj = [self._owner._check_child(node) for node in obj]
         else:
-            raise TypeError(f'invalid index: {i.__class__.__name__}')
+            raise TypeError(f"invalid index: {i.__class__.__name__}")
         self._data[i] = obj
 
     def __delitem__(self, i):

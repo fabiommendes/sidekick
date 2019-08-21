@@ -3,8 +3,16 @@ import itertools
 from ..magics import L, X, Y
 from ..core import fn, extract_function, Seq, Func, NOT_GIVEN
 
-__all__ = ['cycle', 'iterate', 'iterate_indexed', 'iterate_past',
-           'repeat', 'repeatedly', 'singleton', 'unfold']
+__all__ = [
+    "cycle",
+    "iterate",
+    "iterate_indexed",
+    "iterate_past",
+    "repeat",
+    "repeatedly",
+    "singleton",
+    "unfold",
+]
 
 _enumerate = enumerate
 _cycle = itertools.cycle
@@ -124,7 +132,7 @@ def iterate_past(func: Func, init: Seq) -> Seq:
 
     init = tuple(init)
     n = len(init)
-    
+
     # Optimize some special cases
     if n == 0:
         while True:
@@ -154,7 +162,6 @@ def iterate_past(func: Func, init: Seq) -> Seq:
             new = func(*args)
             yield new
             args = args[1:] + (new,)
-            
 
 
 @fn.curry(2)

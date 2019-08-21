@@ -9,58 +9,60 @@ from .node import NodeOrLeaf, Leaf
 
 
 # noinspection PyShadowingBuiltins
-def export_tree(obj: NodeOrLeaf, file=None, format='dict', **kwargs):
+def export_tree(obj: NodeOrLeaf, file=None, format="dict", **kwargs):
     """
     Export tree to given format data source.
     """
-    if format == 'dict':
+    if format == "dict":
         return _to_dict(obj, **kwargs)
-    elif format == 'json':
+    elif format == "json":
         data = _to_dict(obj, **kwargs)
         if file:
             json.dump(data, file)
         else:
             return json.dumps(data)
-    elif format == 'dot':
+    elif format == "dot":
         export = DotExporter(obj, **kwargs)
         if file:
             export.to_dotfile(file)
         else:
-            return '\n'.join(export)
-    elif format == 'image':
+            return "\n".join(export)
+    elif format == "image":
         export = DotExporter(obj, **kwargs)
         export.to_picture(file)
     else:
-        raise ValueError(f'invalid import method: {format!r}')
+        raise ValueError(f"invalid import method: {format!r}")
 
 
-def _to_dict(data,
-             attrs=lambda x: dict(x.__dict__),
-             children=lambda x: list(x.children),
-             compress=True):
+def _to_dict(
+    data,
+    attrs=lambda x: dict(x.__dict__),
+    children=lambda x: list(x.children),
+    compress=True,
+):
     attrs_ = attrs(data)
     children_ = children(data)
     if children_:
-        attrs_['children'] = [_to_dict(c, attrs, children, compress) for c in children_]
+        attrs_["children"] = [_to_dict(c, attrs, children, compress) for c in children_]
     elif isinstance(data, Leaf):
         if compress:
             return data.value
-        attrs_['value'] = data.value
+        attrs_["value"] = data.value
     return attrs_
 
 
 class DotExporter(object):
     def __init__(
-            self,
-            node,
-            graph="digraph",
-            name="tree",
-            options=None,
-            indent=4,
-            nodenamefunc=None,
-            nodeattrfunc=None,
-            edgeattrfunc=None,
-            edgetypefunc=None,
+        self,
+        node,
+        graph="digraph",
+        name="tree",
+        options=None,
+        indent=4,
+        nodenamefunc=None,
+        nodeattrfunc=None,
+        edgeattrfunc=None,
+        edgetypefunc=None,
     ):
         """
         Dot Language Exporter.

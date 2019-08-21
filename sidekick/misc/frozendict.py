@@ -1,4 +1,4 @@
-__all__ = ['FrozenDict', 'FrozenKeyDict']
+__all__ = ["FrozenDict", "FrozenKeyDict"]
 
 
 class FrozenKeyDict(dict):
@@ -14,7 +14,7 @@ class FrozenKeyDict(dict):
     # noinspection PyUnusedLocal
     def _forbidden_method_error(self, *args, **kwds):
         tname = type(self).__name__
-        raise KeyError('cannot add or remove keys of %s.' % tname)
+        raise KeyError("cannot add or remove keys of %s." % tname)
 
     __delitem__ = clear = pop = popitem = _forbidden_method_error
 
@@ -34,7 +34,7 @@ class FrozenKeyDict(dict):
         data = dict(*args, **kwargs)
         changed = set(data) - self.keys()
         if changed:
-            raise KeyError(f'cannot add keys: {changed}')
+            raise KeyError(f"cannot add keys: {changed}")
         super().update(data)
 
     def __repr__(self):
@@ -47,9 +47,10 @@ class FrozenDict(FrozenKeyDict):
     Immutable dictionary type.
     """
 
-    __slots__ = ('_cached_hash',)
-    __delitem__ = __setitem__ = setdefault = update = \
-        FrozenKeyDict._forbidden_method_error
+    __slots__ = ("_cached_hash",)
+    __delitem__ = (
+        __setitem__
+    ) = setdefault = update = FrozenKeyDict._forbidden_method_error
 
     def __hash__(self):
         try:

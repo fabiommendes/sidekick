@@ -2,7 +2,7 @@ import itertools
 
 from sidekick import fn, Func, Seq
 
-__all__ = ['indexed_map', 'enumerate']
+__all__ = ["indexed_map", "enumerate"]
 _map = map
 _enumerate = enumerate
 

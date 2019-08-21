@@ -24,7 +24,7 @@ class List(Union):
         if self:
             return self.head, self.tail
         else:
-            raise ValueError('cannot desconstruct empty list.')
+            raise ValueError("cannot desconstruct empty list.")
 
     # Generic implementations
     __contains__ = Seq.__contains__
@@ -220,9 +220,11 @@ class List(Union):
         Maps a function that return sequences into the list and flatten all
         intermediate results.
         """
+
         def iter_all():
             for x in self:
                 yield from func(x)
+
         return List(iter_all())
 
 
@@ -230,6 +232,7 @@ class Cons(List):
     """
     A link in the linked list.
     """
+
     head: object
     tail: List
     __bool__ = lambda lst: True
@@ -241,5 +244,5 @@ class Nil(List):
 
     Represents an empty list.
     """
-    __bool__ = lambda x: False
 
+    __bool__ = lambda x: False

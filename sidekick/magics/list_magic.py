@@ -17,7 +17,7 @@ class L(DataMagic, type=list):
         elif isinstance(item, int):
             return fn(lambda obj: self._getindex(obj, item))
         else:
-            raise TypeError(f'unsupported type: {type(item).__name__}')
+            raise TypeError(f"unsupported type: {type(item).__name__}")
 
     def _getindex(self, obj, item):
         try:

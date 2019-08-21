@@ -66,7 +66,7 @@ def power(func: Func, n: int) -> fn:
     elif n == 1:
         return fn(func)
     elif n < 0:
-        raise TypeError('cannot invert function')
+        raise TypeError("cannot invert function")
 
     func = extract_function(func)
 
@@ -275,7 +275,7 @@ def ridentity(*args, **kwargs):
     3
     """
     if not args:
-        raise TypeError('must be called with at least one positional argument.')
+        raise TypeError("must be called with at least one positional argument.")
     return args[-1]
 
 

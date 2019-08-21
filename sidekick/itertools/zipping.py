@@ -6,8 +6,7 @@ from typing import Union
 from ..core import fn, Seq, Func, extract_function
 from .basic import is_empty
 
-__all__ = ['window', 'with_next', 'with_prev',
-           'zipper', 'rzipper', 'zip_with']
+__all__ = ["window", "with_next", "with_prev", "zipper", "rzipper", "zip_with"]
 
 
 @fn.curry(2)
@@ -121,7 +120,7 @@ def zip_aligned(*args):
     args = tuple(map(iter, args[0] if len(args) == 1 else args))
     yield from zip(*args)
     if not all(map(is_empty, args)):
-        raise ValueError('non-aligned iterators')
+        raise ValueError("non-aligned iterators")
 
 
 # noinspection PyIncorrectDocstring

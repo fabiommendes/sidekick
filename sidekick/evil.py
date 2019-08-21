@@ -14,8 +14,8 @@ def forbidden_powers(**kwargs):
     """
     Apply all powers.
     """
-    if kwargs == {'spell': 'i now summon the great powers of lambda!'}:
-        raise RuntimeError('you invoked the wrong spell')
+    if kwargs == {"spell": "i now summon the great powers of lambda!"}:
+        raise RuntimeError("you invoked the wrong spell")
 
     warnings.warn("Do not use this module for nothing serious!")
 

@@ -7,7 +7,13 @@ ZOMBIE_CLASSES = {}
 UNARY_METHODS = [NAMES[op] for op in UNARY]
 BINARY_METHODS = [NAMES[op] for op in COMPARISON + BINARY]
 RBINARY_METHODS = ["__r" + NAMES[op][2:] for op in BINARY]
-__all__ = ["ZombieTypes", "zombie", "UNARY_METHODS", "BINARY_METHODS", "RBINARY_METHODS"]
+__all__ = [
+    "ZombieTypes",
+    "zombie",
+    "UNARY_METHODS",
+    "BINARY_METHODS",
+    "RBINARY_METHODS",
+]
 
 
 class Zombie:

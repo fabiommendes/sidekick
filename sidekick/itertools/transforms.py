@@ -2,7 +2,7 @@ from operator import itemgetter
 
 from ..core import Seq, Pred, extract_function, fn
 
-__all__ = ['select_indexed', 'select_indexes']
+__all__ = ["select_indexed", "select_indexes"]
 
 identity = lambda x: x
 _first_item = itemgetter(0)

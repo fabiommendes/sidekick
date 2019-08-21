@@ -31,7 +31,8 @@ class pushing_iterator(Iterator):
         >>> collatz
         [7, 22, 11, 34, 17, 52, 26, 13, 40, 20, 10, 5, 16, 8, 4, 2, 1]
     """
-    __slots__ = ('_cursor_stack', '_next')
+
+    __slots__ = ("_cursor_stack", "_next")
 
     def __init__(self, iterator, default=NOT_GIVEN):
         self._cursor_stack = []
@@ -118,7 +119,8 @@ class continuing_iterator(Iterator):
         >>> items
         [1, 2, 3, 1, 2, 3, 1, 2, 3, 1]
     """
-    __slots__ = ('_tail_iters', '_next')
+
+    __slots__ = ("_tail_iters", "_next")
 
     def __init__(self, iterator, default=NOT_GIVEN):
         self._tail_iters = deque()
@@ -169,7 +171,8 @@ class prev_iter(Iterator):
         >>> (x / it.prev for x in it) | L[:50]              # doctest: +ELLIPSIS
         [1.0, 2.0, 1.5, ..., 1.618033988749895, 1.618033988749895]
     """
-    __slots__ = ('prev', '_next')
+
+    __slots__ = ("prev", "_next")
 
     def __init__(self, iterator, start=None):
         self._next = iter(self.generator(iterator)).__next__
@@ -182,5 +185,3 @@ class prev_iter(Iterator):
 
     def __next__(self):
         return self._next()
-
-

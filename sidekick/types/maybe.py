@@ -4,7 +4,16 @@ from ..functools import call
 from ..core import fn
 from .union import Union
 
-__all__ = ['Maybe', 'Just', 'Nothing', 'maybe', 'mapply', 'mpipe', 'mpipeline', 'mfilter']
+__all__ = [
+    "Maybe",
+    "Just",
+    "Nothing",
+    "maybe",
+    "mapply",
+    "mpipe",
+    "mpipeline",
+    "mfilter",
+]
 
 flip = lambda f: lambda x, y: f(y, x)
 this = None
@@ -107,6 +116,7 @@ class Just(Maybe):
     """
     A computation with definite value.
     """
+
     value: object
     is_success = True
     __bool__ = lambda _: True

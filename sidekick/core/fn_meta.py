@@ -5,14 +5,14 @@ from types import FunctionType, MethodType, BuiltinFunctionType, BuiltinMethodTy
 
 FUNCTION_TYPES = FunctionType, MethodType, BuiltinFunctionType, BuiltinMethodType
 FUNCTION_ATTRIBUTES = {
-    'doc': '__doc__',
-    'name': '__name__',
-    'annotations': '__annotations__',
-    'closure': '__closure__',
-    'code': '__code__',
-    'defaults': '__defaults__',
-    'globals': '__globals__',
-    'kwdefaults': '__kwdefaults__',
+    "doc": "__doc__",
+    "name": "__name__",
+    "annotations": "__annotations__",
+    "closure": "__closure__",
+    "code": "__code__",
+    "defaults": "__defaults__",
+    "globals": "__globals__",
+    "kwdefaults": "__kwdefaults__",
 }
 
 identity = lambda x: x
@@ -25,8 +25,8 @@ class FunctionMeta(type):
 
     def __new__(mcs, name, bases, ns):
         ns.update(
-            __doc__=lazy_property(lambda x: x.__getattr__('__doc__')),
-            __module__=lazy_property(lambda x: x.__getattr__('__module__')),
+            __doc__=lazy_property(lambda x: x.__getattr__("__doc__")),
+            __module__=lazy_property(lambda x: x.__getattr__("__module__")),
         )
         return type.__new__(mcs, name, bases, ns)
 
@@ -54,7 +54,7 @@ class lazy_property:
     Used to mirror wrapped function properties.
     """
 
-    __slots__ = 'func'
+    __slots__ = "func"
 
     def __init__(self, func):
         self.func = func
@@ -69,7 +69,8 @@ class mixed_accessor:
     """
     Descriptor with different class and an instance implementations.
     """
-    __slots__ = ('_cls', '_instance')
+
+    __slots__ = ("_cls", "_instance")
 
     def __init__(self, instance=None, cls=None):
         self._cls = cls
@@ -135,7 +136,7 @@ def arity(func):
     """
     Return arity of a function.
     """
-    if hasattr(func, 'arity'):
+    if hasattr(func, "arity"):
         return func.arity
 
     spec = inspect.getfullargspec(func)

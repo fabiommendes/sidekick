@@ -7,12 +7,13 @@ from ..core import fn
 # DATA MAGICS
 # ------------------------------------------------------------------------------
 
+
 class DataMagicMeta(type):
     def __new__(mcs, name, bases, ns, *, type=None):
         if type is not None:
             ns = dict(default_namespace(type), **ns)
-            meta = ns.get('_meta', {})
-            for method in meta.get('methods', ()):
+            meta = ns.get("_meta", {})
+            for method in meta.get("methods", ()):
                 ns.update(method(type, ns))
 
         return super().__new__(mcs, name, bases, ns)
@@ -30,7 +31,7 @@ def default_namespace(tt):
         except TypeError:
             return self.coerce(obj)
 
-    ns = {'type': tt, '__ror__': pipe, '__lt__': pipe}
+    ns = {"type": tt, "__ror__": pipe, "__lt__": pipe}
     return ns
 
 
@@ -44,7 +45,7 @@ def pure(name, type, ns, *, arity=None, flip=False):
 def impure(name, tt, ns, *, arity=None, flip=False):
     method = getattr(tt, name)
     if name in ns:
-        raise TypeError(f'function already registered: {name}')
+        raise TypeError(f"function already registered: {name}")
 
     if flip and arity is None:
         arity = 2
@@ -55,6 +56,7 @@ def impure(name, tt, ns, *, arity=None, flip=False):
 
     # Implement methods of arbitrary arity
     elif arity is not None:
+
         @staticmethod
         @fn.wraps(method)
         @fn.curry(arity)
@@ -93,9 +95,16 @@ class DataMagic(metaclass=DataMagicMeta, type=None):
 # ------------------------------------------------------------------------------
 # OPERATOR BASED MAGICS
 # ------------------------------------------------------------------------------
-def base_operator_magic(make_op, make_rop=None, arithmetic=True, bitwise=False,
-                        logic=True, inplace=True, sequence=True, op=operator):
-
+def base_operator_magic(
+    make_op,
+    make_rop=None,
+    arithmetic=True,
+    bitwise=False,
+    logic=True,
+    inplace=True,
+    sequence=True,
+    op=operator,
+):
     class Base:
         if arithmetic:
             __add__ = make_op(op.add)
