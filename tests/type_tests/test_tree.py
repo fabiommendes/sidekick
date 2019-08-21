@@ -1,7 +1,9 @@
+import json
+
 import pytest
 from hypothesis import given
 
-from sidekick import common_ancestor, common_ancestors, walk
+from sidekick import common_ancestor, common_ancestors, walk, import_tree, Leaf
 from sidekick.hypothesis import trees, leaves
 
 
@@ -21,6 +23,11 @@ class TestNode:
             "|   +-- 'b'",
             "+-- 'c'"
         ]
+
+    def test_equality(self):
+        assert Leaf('a') == Leaf('a')
+        assert Leaf('a') != Leaf('b')
+        assert Leaf('a') != Leaf('a', prop=True)
 
     def test_simple_tree_properties(self, tree):
         assert tree.height == 2
@@ -101,6 +108,17 @@ class TestIterators:
         assert tree.find_all(lambda x: x.value in ['b', 'c']) == (b, c)
         assert tree.find(lambda x: x.value in ['b', 'c']) == b
         assert tree.find(lambda x: x.value == 'd', default=None) is None
+
+
+class TestImportExport:
+    def test_dict_importer(self, tree):
+        data = {'children': [{'children': ['a', 'b']}, 'c']}
+        assert tree == import_tree(data, how='dict')
+
+    def test_json_importer(self, tree):
+        data = {'children': [{'children': ['a', 'b']}, 'c']}
+        data = json.dumps(data)
+        assert tree == import_tree(data, how='json')
 
 
 class TestErrors:

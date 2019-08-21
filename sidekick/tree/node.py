@@ -134,6 +134,16 @@ class NodeOrLeaf:
         self.__dict__.update(kwargs)
         self._parent = parent
 
+    def __eq__(self, other):
+        if self.__class__ is other.__class__:
+            return self._is_equal(other)
+        return NotImplemented
+
+    def _is_equal(self, other: 'NodeOrLeaf'):
+        return self.value == other.value \
+               and self._children == other._children \
+               and self.__dict__ == other.__dict__
+
     def __repr__(self):
         return self._repr(parent=False)
 
@@ -535,6 +545,12 @@ class SExpr(Node, Sequence):
     def __iter__(self):
         yield self.tag
         yield from self._children
+
+    def _is_equal(self, other: 'SExpr'):
+        return self.tag == other.tag \
+               and self.value == other.value \
+               and self._children == other._children \
+               and self.__dict__ == other.__dict__
 
     def _repr(self, parent=True, children=True):
         data = self._repr_meta(parent)
