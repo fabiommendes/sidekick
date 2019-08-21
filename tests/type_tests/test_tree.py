@@ -61,7 +61,7 @@ class TestIterators:
         assert tuple(tree.iter_children()) == tree_parts
         assert tuple(tree.iter_children(max_depth=1)) == (ab, c)
 
-    def test_level_first(self, tree, tree_parts):
+    def test_level_order(self, tree, tree_parts):
         ab, a, b, c = tree_parts
         assert tuple(tree.iter_children('level-order')) == (ab, c, a, b)
         assert tuple(tree.iter_children('level-order', max_depth=1)) == (ab, c)
@@ -85,6 +85,16 @@ class TestIterators:
         ab, a, b, c = tree_parts
         assert tuple(tree.iter_children('out-order')) == (c, tree, b, ab, a)
         assert tuple(tree.iter_children('out-order', max_depth=1)) == (c, tree, ab)
+
+    def test_group_level(self, tree, tree_parts):
+        ab, a, b, c = tree_parts
+        assert tuple(tree.iter_group('level-order')) == ((ab, c), (a, b))
+        assert tuple(tree.iter_group('level-order', max_depth=1)) == ((ab, c),)
+
+    def test_group_zigzag(self, tree, tree_parts):
+        ab, a, b, c = tree_parts
+        assert tuple(tree.iter_group('zig-zag')) == ((ab, c), (b, a))
+        assert tuple(tree.iter_group('zig-zag', max_depth=1)) == ((ab, c),)
 
 
 class TestErrors:

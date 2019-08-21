@@ -1,10 +1,13 @@
 import operator as op
-from itertools import chain
+from itertools import chain, cycle
 from typing import MutableSequence, List, Sequence, TypeVar, Optional, Iterator, Callable
 
 T = TypeVar('T')
+ID = lambda x: x
 INF = float('inf')
 TRUE = (lambda x: True)
+Nodes = Sequence['NodeOrLeaf']
+iNodes = Iterator['NodeOrLeaf']
 
 
 class NodeOrLeaf:
@@ -182,7 +185,20 @@ class NodeOrLeaf:
         except AttributeError as exc:
             msg = f'invalid iteration method: {how}'
             raise ValueError(msg) from exc
+        return method(self, **kwargs)
 
+    # noinspection PyMethodParameters
+    def iter_group(node, how=None, *, self=None, **kwargs) -> Iterator[Nodes]:
+        """
+        Group iterator over groups of child nodes.
+        """
+        try:
+            how = how or "level-order"
+            attr = how.replace('-', '_')
+            method = getattr(node, f'_iter_group_{attr}')
+        except AttributeError as exc:
+            msg = f'invalid iteration method: {how}'
+            raise ValueError(msg) from exc
         return method(self, **kwargs)
 
     def _iter_children_simple(self, yield_self):
@@ -195,16 +211,14 @@ class NodeOrLeaf:
         if not keep(self) or max_depth == 0:
             return
 
-        children = self._children
-        children = filter(keep, children) if keep is not TRUE else children
-
+        children = self._keep(keep, self._children)
         if this:
             yield self
         while children and max_depth > 0:
             yield from children
             max_depth -= 1
             level = chain(*(child.children for child in children))
-            children = list(filter(keep, level) if keep is not TRUE else level)
+            children = list(self._keep(keep, level))
 
     def _iter_children_pre_order(self, this, keep=TRUE, max_depth=INF):
         if not keep(self) or max_depth < 0:
@@ -250,8 +264,27 @@ class NodeOrLeaf:
         for child in children:
             yield from child._iter_children_out_order(True, keep, max_depth - 1)
 
+    def _iter_group_level_order(self, this, keep=TRUE, max_depth=INF,
+                                seq: Callable[[iNodes], Nodes] = tuple):
+        if not keep(self) or max_depth == 0:
+            return
+        if this:
+            yield seq([self])
+
+        children = seq(self._keep(keep, self._children))
+        while children and max_depth > 0:
+            yield children
+            max_depth -= 1
+            level = chain(*(child.children for child in children))
+            children = seq(self._keep(keep, level))
+
+    def _iter_group_zig_zag(self, this, keep=TRUE, max_depth=INF, seq=tuple):
+        groups = self._iter_group_level_order(this, keep, max_depth, seq)
+        for group, zig in zip(groups, cycle([True, False])):
+            yield group if zig else group[::-1]
+
     @staticmethod
-    def _keep(keep, lst):
+    def _keep(keep, lst: iNodes) -> Nodes:
         return lst if keep is TRUE else list(filter(keep, lst))
 
     #
