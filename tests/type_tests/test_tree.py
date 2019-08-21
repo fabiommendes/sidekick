@@ -96,6 +96,12 @@ class TestIterators:
         assert tuple(tree.iter_group('zig-zag')) == ((ab, c), (b, a))
         assert tuple(tree.iter_group('zig-zag', max_depth=1)) == ((ab, c),)
 
+    def test_search(self, tree, tree_parts):
+        ab, a, b, c = tree_parts
+        assert tree.find_all(lambda x: x.value in ['b', 'c']) == (b, c)
+        assert tree.find(lambda x: x.value in ['b', 'c']) == b
+        assert tree.find(lambda x: x.value == 'd', default=None) is None
+
 
 class TestErrors:
     def test_cannot_assign_invalid_parent(self, tree, tree_parts):

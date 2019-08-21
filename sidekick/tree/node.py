@@ -1,11 +1,14 @@
 import operator as op
-from itertools import chain, cycle
+from itertools import chain, cycle, islice
 from typing import MutableSequence, List, Sequence, TypeVar, Optional, Iterator, Callable
+
+from ..itertools import filter as _filter
 
 T = TypeVar('T')
 ID = lambda x: x
 INF = float('inf')
 TRUE = (lambda x: True)
+NOT_GIVEN = object()
 Nodes = Sequence['NodeOrLeaf']
 iNodes = Iterator['NodeOrLeaf']
 
@@ -15,6 +18,7 @@ class NodeOrLeaf:
     Abstract base class for leaf or node types.
     """
     __slots__ = ("_parent", "__dict__")
+    value = None
     _parent: Optional['Node']
     _children: Sequence['NodeOrLeaf']
     _pretty_printer: Callable[..., str] = None
@@ -286,6 +290,64 @@ class NodeOrLeaf:
     @staticmethod
     def _keep(keep, lst: iNodes) -> Nodes:
         return lst if keep is TRUE else list(filter(keep, lst))
+
+    #
+    # Query nodes
+    #
+    def find_all(*self_and_filter, min_count=0, max_count=INF, **kwargs):
+        """
+        Search nodes matching `filter` but stop at `maxlevel` or `stop`.
+
+        Return tuple with matching nodes.
+
+        Args:
+            filter:
+                Discard nodes that filter(node) = False, but iterate over its
+                children.
+            min_count (int):
+                Minimum number of nodes.
+            max_count (int):
+                Maximum number of nodes.
+        Keyword Args:
+            Accepts all arguments of :meth:`iter_children`
+        """
+        node, *pred = self_and_filter
+        data = node.iter_children(**kwargs)
+        if pred:
+            pred, = pred
+            data = _filter(pred, data)
+
+        data = tuple(data)
+        size = len(data)
+        if size < min_count:
+            msg = f"Expecting at least {min_count} elements, but found {size}."
+            raise ValueError(msg)
+        if size > max_count:
+            msg = f"Expecting {max_count} elements at maximum, but found {size}."
+            raise ValueError(msg)
+        return data
+
+    def find(*self_and_filter, default=NOT_GIVEN, **kwargs):
+        """
+        Like find_all(), but searches for *single* matching node.
+
+        It raises a ValueError if no Node is found or return the value passed
+        as the "default" keyword argument.
+        """
+        self, *filter = self_and_filter
+        node, *pred = self_and_filter
+        data = node.iter_children(**kwargs)
+        if pred:
+            pred, = pred
+            data = _filter(pred, data)
+
+        try:
+            node, = islice(data, 1)
+            return node
+        except ValueError as exc:
+            if default is NOT_GIVEN:
+                raise ValueError('no element found') from exc
+            return default
 
     #
     # Api
