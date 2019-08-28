@@ -9,7 +9,7 @@ pytestmark = pytest.mark.slow()
 
 
 class TestBaseStrategies:
-    @given(atoms())
+    @given(atoms(finite=True))
     def test_valid_atom(self, x):
         assert x == x
 

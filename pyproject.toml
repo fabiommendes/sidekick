@@ -44,7 +44,7 @@ exclude = '''
   /(
       _?build      # exclude a few common directories in the
     | dist         # root of the project
-    | __pycache__
+    | .*__pycache__.*
     | htmlcov
     | \.?venv
     | \.(eggs|git|tox|idea|vscode)
