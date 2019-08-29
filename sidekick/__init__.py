@@ -12,9 +12,11 @@ from .lazytools import *
 from .magics import *
 from .misc import misc
 from .render import pprint, pformat
-from .tree import *
+from .tree import Node, Leaf
+from sidekick.tree.node_sexpr import SExpr
 from .types import *
 from .types import json
+from . import tree
 
 
 @call()

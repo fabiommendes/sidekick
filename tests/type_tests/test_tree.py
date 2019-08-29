@@ -3,12 +3,17 @@ import json
 import pytest
 from hypothesis import given
 
-import sidekick as sk
-from sidekick import Leaf, common_ancestor, common_ancestors, walk
-from sidekick.hypothesis import trees, leaves
+from sidekick import Node, SExpr
+from sidekick.hypothesis import trees, leaves, AtomT
+from sidekick.tree import Leaf, common_ancestor, common_ancestors, walk, import_tree, \
+    export_tree, NodeOrLeaf
 
 
 class TestNode:
+    """
+    Test basic tree behavior and functionalities
+    """
+
     def test_render_tree(self, tree):
         assert tree.pretty().splitlines() == [
             "Node()",
@@ -28,7 +33,7 @@ class TestNode:
     def test_equality(self):
         assert Leaf("a") == Leaf("a")
         assert Leaf("a") != Leaf("b")
-        assert Leaf("a") != Leaf("a", prop=True)
+        assert Leaf("a") == Leaf("a", prop=True)
 
     def test_simple_tree_properties(self, tree):
         assert tree.height == 2
@@ -60,6 +65,10 @@ class TestNode:
 
 
 class TestIterators:
+    """
+    Test iteration on trees.
+    """
+
     def test_simple_iterator(self, tree, tree_parts):
         assert tuple(tree.iter_children()) == tree_parts
         assert tuple(tree.iter_children(self=True)) == (tree, *tree_parts)
@@ -106,31 +115,41 @@ class TestIterators:
 
     def test_search(self, tree, tree_parts):
         ab, a, b, c = tree_parts
-        assert tree.find_all(lambda x: x.value in ["b", "c"]) == (b, c)
-        assert tree.find(lambda x: x.value in ["b", "c"]) == b
-        assert tree.find(lambda x: x.value == "d", default=None) is None
+        assert tree.find_all(lambda x: x.is_leaf and x.value in ["b", "c"]) == (b, c)
+        assert tree.find(lambda x: x.is_leaf and x.value in ["b", "c"]) == b
+        assert tree.find(lambda x: x.is_leaf and x.value == "d", default=None) is None
+
+    def test_leaf_search(self, tree, tree_parts):
+        ab, a, b, c = tree_parts
+        assert tree.find_all(lambda x: x.value in ["b", "c"], leaves=True) == (b, c)
+        assert tree.find(lambda x: x.value in ["b", "c"], leaves=True) == b
+        assert tree.find(lambda x: x.value == "d", default=None, leaves=True) is None
 
 
 class TestImportExport:
+    """
+    Test persistence, visualization and serialization.
+    """
+
     def test_dict_importer(self, tree):
         data = {"children": [{"children": ["a", "b"]}, "c"]}
-        assert tree == sk.import_tree(data, how="dict")
+        assert tree == import_tree(data, how="dict")
 
     def test_json_importer(self, tree):
         data = {"children": [{"children": ["a", "b"]}, "c"]}
         data = json.dumps(data)
-        assert tree == sk.import_tree(data, how="json")
+        assert tree == import_tree(data, how="json")
 
     def test_dict_exporter(self, tree):
         data = {"children": [{"children": ["a", "b"]}, "c"]}
-        assert sk.export_tree(tree, format="dict") == data
+        assert export_tree(tree, format="dict") == data
 
     def test_json_exporter(self, tree):
         data = {"children": [{"children": ["a", "b"]}, "c"]}
-        assert sk.export_tree(tree, format="json") == json.dumps(data)
+        assert export_tree(tree, format="json") == json.dumps(data)
 
     def test_dot_exporter(self, tree):
-        assert sk.export_tree(tree, format="dot") == (
+        assert export_tree(tree, format="dot") == (
             """digraph tree {\n"""
             """    "Node()";\n"""
             """    "Node()";\n"""
@@ -145,7 +164,31 @@ class TestImportExport:
         )
 
 
+class TestClasses:
+    """
+    Check class structure and invariants.
+    """
+
+    def test_tree_classes_have_slots(self):
+        import sidekick.tree as tree
+
+        for k, v in vars(tree).items():
+            if isinstance(v, type) and issubclass(v, NodeOrLeaf):
+                assert '__slots__' in v.__dict__, v.__name__
+
+        x = Leaf(42)
+        y = Node([x])
+        z = SExpr('test', [y])
+        for item in [x, y, z]:
+            with pytest.raises(AttributeError):
+                print(item.__dict__)
+
+
 class TestErrors:
+    """
+    Check it raises the correct errors.
+    """
+
     def test_cannot_assign_invalid_parent(self, tree, tree_parts):
         ab, a, b, c = tree_parts
         # Bad parent type
@@ -164,13 +207,18 @@ class TestErrors:
 
 @pytest.mark.slow()
 class TestHypothesis:
-    @given(leaves(allow_attrs=False))
-    def test_leaf(self, leaf):
-        assert isinstance(leaf.value, (int, float, str))
+    """
+    Parametric testing for trees.
+    """
 
     @given(leaves(allow_attrs=False))
     def test_leaf(self, leaf):
-        assert isinstance(leaf.value, (int, float, str))
+        assert isinstance(leaf.value, AtomT)
+        assert leaf.attrs == {}
+
+    @given(leaves(allow_attrs=False))
+    def test_leaf(self, leaf):
+        assert isinstance(leaf.value, AtomT)
 
     @given(trees())
     def test_can_render_key(self, tree):

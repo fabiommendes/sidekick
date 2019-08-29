@@ -5,7 +5,8 @@ from os import path, remove
 from subprocess import check_call
 from tempfile import NamedTemporaryFile
 
-from .node import NodeOrLeaf, Leaf
+from .node_classes import Leaf
+from sidekick.tree.node_base import NodeOrLeaf
 
 
 # noinspection PyShadowingBuiltins
@@ -36,7 +37,7 @@ def export_tree(obj: NodeOrLeaf, file=None, format="dict", **kwargs):
 
 def _to_dict(
     data,
-    attrs=lambda x: dict(x.__dict__),
+    attrs=lambda x: dict(x.attrs),
     children=lambda x: list(x.children),
     compress=True,
 ):
@@ -191,7 +192,7 @@ def _nodenamefunc(node):
     try:
         return node.tag
     except AttributeError:
-        return node._repr_data()
+        return node._repr_node()
 
 
 def _nodeattrfunc(node):

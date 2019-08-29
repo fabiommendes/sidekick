@@ -1,6 +1,6 @@
 from typing import NamedTuple
 
-from .node import NodeOrLeaf
+from sidekick.tree.node_base import NodeOrLeaf
 from ..itertools import uncons
 from ..render import PrintContext, PrettyPrinter
 
@@ -89,7 +89,7 @@ NodeOrLeaf._pretty_printer = staticmethod(render_node)
 
 # noinspection PyProtectedMember
 def repr_node_root(node):
-    return node._repr_data()
+    return node._repr_node()
 
 
 STYLES = {

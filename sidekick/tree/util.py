@@ -1,7 +1,8 @@
 import operator as op
 from typing import List, Optional
 
-from .node import Node, NodeOrLeaf
+from .node_base import NodeOrLeaf
+from .node_classes import Node
 
 
 def common_ancestors(*nodes: NodeOrLeaf) -> List[Node]:
@@ -50,6 +51,6 @@ def walk(start, end):
 
     common = [x for x, y in zip(xs, ys) if x is y]
     n_common = len(common)
-    up = () if start is common[-1] else xs[: n_common - 1 : -1]
+    up = () if start is common[-1] else xs[: n_common - 1: -1]
     down = () if end is common[-1] else ys[n_common:]
     return up, common[-1], down

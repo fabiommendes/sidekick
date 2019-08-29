@@ -1,6 +1,6 @@
 import json
 
-from .node import Node, Leaf
+from .node_classes import Node, Leaf
 
 
 def import_tree(obj, how="dict", **kwargs):
