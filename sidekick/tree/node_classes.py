@@ -44,7 +44,7 @@ class Leaf(NodeOrLeaf):
         return self._repr_node()
 
     def copy(self):
-        return self.__class__(self._value, **self._attrs)
+        return type(self)(self._value, **self._attrs)
 
 
 class Node(NodeOrLeaf):
@@ -167,7 +167,7 @@ class Node(NodeOrLeaf):
 
     def copy(self):
         children = (x.copy() for x in self._children)
-        return self.__class__(children, **self._attrs)
+        return type(self)(children, **self._attrs)
 
 
 class TreeError(ValueError):
