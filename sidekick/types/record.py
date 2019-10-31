@@ -22,10 +22,12 @@ class RecordMeta(type):
     _meta: "Meta" = NOT_GIVEN
 
     def __new__(mcs, name, bases, ns, use_invalid=False, **kwargs):
-        if Namespace is NotImplemented:
+        if Namespace is NotImplemented or Record is NotImplemented:
             return super().__new__(mcs, name, bases, ns)
         else:
             fields = extract_fields_from_annotations(bases, ns)
+            kwargs.setdefault('is_mutable',
+                              any(issubclass(cls, Namespace) for cls in bases))
             return new_record_type(name, fields, bases, ns, mcs=mcs, **kwargs)
 
     def __init__(cls, name, bases, ns, **kwargs):
@@ -35,7 +37,8 @@ class RecordMeta(type):
         return collections.OrderedDict()
 
     def define(
-        self, name: str, fields: list, bases=(), ns: dict = None, use_invalid=False
+            self, name: str, fields: list, bases=(), ns: dict = None, use_invalid=False,
+            is_mutable=None,
     ):
         """
         Declare a new record class.
@@ -58,6 +61,11 @@ class RecordMeta(type):
                 If True, accept invalid Python names as record fields. Those
                 fields are still available from the getattr() and setattr()
                 interfaces but are very inconvenient to use.
+            is_mutable:
+                If given, controls the mutabilty of resulting class. This controls
+                the implicit base class (Record or Namespace). If not given,
+                and no base class derive from Record or Namespace, assumes
+                that result is immutable.
 
         Usage:
 
@@ -69,38 +77,43 @@ class RecordMeta(type):
         Returns:
             A new Record subclass.
         """
-        if Record not in bases:
-            bases = (*bases, Record)
-        return new_record_type(name, fields, bases, ns or {}, use_invalid)
+        kwargs = {"use_invalid": use_invalid}
 
-    def namespace(
-        self, name: str, fields: list, bases=(), ns: dict = None, use_invalid=False
-    ):
-        """
-        Like meth:`sidekick.Record.define`, but declares a mutable record
-        (a.k.a, namespace).
-        """
-        if Namespace not in bases:
+        # Compute mutability of class
+        has_namespace = any(issubclass(cls, Namespace) for cls in bases)
+        if is_mutable is None and has_namespace:
+            kwargs['is_mutable'] = True
+        elif is_mutable is None:
+            kwargs['is_mutable'] = issubclass(self, Namespace)
+        elif not is_mutable and has_namespace:
+            raise ValueError('Immutable record cannot have a mutable super class.')
+        else:
+            kwargs['is_mutable'] = bool(is_mutable)
+
+        # Force either Record or Namespace be in bases
+        if kwargs['is_mutable'] and Namespace not in bases:
             bases = (*bases, Namespace)
-        kwargs = {"use_invalid": use_invalid, "is_mutable": True}
+        elif not kwargs['is_mutable'] and Record not in bases:
+            bases = (*bases, Record)
+
         return new_record_type(name, fields, bases, ns or {}, **kwargs)
 
 
 def new_record_type(
-    name: str,
-    fields: list,
-    bases: tuple,
-    ns: dict,
-    use_invalid=False,
-    is_mutable=False,
-    mcs: type = RecordMeta,
+        name: str,
+        fields: list,
+        bases: tuple,
+        ns: dict,
+        use_invalid=False,
+        is_mutable=False,
+        mcs: type = RecordMeta,
 ) -> type:
     """
     Create new record type.
     """
     if isinstance(fields, collections.abc.Mapping):
         fields = list(normalize_field_mapping(fields))
-    meta_info = Meta([clean_field(f, use_invalid) for f in fields])
+    meta_info = Meta([clean_field(f, use_invalid) for f in fields], is_mutable)
     initial_ns = make_record_namespace(bases, meta_info, is_mutable)
     ns = dict(initial_ns, **ns)
 
@@ -108,8 +121,8 @@ def new_record_type(
     cls = type.__new__(mcs, name, bases, ns)
     cls._meta = meta_info
     init = make_init_function(cls)
-    if not hasattr(cls, "_init"):
-        cls._init = init
+    if "__init_data__" not in ns:
+        cls.__init_data__ = init
     if "__init__" not in ns:
         cls.__init__ = init
     return cls
@@ -284,14 +297,15 @@ def get_slot(cls, name):
 
 
 class Meta(MetaMixin):
-    __slots__ = ("fields", "types", "defaults")
+    __slots__ = ("fields", "types", "defaults", "is_mutable")
 
-    def __init__(self, fields):
+    def __init__(self, fields, is_mutable):
         self.fields = tuple(f.name for f in fields)
         self.types = tuple(f.type for f in fields)
         self.defaults = MappingProxyType(
             {f.name: f.default for f in fields if f.default is not NOT_GIVEN}
         )
+        self.is_mutable = is_mutable
 
     def __iter__(self):
         yield from self.fields
@@ -307,6 +321,29 @@ class RecordMixin:
     __slots__ = ()
     _meta: Meta = NOT_GIVEN
     M: Mapping
+
+    def __init__(*args, **extra):
+        self, *args = args
+        args = zip(self._meta.fields, args)
+        kwargs = dict(self._meta.default)
+        common = set(args).intersection(extra)
+        if common:
+            raise TypeError(f'repeated occurrence of arguments: {common}')
+
+        kwargs.update(args)
+        kwargs.update(extra)
+        missing = set(kwargs) - self._meta.fields
+        if missing:
+            raise TypeError(f'missing arguments: {missing}')
+
+        types = dict(zip(self._meta.fields, self._meta.types))
+        for k, v in kwargs.items():
+            tt = types[k]
+            if isinstance(tt, type) and not issubclass(v, tt):
+                vt = type(v).__name__
+                tt = tt.__name__
+                raise TypeError(f'invalid type for {k}: got {vt!r}, expected {tt!r}')
+            setattr(self, k, v)
 
     def __repr__(self):
         return "%s(%s)" % (
@@ -360,7 +397,7 @@ class Record(RecordMixin, metaclass=RecordMeta):
 
 
 # noinspection PyRedeclaration
-class Namespace(RecordMixin, metaclass=RecordMeta, is_mutable=True):
+class Namespace(RecordMixin, metaclass=RecordMeta):
     """
     A mutable record-like type.
     """

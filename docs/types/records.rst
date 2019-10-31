@@ -32,14 +32,14 @@ Point(1, 2)
 2
 
 As we can see, record instances are already nicely printed (not that ugly
-``<Point 0x...>`` line noise). They also implement hashing and the ``==``
-operator.
+``<Point 0x...>`` line noise) and have useful constructors. They also implement
+hashing, the ``==`` operator and utilities for pickling and deep copy.
 
 Sidekick distinguishes mutable and immutable records types. In fact, we call
 mutable records "namespaces", and they are appropriately created using
-the :func:`Record.namespace` function:
+the :func:`Namespace.define` function:
 
->>> MutablePoint = Record.namespace('MutablePoint', ['x', 'y'])
+>>> MutablePoint = Namespace.define('MutablePoint', ['x', 'y'])
 >>> w = MutablePoint(x=1, y=1)
 >>> w.y = 2  # this will not raise an error!
 >>> w
@@ -56,7 +56,7 @@ Sometimes we just want to instantiate a record on-the-fly without going
 through the trouble of creating a new record type. Sidekick offers
 the :func:`record` and :func:`namespace` functions that do
 just that. Notice that anonymous records are less safe (e.g., you can introduce
-subtle bugs because it does not know the correct name of all fields) and slightly
+subtle bugs because they do not know the correct name of all fields) and slightly
 less efficient than regular record types. Nevertheless they are a good fit to
 replace dictionaries in many situations:
 
@@ -65,7 +65,7 @@ replace dictionaries in many situations:
 'John Lennon'
 
 Anonymous records have a few tweaks over regular records to make it more
-interoperable with dictionaries and are heavily inspired on Javascript objects.
+interoperable with dictionaries and are somewhat reminiscent of Javascript objects.
 Records can be created from dictionaries and support the getitem interface:
 
 >>> artist = record({'name': 'John Lennon', 'band': 'Beatles'})
@@ -88,35 +88,36 @@ builtin :mod:`sidekick.json` module:
 >>> json.loads('{"name": "John Lennon", "band": "Beatles"}', object_hook=record)
 record(band='Beatles', name='John Lennon')
 
-We can't automatically serialize record types, but Sidekick provides a encoder
-class that can be used instead of the default one:
+That is good for reading JSON. We can't automatically serialize record types,
+but Sidekick provides a encoder class that can be used instead of the
+default one:
 
 >>> from sidekick.json import JSONEncoder
 >>> json.dumps(artist, cls=JSONEncoder)
 '{"name": "John Lennon", "band": "Beatles"}'
 
-:mod:`sidekick.json` since it provides the same API of the builtin ``JSON``
-module (i.e., :func:`json.load`, :func:`json.dump`, etc), but it understands
-Sidekick's types.
+A more convenient alternative is to import :mod:`sidekick.json` instead of the builtin
+:mod:`json` module, since it provides the same API (i.e., :func:`json.load`,
+:func:`json.dump`, etc), but it understands Sidekick's types.
 
 
 Class based interface
 =====================
 
-Records/Namespaces are lightweight classes. It is very common to outgrow simple
-record type and start requiring methods and additional properties. Records can
-also be declared as classes and provide any functionality available to regular
-classes. This interface allows further customizations such as setting default
-values and types for the record fields.
+Records/Namespaces are lightweight classes. It is very common that your code
+outgrows the need of simple record elements and starts requiring methods and
+additional properties. Records can be declared as regular Python classes and just
+implement methods, properties, mixins, etc. This interface allows further
+customizations such as setting default values and types for the record fields.
 
 >>> class Point(Record):
-...      x: int
-...      y: int = 0
+...      x: float
+...      y: float = 0.0
 
 This declares x as a required argument of the Point constructor and y as an
-optional value with a default value of 0. Notice that the type hint are required
+optional value with a default value of 0. Notice that the type hint is required
 even if you don't want to enforce a type on the field values. In that case,
-just annotate the field with with ``attr : object``.
+just annotate the field with with ``attr : object`` or ``attr: Any``.
 
 Records declared this way behave just regular records.
 
@@ -124,16 +125,42 @@ Records declared this way behave just regular records.
 >>> u
 Point(1, 2)
 
+Init method
+-----------
+
+The ``__init__`` method of a Record/Namespace is created dynamically using eval().
+This inelegant solution is orders of magnitude faster than the alternative of
+constructing a generic the logic for initialization with Python code. In fact,
+Sidekick does both: Record meta class creates a fast version of __init__ if user
+does not override the init method, but also implements a fallback
+slow version that is available for ``super()`` calls. The ``eval()`` based
+implementation is also saved into ``__init_data__``, which is always automatically
+created by the metaclass. This can be used by users who override __init__, but still
+want benefit from the faster dynamically created version of the method.
+
+.. code-block:: python
+
+    class Point(Record):
+        x: float
+        y: float = 0.0
+
+        # Works, but is slow
+        def __init__(self, x, y):
+            super().__init__(x + 0.0, y + 0.0)
+
+        # This is faster
+        def __init__(self, x, y):
+            self.__init_data__(x + 0.0, y + 0.0)
+
 
 Conversions and introspection
 =============================
 
 Dictionaries associate a set of keys to their corresponding values. In Python,
-this is often abused as a mean of data aggregation: a string with a field name
-is then associated with the corresponding field value. Dictionaries are
-also extensively used internally in many places and any decent
-Python programmer must have a good grasp of how to use
-dictionaries and probably know most of its API.
+this is often used (or abused) as a mean of data aggregation: a string with a
+field name is then associated with the corresponding field value. Dictionaries are
+also used internally in many places and any decent Python programmer must have a
+good grasp of how to use dictionaries and know most of its API.
 
 For data aggregation, however, records offer a few advantages
 
@@ -144,7 +171,7 @@ For data aggregation, however, records offer a few advantages
 On the other hand,
 
 4 Dictionaries are easier to introspect
-5 Dictionaries is a standard language feature
+5 Dictionaries are a standard language feature
 
 While we can't do nothing about #5, Sidekick offer a few introspection
 capabilities to dictionaries under the record's `_meta` and `M` attributes.
@@ -153,17 +180,18 @@ capabilities to dictionaries under the record's `_meta` and `M` attributes.
 KeysView({'name': 'John Lennon', 'band': 'Beatles'})
 
 
-Record.D/Record._meta
+Record.M/Record._meta
 -------------------------
 
 The record `M` attribute offers a Mapping interface to a record and support
 all expected dictionary methods (e.g., keys, values, items, etc). Record types
-preserve the order of key declaration, and behave like OrderedDict's.
+preserve the original order of filed declaration, and behave like OrderedDict's.
 
+>>> u = Point(1.0, 2.0)
 >>> for k, v in u.M.items():
 ...     print('%s: %s' % (k, v))
-x: 1
-y: 2
+x: 1.0
+y: 2.0
 
 The `_meta` field is class-bound and provides information about the record type
 
@@ -175,12 +203,12 @@ The `_meta` field is class-bound and provides information about the record type
 **Default values**
 
 >>> Point._meta.defaults
-mappingproxy({'y': 0})
+mappingproxy({'y': 0.0})
 
 **Field types**
 
 >>> Point._meta.types
-(<class 'int'>, <class 'int'>)
+(<class 'float'>, <class 'float'>)
 
 
 Conversions
@@ -190,9 +218,21 @@ Records iterate as a sequence of (key, value) pairs and thus can be
 converted to regular dictionaries using the standard dict(record) method.
 
 >>> dict(u)
-{'x': 1, 'y': 2}
+{'x': 1.0, 'y': 2.0}
 
 We can convert a dictionary to a record using the standard unpacking syntax:
 
->>> Point(**{'x': 1, 'y': 2})
-Point(1, 2)
+>>> Point(**{'x': 1.0, 'y': 2.0})
+Point(1.0, 2.0)
+
+
+Type safety
+-----------
+
+We are still defining how typechecks in records classes behave. For one side,
+static type safety makes code more robust, but on the other hand it is not
+very Pythonic to use explicit instance checks and type hints are generally
+interpreted as a suggestion of use (even a strong suggestion), and not as
+an strict contract. For now, any code that passes wrong values of the wrong
+types to a record subclass is in the realm of "undefined behavior" and might
+break in future releases of Sidekick.
