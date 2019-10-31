@@ -1,4 +1,4 @@
-from .zombie import UNARY_METHODS, BINARY_METHODS, RBINARY_METHODS
+from .zombie import UNARY_METHODS, BINARY_METHODS, RBINARY_METHODS, ARBITRARY_METHODS
 from ..functools import call
 
 __all__ = ["Deferred", "Proxy", "deferred"]
@@ -95,6 +95,10 @@ def _patch_proxy():
 
     for name in BINARY_METHODS + RBINARY_METHODS:
         code = template.format(name=name, sep=", ", args="other")
+        definitions.append(code)
+
+    for name in ARBITRARY_METHODS:
+        code = template.format(name=name, sep=", ", args="*args, **kwargs")
         definitions.append(code)
 
     ns = {}

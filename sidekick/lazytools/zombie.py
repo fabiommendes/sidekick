@@ -5,8 +5,11 @@ from ..functools import call
 
 ZOMBIE_CLASSES = {}
 UNARY_METHODS = [NAMES[op] for op in UNARY]
-BINARY_METHODS = [NAMES[op] for op in COMPARISON + BINARY]
-RBINARY_METHODS = ["__r" + NAMES[op][2:] for op in BINARY]
+UNARY_METHODS.extend(['iter'])
+BINARY_METHODS = [NAMES[op].rstrip('_') for op in COMPARISON + BINARY]
+RBINARY_METHODS = ["r" + op for op in BINARY_METHODS]
+BINARY_METHODS.extend(['getitem', 'getattr'])
+ARBITRARY_METHODS = ['setitem', 'call']
 __all__ = [
     "ZombieTypes",
     "zombie",
@@ -259,8 +262,7 @@ def _patch_zombie_class():
     exec(code, {}, ns)
     zombie_ns.update(ns)
 
-    for k, v in ns.items():
-        setattr(Zombie, k, v)
-
-    for k, v in zombie_ns.items():
-        setattr(SlottedZombie, k, v)
+    for cls in (Zombie, SlottedZombie):
+        for k, v in zombie_ns.items():
+            if k not in cls.__dict__:
+                setattr(cls, k, v)
