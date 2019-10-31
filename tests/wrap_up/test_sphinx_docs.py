@@ -7,7 +7,7 @@ import manuel.testing
 import pytest
 
 cd = os.path.dirname
-path = cd(cd(__file__))
+path = cd(cd(cd(__file__)))
 
 
 def make_manuel_suite(ns):
