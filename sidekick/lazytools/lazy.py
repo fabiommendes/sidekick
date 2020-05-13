@@ -98,8 +98,9 @@ def alias(attr, *, mutable=False, transform=None, prepare=None):
         mutable (bool):
             If True, makes the alias mutable.
         transform (callable):
-            If given, transforms the resulting value
-        prepare
+            If given, transform output.
+        prepare:
+            If given, prepare value before saving.
     """
     if transform is not None or prepare is not None:
         return TransformingAlias(attr, transform, prepare)

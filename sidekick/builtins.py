@@ -28,6 +28,9 @@ def filter(pred: Pred, seq: Seq):
     filter(pred, seq) ==> seq[a], seq[b], seq[c], ...
 
     in which a, b, c, ... are the indexes in which pred(seq[i]) == True.
+
+    See Also:
+        remove -- remove only elements in which predicate is true.
     """
     return _filter(extract_function(pred), seq)
 

@@ -1,7 +1,7 @@
 import collections.abc
 import keyword
 from types import MappingProxyType
-from typing import Mapping
+from typing import Mapping, Dict
 
 from .anonymous_record import MutableMapView, MapView, record, namespace, MetaMixin
 
@@ -319,31 +319,33 @@ Record = Namespace = NotImplemented
 
 class RecordMixin:
     __slots__ = ()
-    _meta: Meta = NOT_GIVEN
+    _meta: Meta = Meta
     M: Mapping
 
     def __init__(*args, **extra):
         self, *args = args
-        args = zip(self._meta.fields, args)
-        kwargs = dict(self._meta.default)
+        cls = type(self)
+        args = dict(zip(self._meta.fields, args))
+        kwargs = dict(self._meta.defaults)
         common = set(args).intersection(extra)
         if common:
             raise TypeError(f'repeated occurrence of arguments: {common}')
 
         kwargs.update(args)
         kwargs.update(extra)
-        missing = set(kwargs) - self._meta.fields
+        missing = set(kwargs) - set(self._meta.fields)
         if missing:
             raise TypeError(f'missing arguments: {missing}')
 
         types = dict(zip(self._meta.fields, self._meta.types))
         for k, v in kwargs.items():
-            tt = types[k]
-            if isinstance(tt, type) and not issubclass(v, tt):
+            tt: type = types[k]
+            if isinstance(tt, type) and not isinstance(v, tt):
                 vt = type(v).__name__
                 tt = tt.__name__
                 raise TypeError(f'invalid type for {k}: got {vt!r}, expected {tt!r}')
-            setattr(self, k, v)
+            slot = get_slot(cls, k)
+            slot.__set__(self, v)
 
     def __repr__(self):
         return "%s(%s)" % (

@@ -47,11 +47,9 @@ def cond(test, then, else_):
 #
 # Predicate factories
 #
-
-
 def any_of(*predicates):
     """
-    Return a new predicate that performs a logic AND to all predicate
+    Return a new predicate that performs a logic OR to all predicate
     functions.
     """
     if len(predicates) == 1:
@@ -61,7 +59,7 @@ def any_of(*predicates):
 
 def all_of(*predicates):
     """
-    Return a new predicate that performs an logic ALL to all predicate
+    Return a new predicate that performs an logic AND to all predicate
     functions.
     """
     if len(predicates) == 1:

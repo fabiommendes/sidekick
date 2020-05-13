@@ -3,9 +3,9 @@ import typing
 
 from .. import _toolz as toolz
 from ..core import fn, extract_function, Func, Pred, Seq
+from ..magics import X, L
 
 _filter = filter
-
 __all__ = [
     # Filtering
     *[
@@ -134,7 +134,7 @@ def unique(seq: Seq, *, key: Func = None, exclude: Seq = ()) -> Seq:
         Elements of a sequence or their keys should be hashable, otherwise it
         uses a slow path.
     """
-    pred = extract_function(key or (lambda x: x))
+    pred = extract_function(key or (lambda v: v))
     seen = set(map(key, exclude))
     add = seen.add
 
@@ -284,7 +284,7 @@ def drop_positions(indices: Seq, seq: Seq, *, silent=False) -> Seq:
 
 
 @fn.curry(2)
-def separate(pred: Func, seq: Seq) -> (Seq, Seq):
+def separate(pred: Func, seq: Seq, consume: bool = False) -> (Seq, Seq):
     """
     Split sequence it two. The first consists of items that pass the
     predicate and the second of those items that don't.
@@ -292,14 +292,34 @@ def separate(pred: Func, seq: Seq) -> (Seq, Seq):
     Similar to (filter(pred, seq), filter(!pred, seq)), but only evaluate
     the predicate once per item.
 
+    Args:
+        pred:
+            Predicate function
+        seq:
+            Iterable of items that should be separated.
+        consume (bool):
+            If given, fully consume the iterator and return two lists. This is
+            faster than separating and then converting each element to a list.
+
     Examples:
-        >>> a, b = separate(X % 2, [1, 2, 3, 4, 5])
+        >>> a, b = separate((X % 2), [1, 2, 3, 4, 5])
         >>> list(a), list(b)
         ([1, 3, 5], [2, 4])
     """
     pred = extract_function(pred)
-    a, b = itertools.tee((x, pred(x)) for x in seq)
-    return ((x for x, keep in a if keep), (x for x, exclude in b if not exclude))
+    if consume:
+        a, b = [], []
+        add_a = a.append
+        add_b = b.append
+        for x in seq:
+            if pred(x):
+                add_a(x)
+            else:
+                add_b(x)
+        return a, b
+    else:
+        a, b = itertools.tee((x, pred(x)) for x in seq)
+        return (x for x, keep in a if keep), (x for x, exclude in b if not exclude)
 
 
 #
@@ -317,7 +337,8 @@ def consume(seq: Seq, *, default=None) -> Seq:
             Fallback value returned for empty sequences.
 
     Examples:
-        >>> consume(print(x) for x in [1, 2, 3])
+        >>> it = map(print, [1, 2, 3])
+        >>> consume(it)
         1
         2
         3
@@ -443,3 +464,6 @@ def take_nth(n: int, seq: Seq) -> Seq:
         take
     """
     return toolz.take_nth(n, seq)
+
+
+del X, L  # documentation functions

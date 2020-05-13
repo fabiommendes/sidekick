@@ -249,13 +249,12 @@ def _patch_zombie_class():
         "   return self.__{name}__({args})"
     )
 
-    for name in UNARY_METHODS:
-        code = template.format(name=name, sep="", args="")
-        definitions.append(code)
-
-    for name in BINARY_METHODS + RBINARY_METHODS:
-        code = template.format(name=name, sep=", ", args="other")
-        definitions.append(code)
+    for sep, args, lst in (
+            ("", "", UNARY_METHODS),
+            (", ", "other", BINARY_METHODS + RBINARY_METHODS)):
+        for name in lst:
+            code = template.format(name=name, sep=sep, args=args)
+            definitions.append(code)
 
     ns = {}
     code = "\n".join(definitions)

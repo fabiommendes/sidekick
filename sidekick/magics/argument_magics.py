@@ -1,4 +1,5 @@
 from itertools import repeat
+from operator import attrgetter
 
 from .base_magics import base_operator_magic
 from ..core.placeholder import call_node, Placeholder
@@ -29,6 +30,9 @@ class X(base_operator_magic(make_op, make_rop, bitwise=False)):
 
     def __call__(self, x):
         return x
+
+    def __getattr__(self, attr):
+        return attrgetter(attr)
 
     # attr = staticmethod(op.attrgetter)
     # method = staticmethod(op.methodcaller)
