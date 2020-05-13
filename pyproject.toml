@@ -27,7 +27,7 @@ requires = [ "toolz >= 0.10.0" ]
 
 [tool.flit.metadata.requires-extra]
 test = [ "pytest", "pytest-cov", "mock", "manuel", "hypothesis" ]
-doc = [ "sphinx" ]
+doc = [ "sphinx", "sphinx_rtd_theme" ]
 dev = [ "flake8", "black", "readme_renderer" ]
 hypothesis = [ "hypothesis" ]
 
