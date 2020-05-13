@@ -11,7 +11,7 @@ home-page = "http://github.com/fabiommendes/sidekick/"
 requires-python = ">=3.6"
 description-file = "README.rst"
 classifiers = [
-    "Intended Audience :: Developers",
+  "Intended Audience :: Developers",
 	"Development Status :: 4 - Beta",
 	"License :: OSI Approved :: MIT License",
 	"Operating System :: OS Independent",
@@ -19,9 +19,10 @@ classifiers = [
 	"Programming Language :: Python :: 3",
 	"Programming Language :: Python :: 3.6",
 	"Programming Language :: Python :: 3.7",
+	"Programming Language :: Python :: 3.8",
 	"Topic :: Software Development :: Libraries",
 ]
-requires = [ "toolz >= 0.9.0" ]
+requires = [ "toolz >= 0.10.0" ]
 
 
 [tool.flit.metadata.requires-extra]

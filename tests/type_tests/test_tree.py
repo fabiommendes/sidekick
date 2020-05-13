@@ -5,8 +5,15 @@ from hypothesis import given
 
 from sidekick import Node, SExpr
 from sidekick.hypothesis import trees, leaves, AtomT
-from sidekick.tree import Leaf, common_ancestor, common_ancestors, walk, import_tree, \
-    export_tree, NodeOrLeaf
+from sidekick.tree import (
+    Leaf,
+    common_ancestor,
+    common_ancestors,
+    walk,
+    import_tree,
+    export_tree,
+    NodeOrLeaf,
+)
 
 
 class TestNode:
@@ -174,11 +181,11 @@ class TestClasses:
 
         for k, v in vars(tree).items():
             if isinstance(v, type) and issubclass(v, NodeOrLeaf):
-                assert '__slots__' in v.__dict__, v.__name__
+                assert "__slots__" in v.__dict__, v.__name__
 
         x = Leaf(42)
         y = Node([x])
-        z = SExpr('test', [y])
+        z = SExpr("test", [y])
         for item in [x, y, z]:
             with pytest.raises(AttributeError):
                 print(item.__dict__)

@@ -9,10 +9,11 @@ from sidekick import Record, Namespace, record
 # RECORD AND NAMESPACES
 # ==============================================================================
 
+
 class TestMetaclass:
     def test_create_class_with_define(self):
-        self._check(Record.define('Point', ['x', 'y']))
-        self._check_mutable(Namespace.define('Point', ['x', 'y']))
+        self._check(Record.define("Point", ["x", "y"]))
+        self._check_mutable(Namespace.define("Point", ["x", "y"]))
 
     def test_create_class_with_class_notation(self):
         class Point(Record):
@@ -28,8 +29,8 @@ class TestMetaclass:
         self._check_mutable(Point)
 
     def _check(self, cls, is_mutable=False, base=Record):
-        assert cls.__name__ == 'Point'
-        assert cls._meta.fields == ('x', 'y')
+        assert cls.__name__ == "Point"
+        assert cls._meta.fields == ("x", "y")
         assert cls._meta.types == (object, object)
         assert not cls._meta.defaults
         assert cls._meta.is_mutable == is_mutable
@@ -56,7 +57,7 @@ class TestRecord:
         meta = cls._meta
         assert not meta.is_mutable
         assert meta.types == (object, object)
-        assert meta.fields == ('x', 'y')
+        assert meta.fields == ("x", "y")
 
     def test_record_is_immutable(self, pt):
         assert hash(pt) != -1
@@ -96,7 +97,7 @@ class TestRecord:
 
 
 class TestNamespace(TestRecord):
-    @pytest.fixture(scope='function')
+    @pytest.fixture(scope="function")
     def cls(self):
         class MutablePoint(Namespace):
             x: object
@@ -110,7 +111,7 @@ class TestNamespace(TestRecord):
         meta = cls._meta
         assert meta.is_mutable
         assert meta.types == (object, object)
-        assert meta.fields == ('x', 'y')
+        assert meta.fields == ("x", "y")
 
 
 class TestRecordView:
@@ -138,6 +139,7 @@ class TestRecordView:
 # ==============================================================================
 # ANONYMOUS STRUCTURES
 # ==============================================================================
+
 
 class TestAnonymousRecord:
     @pytest.fixture

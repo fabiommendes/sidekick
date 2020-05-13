@@ -53,9 +53,11 @@ class NodeOrLeaf(NodeOrLeafIteratorMixin):
         elif not isinstance(value, Node):
             raise TypeError(f"Parent node {value!r} is not of type 'Node'.")
         elif value is not self._parent:
-            has_loop = (self.is_ancestor_of(value)
-                        or value.is_ancestor_of(self)
-                        or self is value)
+            has_loop = (
+                self.is_ancestor_of(value)
+                or value.is_ancestor_of(self)
+                or self is value
+            )
             if has_loop:
                 msg = f"Setting parent to {value} would create a dependency loop"
                 raise ValueError(msg)
@@ -138,7 +140,7 @@ class NodeOrLeaf(NodeOrLeafIteratorMixin):
 
     def __eq__(self, other):
         if self.__class__ is other.__class__:
-            raise NotImplementedError('must be implemented in subclass')
+            raise NotImplementedError("must be implemented in subclass")
         return NotImplemented
 
     #
@@ -161,7 +163,7 @@ class NodeOrLeaf(NodeOrLeafIteratorMixin):
         """
         return any(self is ancestor for ancestor in node.iter_ancestors())
 
-    def copy(self) -> 'NodeOrLeaf':
+    def copy(self) -> "NodeOrLeaf":
         """
         Create a copy of tree.
         """

@@ -9,7 +9,7 @@ PUBLIC_IDENTIFIER_RE = re.compile(r"[^\d\W_]\w*", re.ASCII)
 AtomT = bool, int, float, complex, str, bytes, type(None), type(Ellipsis)
 
 
-def atoms(which='basic', finite=False):
+def atoms(which="basic", finite=False):
     """
     Return atomic Python types.
 
@@ -33,29 +33,26 @@ def atoms(which='basic', finite=False):
         st.booleans(),
         st.text(),
         st.floats(
-            allow_nan=not finite and which != 'json',
-            allow_infinity=not finite and which != 'json',
-        )
+            allow_nan=not finite and which != "json",
+            allow_infinity=not finite and which != "json",
+        ),
     ]
     add = strategies.append
 
-    if which in ('basic', 'ordered'):
+    if which in ("basic", "ordered"):
         add(st.integers())
         add(st.just(None))
         add(st.binary())
 
-    if which == 'json':
+    if which == "json":
         # See also:
         # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MIN_SAFE_INTEGER
         add(st.integers(min_value=-(2 ** 53 - 1), max_value=2 ** 53 - 1))
         add(st.just(None))
 
-    if which == 'basic':
+    if which == "basic":
         add(st.just(...))
-        add(st.complex_numbers(
-            allow_nan=not finite,
-            allow_infinity=not finite,
-        ))
+        add(st.complex_numbers(allow_nan=not finite, allow_infinity=not finite,))
 
     return st.one_of(*strategies)
 

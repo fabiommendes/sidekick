@@ -17,21 +17,23 @@ class SExprBase(Node):
     # append
     # clear
     # copy
-    count = delegate_to('_children')
+    count = delegate_to("_children")
     # extend
-    index = delegate_to('_children')
+    index = delegate_to("_children")
     # insert
-    pop = delegate_to('_children')
+    pop = delegate_to("_children")
     # remove
-    reverse = delegate_to('_children')
-    sort = delegate_to('_children')
+    reverse = delegate_to("_children")
+    sort = delegate_to("_children")
 
     def __eq__(self, other):
         if self.__class__ is other.__class__:
             other: SExpr
-            return (self.tag == other.tag
-                    and self._attrs == other._attrs
-                    and self._children == other._children)
+            return (
+                self.tag == other.tag
+                and self._attrs == other._attrs
+                and self._children == other._children
+            )
         return NotImplemented
 
     def __getitem__(self, i: int) -> NodeOrLeaf:

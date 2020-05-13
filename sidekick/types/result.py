@@ -214,7 +214,7 @@ def first_error(*args):
     'not prime'
     """
     if len(args) == 1:
-        args, = args
+        (args,) = args
     cls = (Err, Exception)
     for x in args:
         if isinstance(x, cls):

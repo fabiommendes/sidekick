@@ -51,6 +51,6 @@ def walk(start, end):
 
     common = [x for x, y in zip(xs, ys) if x is y]
     n_common = len(common)
-    up = () if start is common[-1] else xs[: n_common - 1: -1]
+    up = () if start is common[-1] else xs[: n_common - 1 : -1]
     down = () if end is common[-1] else ys[n_common:]
     return up, common[-1], down
