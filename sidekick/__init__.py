@@ -2,7 +2,7 @@
 A companion library that enhance your functional superpowers.
 """
 __author__ = "Fábio Macêdo Mendes"
-__version__ = "0.6.0b0"
+__version__ = "0.7.0"
 
 from . import op
 from .core import *
@@ -13,7 +13,7 @@ from .magics import *
 from .misc import misc
 from .render import pprint, pformat
 from .tree import Node, Leaf
-from sidekick.tree.node_sexpr import SExpr
+from .tree.node_sexpr import SExpr
 from .types import *
 from .types import json
 from . import tree

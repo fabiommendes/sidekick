@@ -42,8 +42,8 @@ class Children(MutableSequence):
         return len(self._data)
 
     def __repr__(self):
-        data = ', '.join(map(repr, self._data))
-        return f'[{data}]'
+        data = ", ".join(map(repr, self._data))
+        return f"[{data}]"
 
     def insert(self, index: int, obj: T) -> None:
         obj = self._owner._check_child(obj)

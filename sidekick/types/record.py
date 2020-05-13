@@ -26,8 +26,9 @@ class RecordMeta(type):
             return super().__new__(mcs, name, bases, ns)
         else:
             fields = extract_fields_from_annotations(bases, ns)
-            kwargs.setdefault('is_mutable',
-                              any(issubclass(cls, Namespace) for cls in bases))
+            kwargs.setdefault(
+                "is_mutable", any(issubclass(cls, Namespace) for cls in bases)
+            )
             return new_record_type(name, fields, bases, ns, mcs=mcs, **kwargs)
 
     def __init__(cls, name, bases, ns, **kwargs):
@@ -37,8 +38,13 @@ class RecordMeta(type):
         return collections.OrderedDict()
 
     def define(
-            self, name: str, fields: list, bases=(), ns: dict = None, use_invalid=False,
-            is_mutable=None,
+        self,
+        name: str,
+        fields: list,
+        bases=(),
+        ns: dict = None,
+        use_invalid=False,
+        is_mutable=None,
     ):
         """
         Declare a new record class.
@@ -82,31 +88,31 @@ class RecordMeta(type):
         # Compute mutability of class
         has_namespace = any(issubclass(cls, Namespace) for cls in bases)
         if is_mutable is None and has_namespace:
-            kwargs['is_mutable'] = True
+            kwargs["is_mutable"] = True
         elif is_mutable is None:
-            kwargs['is_mutable'] = issubclass(self, Namespace)
+            kwargs["is_mutable"] = issubclass(self, Namespace)
         elif not is_mutable and has_namespace:
-            raise ValueError('Immutable record cannot have a mutable super class.')
+            raise ValueError("Immutable record cannot have a mutable super class.")
         else:
-            kwargs['is_mutable'] = bool(is_mutable)
+            kwargs["is_mutable"] = bool(is_mutable)
 
         # Force either Record or Namespace be in bases
-        if kwargs['is_mutable'] and Namespace not in bases:
+        if kwargs["is_mutable"] and Namespace not in bases:
             bases = (*bases, Namespace)
-        elif not kwargs['is_mutable'] and Record not in bases:
+        elif not kwargs["is_mutable"] and Record not in bases:
             bases = (*bases, Record)
 
         return new_record_type(name, fields, bases, ns or {}, **kwargs)
 
 
 def new_record_type(
-        name: str,
-        fields: list,
-        bases: tuple,
-        ns: dict,
-        use_invalid=False,
-        is_mutable=False,
-        mcs: type = RecordMeta,
+    name: str,
+    fields: list,
+    bases: tuple,
+    ns: dict,
+    use_invalid=False,
+    is_mutable=False,
+    mcs: type = RecordMeta,
 ) -> type:
     """
     Create new record type.
@@ -139,7 +145,7 @@ def clean_field(field, use_invalid=False):
     elif isinstance(field, Field):
         return field
     elif len(field) == 1:
-        name, = field
+        (name,) = field
     elif len(field) == 2:
         name, tt = field
     else:
@@ -329,13 +335,13 @@ class RecordMixin:
         kwargs = dict(self._meta.defaults)
         common = set(args).intersection(extra)
         if common:
-            raise TypeError(f'repeated occurrence of arguments: {common}')
+            raise TypeError(f"repeated occurrence of arguments: {common}")
 
         kwargs.update(args)
         kwargs.update(extra)
         missing = set(kwargs) - set(self._meta.fields)
         if missing:
-            raise TypeError(f'missing arguments: {missing}')
+            raise TypeError(f"missing arguments: {missing}")
 
         types = dict(zip(self._meta.fields, self._meta.types))
         for k, v in kwargs.items():
@@ -343,7 +349,7 @@ class RecordMixin:
             if isinstance(tt, type) and not isinstance(v, tt):
                 vt = type(v).__name__
                 tt = tt.__name__
-                raise TypeError(f'invalid type for {k}: got {vt!r}, expected {tt!r}')
+                raise TypeError(f"invalid type for {k}: got {vt!r}, expected {tt!r}")
             slot = get_slot(cls, k)
             slot.__set__(self, v)
 

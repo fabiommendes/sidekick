@@ -5,11 +5,11 @@ from ..functools import call
 
 ZOMBIE_CLASSES = {}
 UNARY_METHODS = [NAMES[op] for op in UNARY]
-UNARY_METHODS.extend(['iter'])
-BINARY_METHODS = [NAMES[op].rstrip('_') for op in COMPARISON + BINARY]
+UNARY_METHODS.extend(["iter"])
+BINARY_METHODS = [NAMES[op].rstrip("_") for op in COMPARISON + BINARY]
 RBINARY_METHODS = ["r" + op for op in BINARY_METHODS]
-BINARY_METHODS.extend(['getitem', 'getattr'])
-ARBITRARY_METHODS = ['setitem', 'call']
+BINARY_METHODS.extend(["getitem", "getattr"])
+ARBITRARY_METHODS = ["setitem", "call"]
 __all__ = [
     "ZombieTypes",
     "zombie",
@@ -250,8 +250,9 @@ def _patch_zombie_class():
     )
 
     for sep, args, lst in (
-            ("", "", UNARY_METHODS),
-            (", ", "other", BINARY_METHODS + RBINARY_METHODS)):
+        ("", "", UNARY_METHODS),
+        (", ", "other", BINARY_METHODS + RBINARY_METHODS),
+    ):
         for name in lst:
             code = template.format(name=name, sep=sep, args=args)
             definitions.append(code)

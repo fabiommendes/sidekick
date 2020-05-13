@@ -34,7 +34,7 @@ class union(type):
         # Prepare arguments
         name, *args = args
         bases, *args = args if args else ((),)
-        ns, = args if args else ({},)
+        (ns,) = args if args else ({},)
         bases = mcs.check_bases(bases)
 
         if all(not isinstance(cls, union) for cls in bases):
@@ -71,7 +71,7 @@ class union(type):
         Create record type as a new case in union class.
         """
 
-        root, = (cls for cls in bases if isinstance(cls, union))
+        (root,) = (cls for cls in bases if isinstance(cls, union))
         annotations = ns.get("__annotations__", {})
 
         # Record-based class

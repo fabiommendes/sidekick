@@ -3,8 +3,8 @@ from typing import Sequence, Iterator, Callable
 
 from sidekick import filter as _filter
 
-ID = (lambda x: x)
-TRUE = (lambda x: True)
+ID = lambda x: x
+TRUE = lambda x: True
 NOT_GIVEN = object()
 INF = float("inf")
 Nodes = Sequence["WithChildren"]
@@ -16,9 +16,10 @@ class NodeOrLeafIteratorMixin:
     """
     Isolate implementation of methods that iterate over children nodes.
     """
+
     __slots__ = ()
-    _children: Sequence['NodeOrLeafIteratorMixin']
-    _parent: 'NodeOrLeafIteratorMixin'
+    _children: Sequence["NodeOrLeafIteratorMixin"]
+    _parent: "NodeOrLeafIteratorMixin"
 
     def iter_ancestors(self):
         """
@@ -30,8 +31,9 @@ class NodeOrLeafIteratorMixin:
             root = root._parent
 
     # noinspection PyMethodParameters
-    def iter_children(node, how=None, *, self=None, leaves=None, nodes=None, **kwargs) \
-            -> NodesIter:
+    def iter_children(
+        node, how=None, *, self=None, leaves=None, nodes=None, **kwargs
+    ) -> NodesIter:
         """
         Iterate over child nodes.
 
@@ -67,7 +69,7 @@ class NodeOrLeafIteratorMixin:
                 the given depth.
         """
         if leaves is not None and nodes is not None:
-            raise TypeError('cannot set both leaves and nodes at the same time.')
+            raise TypeError("cannot set both leaves and nodes at the same time.")
 
         if how is None and not kwargs:
             data = node._iter_children_simple(self)
@@ -167,7 +169,7 @@ class NodeOrLeafIteratorMixin:
             yield from child._iter_children_out_order(True, keep, max_depth - 1)
 
     def _iter_group_level_order(
-            self, this, keep=TRUE, max_depth=INF, seq: SeqFn = tuple
+        self, this, keep=TRUE, max_depth=INF, seq: SeqFn = tuple
     ):
         if not keep(self) or max_depth == 0:
             return
@@ -215,7 +217,7 @@ class NodeOrLeafIteratorMixin:
         node, *pred = self_and_filter
         data = node.iter_children(**kwargs)
         if pred:
-            pred, = pred
+            (pred,) = pred
             data = _filter(pred, data)
 
         data = tuple(data)
@@ -238,11 +240,11 @@ class NodeOrLeafIteratorMixin:
         node, *pred = self_and_filter
         data = node.iter_children(**kwargs)
         if pred:
-            pred, = pred
+            (pred,) = pred
             data = _filter(pred, data)
 
         try:
-            node, = islice(data, 1)
+            (node,) = islice(data, 1)
             return node
         except ValueError as exc:
             if default is NOT_GIVEN:

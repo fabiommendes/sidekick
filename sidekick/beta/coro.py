@@ -36,7 +36,7 @@ def feed(coro, seq):
 
 def dispatch(*args):
     while True:
-        x = (yield)
+        x = yield
         for coro in args:
             coro.send(x)
 
@@ -45,7 +45,7 @@ def sync(n, target):
     def make_sync_coro(i, qs):
         def coro():
             while True:
-                x = (yield)
+                x = yield
                 qs[i].append(x)
                 if all(queues):
                     target.send(tuple(q.popleft() for q in qs))
@@ -69,7 +69,7 @@ def map_record(mapping, target):
 def count(target, start=0):
     send = target.send
     while True:
-        _ = (yield)
+        _ = yield
         start += 1
         send(start)
 
@@ -79,7 +79,7 @@ def mean(target):
     size = 0
     send = target.send
     while True:
-        acc += (yield)
+        acc += yield
         size += 1
         send(acc / size)
 
@@ -91,14 +91,14 @@ def moment(n, target, central=False):
     if central:
         mean_acc = 0
         while True:
-            x = (yield)
+            x = yield
             size += 1
             mean_acc += x
             acc += (x - mean_acc / size) ** n
             send(acc / size)
     else:
         while True:
-            x = (yield)
+            x = yield
             size += 1
             acc += x ** n
             send(acc / size)
@@ -113,7 +113,7 @@ def map(func, target, *extra):
     send = target.send
     if extra:
         for args in zip(*extra):
-            x = (yield)
+            x = yield
             send(func(x, *args))
 
 
@@ -121,7 +121,7 @@ def filter(pred, target):
     pred = extract_function(pred)
     send = target.send
     while True:
-        x = (yield)
+        x = yield
         if pred(x):
             send(x)
 
@@ -131,7 +131,7 @@ def reduce(func, start, target):
     send = target.send
     send(start)
     while True:
-        x = (yield)
+        x = yield
         start = func(start, x)
         send(start)
 
@@ -141,14 +141,14 @@ def chunk(n, target):
     while True:
         chunk = []
         for _ in range(n):
-            x = (yield)
+            x = yield
             chunk.append(x)
         send(chunk)
 
 
 def choice(pred, ok, bad):
     while True:
-        value = (yield)
+        value = yield
         if pred(value):
             ok.send(value)
         else:
@@ -158,7 +158,7 @@ def choice(pred, ok, bad):
 def loop(func):
     def routine():
         while True:
-            x = (yield)
+            x = yield
             target.send(func(x))
 
     target = routine()

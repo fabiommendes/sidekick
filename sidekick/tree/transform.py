@@ -27,16 +27,16 @@ class Transform:
     """
 
     def __init__(self, **kwargs):
-        methods = {k: getattr(self, k) for k in dir(self) if not k.startswith('_')}
-        if 'methods' in kwargs:
-            methods = {**kwargs.pop('methods', {}), **methods}
+        methods = {k: getattr(self, k) for k in dir(self) if not k.startswith("_")}
+        if "methods" in kwargs:
+            methods = {**kwargs.pop("methods", {}), **methods}
         self._methods = methods
-        self._leaf_class = kwargs.pop('leaf_class', getattr(self, 'leaf_class', Leaf))
-        self._node_class = kwargs.pop('node_class', getattr(self, 'node_class', SExpr))
-        self._default = kwargs.pop('default', lambda x: x.copy())
-        self._tag = kwargs.pop('tag', op.attrgetter('tag'))
+        self._leaf_class = kwargs.pop("leaf_class", getattr(self, "leaf_class", Leaf))
+        self._node_class = kwargs.pop("node_class", getattr(self, "node_class", SExpr))
+        self._default = kwargs.pop("default", lambda x: x.copy())
+        self._tag = kwargs.pop("tag", op.attrgetter("tag"))
         if kwargs:
-            raise TypeError(f'invalid argument: {next(iter(kwargs))}')
+            raise TypeError(f"invalid argument: {next(iter(kwargs))}")
 
     def __call__(self, tree):
         methods = self._methods
@@ -76,8 +76,8 @@ class TransformArgs(Transform):
     """
 
     def __init__(self, **kwargs):
-        node = kwargs.get('node_class', SExpr)
-        kwargs.setdefault('default', lambda tag, *xs, **kws: node(tag, xs, **kws))
+        node = kwargs.get("node_class", SExpr)
+        kwargs.setdefault("default", lambda tag, *xs, **kws: node(tag, xs, **kws))
         super().__init__(**kwargs)
 
     def __call__(self, tree):

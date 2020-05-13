@@ -23,7 +23,7 @@ class _BaseSimpleNamespace(SimpleNamespace):
 
     def __init__(self, *args, **kwargs):
         if args:
-            data, = args
+            (data,) = args
             kwargs = dict(data, **kwargs)
         super().__init__(**kwargs)
 
