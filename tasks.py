@@ -8,9 +8,20 @@ def test(ctx):
     """
     ctx.run("pytest tests/")
 
+
+@task
+def docs(ctx, strict=False):
+    """
+    Build documentation.
+    """
+    suffix = " -W" if strict else ""
+    ctx.run("sphinx-build docs/ build/docs/ -n" + suffix)
+
+
 @task
 def check_style(ctx):
     """
-    Run tests.
+    Check code style issues.
     """
-    ctx.run("pytest tests/")
+    ctx.run("black . --check")
+    ctx.run("flake8 sidekick")
