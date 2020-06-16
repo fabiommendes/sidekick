@@ -18,14 +18,12 @@ import re
 import sys
 from pathlib import Path
 
-dir = Path(__file__).parent.parent
-src_dir = dir
-sys.path.append(src_dir)
+repo_dir = Path(__file__).parent.parent
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-# sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, repo_dir)
 
 # -- General configuration ------------------------------------------------
 
@@ -37,6 +35,7 @@ sys.path.append(src_dir)
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
     "sphinx.ext.doctest",
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",  # Supports google-style docstrings.
@@ -65,7 +64,7 @@ copyright = "2019, %s" % author
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
-with open(src_dir / "sidekick" / "__init__.py") as fd:
+with open(repo_dir / "sidekick" / "__init__.py") as fd:
     data = fd.read()
     m = re.search(r'__version__\s*=\s*"(?P<version>[\d.]+)"', data)
     release = m.group("version")
@@ -296,3 +295,12 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 # texinfo_no_detailmenu = False
+
+
+# Doctest
+doctest_test_doctest_blocks = "default"
+doctest_global_cleanup = """"""
+doctest_global_setup = """
+import sidekick.api as sk
+from sidekick.api import X, fn, _
+"""
