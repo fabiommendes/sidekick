@@ -1,6 +1,7 @@
 import inspect
 from functools import partial
-from types import MappingProxyType as mappingproxy
+from types import MappingProxyType as mappingproxy, FunctionType
+from typing import Any, Callable
 
 from .fn_meta import (
     FunctionMeta,
@@ -13,7 +14,8 @@ from .fn_meta import (
 )
 from .placeholder import compile_ast, call_node
 
-__all__ = ["fn", "as_fn"]
+__all__ = ["fn", "as_fn", "quick_fn"]
+_new = object.__new__
 
 
 class fn(metaclass=FunctionMeta):
@@ -220,12 +222,6 @@ class fn(metaclass=FunctionMeta):
         else:
             return self.__inner_function__(*args, **kwargs)
 
-    def splice_kw(self, kwargs):
-        """
-        Splice keywords arguments in function.
-        """
-        return self.__inner_function__(**kwargs)
-
     #
     # Wrapping
     #
@@ -320,13 +316,41 @@ class Curried(fn):
 #
 # Utility functions and types
 #
-def as_fn(func):
+def as_fn(func: Any) -> fn:
     """
     Convert callable to an :class:`fn` object.
 
     If func is already an :class:`fn` instance, it is passed as is.
     """
     return func if isinstance(func, fn) else fn(func)
+
+
+def as_callable(func: Any) -> Callable:
+    """
+    Return function as callable.
+    """
+    return ...
+
+
+def as_function(func: Any) -> FunctionType:
+    """
+    Return object as as Python function.
+
+    Callables are wrapped into a function definition.
+    """
+    return ...
+
+
+def quick_fn(func: callable) -> fn:
+    """
+    Faster fn constructor.
+
+    This is about twice as fast as the regular fn() constructor. It assumes that
+    fn is
+    """
+    new: fn = _new(fn)
+    new.func = func
+    return new
 
 
 class AmbiguousOperation(ValueError):

@@ -41,6 +41,9 @@ class FunctionMeta(type):
         else:
             return self(func)
 
+    def __repr__(cls):
+        return cls.__name__
+
     __lshift__ = __rlshift__ = __rrshift__ = __rshift__
 
 
@@ -154,7 +157,7 @@ def extract_function(func):
 
     This defines the following semantics:
 
-    * Sidekick's fn, predicate, etc: extract the inner function.
+    * Sidekick's fn: extract the inner function.
     * None: return the identity function.
     * Functions, methods and other callables: returned as-is.
     """
