@@ -3,7 +3,8 @@ import itertools
 from .. import _toolz as toolz
 from typing import Union
 
-from ..core import fn, Seq, Func, extract_function
+from .._fn import fn, extract_function
+from ..typing import Seq, Func
 from .basic import is_empty
 
 __all__ = ["window", "with_next", "with_prev", "zipper", "rzipper", "zip_with"]
@@ -40,7 +41,7 @@ def with_prev(seq: Seq, *, fill=None) -> Seq:
     Examples:
         >>> [''.join(p) for p in with_prev("hello!", fill="-")]
         ['-h', 'he', 'el', 'll', 'lo', 'o!']
-    
+
     See Also:
         window
         with_next
@@ -59,7 +60,7 @@ def with_next(seq: Seq, fill=None) -> Seq:
     Examples:
         >>> [''.join(p) for p in with_next("hello!", fill="!")]
         ['he', 'el', 'll', 'lo', 'o!', '!!']
-    
+
     See Also:
         window
         with_prev
@@ -106,12 +107,12 @@ def zip_aligned(*args):
 
     Examples:
         If sizes match, it is just like zip.
-        
+
         >>> zip_aligned((1, 2, 3), (4, 5, 6)) | L
         [(1, 4), (2, 5), (3, 6)]
 
         But gives an error otherwise.
-        
+
         >>> zip_aligned((1, 2, 3), (4, 5, 6, 7)) | L
         Traceback (most recent call last):
         ...

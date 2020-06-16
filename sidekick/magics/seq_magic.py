@@ -1,7 +1,8 @@
 from itertools import count
 from numbers import Real
 
-from sidekick import fn, Seq
+from .._fn import fn
+from ..typing import Seq
 
 
 class N:

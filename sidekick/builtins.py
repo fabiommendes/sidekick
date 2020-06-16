@@ -2,7 +2,8 @@ from functools import wraps as _wraps
 
 import builtins as _builtins
 
-from .core import fn, Pred, Seq, extract_function, Func
+from ._fn import fn, extract_function
+from .typing import Pred, Seq, Func
 
 _execute_with = lambda **kwargs: lambda f: f(**kwargs) or f
 _flipped = lambda f: _wraps(f)(lambda x, y: f(y, x))

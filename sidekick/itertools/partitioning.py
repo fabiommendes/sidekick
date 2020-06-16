@@ -3,7 +3,8 @@ from typing import Union
 
 from .. import _toolz as toolz
 
-from ..core import fn, Seq, Func, extract_function, Pred
+from .._fn import fn, extract_function
+from ..typing import Seq, Func, Pred
 
 not_given = object()
 __all__ = [

@@ -3,7 +3,7 @@ from contextlib import AbstractContextManager
 from typing import Iterator
 
 from .union import Union
-from ..core import extract_function, fn
+from .._fn import fn, extract_function
 from ..functools import error
 
 __all__ = [

@@ -3,7 +3,7 @@ from math import sqrt
 
 from .. import _toolz as toolz
 
-from ..core import fn, Seq, Func, Pred, extract_function
+from .._fn import fn, Seq, Func, Pred, extract_function
 
 __all__ = ["count_by", "is_distinct", "is_iterable", "has"]
 NOT_GIVEN = object()

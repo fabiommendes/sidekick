@@ -1,6 +1,6 @@
 from itertools import tee
 from sidekick.beta.misc import fill
-from ..core import fn, Func, Seq, extract_function
+from .._fn import fn, Func, Seq, extract_function
 
 __all__ = ["order_by", "transform", "transform_map"]
 

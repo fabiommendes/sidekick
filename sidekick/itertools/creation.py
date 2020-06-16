@@ -1,7 +1,8 @@
 import itertools
 
+from .._fn import fn, extract_function
 from ..magics import L, X, Y
-from ..core import fn, extract_function, Seq, Func, NOT_GIVEN
+from ..typing import Seq, Func
 
 __all__ = [
     "cycle",

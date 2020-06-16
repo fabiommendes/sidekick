@@ -1,7 +1,8 @@
 from collections import deque
 from itertools import islice
 
-from ..core import fn, Seq, T, NOT_GIVEN
+from ..typing import Seq, T, NOT_GIVEN
+from .._fn import fn
 from ..magics import L, N  # used in doctests
 
 __all__ = [

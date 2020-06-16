@@ -1,6 +1,6 @@
 from collections.abc import MutableSequence
 
-from ..core import extract_function
+from .._fn import extract_function
 
 SIGNALS = {
     "pre-setitem",

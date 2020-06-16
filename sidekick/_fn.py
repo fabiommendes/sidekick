@@ -3,7 +3,7 @@ from functools import partial
 from types import MappingProxyType as mappingproxy, FunctionType
 from typing import Any, Callable
 
-from .fn_meta import (
+from ._fn_meta import (
     FunctionMeta,
     extract_function,
     FUNCTION_ATTRIBUTES,
@@ -12,7 +12,7 @@ from .fn_meta import (
     lazy_property,
     arity,
 )
-from .placeholder import compile_ast, call_node
+from ._placeholder import compile_ast, call_node
 
 __all__ = ["fn", "as_fn", "quick_fn"]
 _new = object.__new__

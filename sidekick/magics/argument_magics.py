@@ -2,7 +2,7 @@ from itertools import repeat
 from operator import attrgetter
 
 from .base_magics import base_operator_magic
-from ..core.placeholder import call_node, Placeholder
+from .._placeholder import call_node, Placeholder
 from ..functools.functions import fmap
 
 

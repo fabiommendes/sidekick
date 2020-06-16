@@ -5,7 +5,7 @@ from typing import Iterable
 from .. import _toolz as toolz
 
 from sidekick import extract_function
-from ..core import fn, Seq, Func as Func
+from .._fn import fn, Seq, Func as Func
 
 __all__ = [
     "append",

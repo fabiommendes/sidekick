@@ -15,7 +15,7 @@ class Proxy:
         self._proxy_obj_ = obj
 
     def __repr__(self):
-        return f"{type(self).__name__}({repr(self._get_object())})"
+        return f"{type(self).__name__}({repr(self.__get_object())})"
 
     def __get_object(self):
         return self._proxy_obj_

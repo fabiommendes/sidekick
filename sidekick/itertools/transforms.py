@@ -1,6 +1,7 @@
 from operator import itemgetter
 
-from ..core import Seq, Pred, extract_function, fn
+from ..typing import Seq, Pred
+from .._fn import fn, extract_function
 
 __all__ = ["select_indexed", "select_indexes"]
 

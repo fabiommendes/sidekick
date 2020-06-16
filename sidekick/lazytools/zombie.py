@@ -1,6 +1,6 @@
 from types import MemberDescriptorType
 
-from ..core.operators import NAMES, UNARY, BINARY, COMPARISON
+from .._operators import NAMES, UNARY, BINARY, COMPARISON
 from ..functools import call
 
 ZOMBIE_CLASSES = {}

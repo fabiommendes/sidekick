@@ -7,7 +7,8 @@ from typing import Callable, TypeVar
 
 from .composition import always
 from .. import _toolz as toolz
-from ..core import Placeholder, fn, extract_function
+from .._placeholder import Placeholder
+from .._fn import fn, quick_fn, extract_function
 
 NOT_GIVEN = object()
 T = TypeVar("T")
@@ -17,7 +18,7 @@ __all__ = [
     *["call", "call_over", "do", "juxt"],  # Function calling
     *["call_after", "call_at_most", "once", "thunk", "splice"],  # Call filtering
     *["throttle", "background"],  # Runtime control
-    *["flip", "select_args", "skip_args", "keep_args"],  # Runtime control
+    *["flip", "select_args", "skip_args", "keep_args"],  # Arg control
     *["error", "ignore_error", "retry"],  # Error control
     *["force_function"],  # Misc
 ]
@@ -26,7 +27,7 @@ __all__ = [
 #
 # Function calling
 #
-def call(*args, **kwargs):
+def call(*args, **kwargs) -> fn:
     """
     Creates a function that receives another function and apply the given
     arguments.
@@ -36,7 +37,7 @@ def call(*args, **kwargs):
         >>> caller(op.add), caller(op.mul)
         (3, 2)
 
-        This function can be used as a decorator to declare self calling 
+        This function can be used as a decorator to declare self calling
         functions:
 
         >>> @call()
@@ -49,10 +50,10 @@ def call(*args, **kwargs):
         The variable ``patch_module`` will be assigned to the return value of the
         function and the function object itself will be garbage collected.
     """
-    return fn(lambda f: f(*args, **kwargs))
+    return quick_fn(lambda f: f(*args, **kwargs))
 
 
-def call_over(*args, **kwargs):
+def call_over(*args, **kwargs) -> fn:
     """
     Transforms the arguments passed to the result by the functions provided as
     arguments.
@@ -69,9 +70,9 @@ def call_over(*args, **kwargs):
     f_kwargs = {k: extract_function(v) for k, v in kwargs.items()}
     identity = lambda x: x
 
-    @fn
+    @quick_fn
     def transformed(func):
-        @fn
+        @quick_fn
         def wrapped(*args, **kwargs):
             try:
                 extra = args[len(f_args) :]
@@ -120,7 +121,7 @@ def juxt(*funcs: Callable, first=None, last=None) -> fn:
 
     Examples:
         We can create an argument logger using either first/last=True
-        
+
         >>> sqr_log = juxt(print, (X * X), last=True)
         >>> sqr_log(4)
         4
@@ -247,7 +248,7 @@ def once(func):
     """
     Creates a function that is restricted to invoking func once. Repeat calls
     to the function return the value of the first invocation.
-    
+
     Examples:
         This is useful to wrap initialization routines or singleton factories.
         >>> @once
@@ -679,7 +680,7 @@ def _(f, obj):
 
 @fmap.register(Mapping)
 def _(f, obj):
-    return ((k, f(v)) for k, v in ob1j.items())
+    return ((k, f(v)) for k, v in obj.items())
 
 
 @fmap.register(Iterable)

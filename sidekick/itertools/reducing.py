@@ -2,7 +2,8 @@ from functools import reduce as _reduce
 
 from .. import _toolz as toolz
 
-from ..core import fn, Func, Seq, extract_function, Pred
+from .._fn import fn, extract_function
+from ..typing import Func, Seq, Pred
 
 __all__ = [
     *["fold", "reduce"],  # base reducers

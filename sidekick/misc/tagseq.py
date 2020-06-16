@@ -1,7 +1,7 @@
 from collections import namedtuple
 from collections.abc import MutableSequence
 
-from ..core import extract_function
+from .._fn import extract_function
 
 tagged = namedtuple("tagged", ["value", "tag"])
 NOT_GIVEN = object()

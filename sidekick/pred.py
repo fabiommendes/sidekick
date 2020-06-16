@@ -1,4 +1,4 @@
-from .core import fn, extract_function
+from ._fn import fn, extract_function
 from .op import is_ as is_identical, eq as is_equal
 
 __all__ = [
@@ -54,7 +54,7 @@ def any_of(*predicates):
     """
     if len(predicates) == 1:
         predicates = predicates[0]
-    return fn(lambda x: any(f(x) for f in predicates))
+    return fn(lambda *args, **kwargs: any(f(*args, **kwargs) for f in predicates))
 
 
 def all_of(*predicates):
@@ -64,7 +64,7 @@ def all_of(*predicates):
     """
     if len(predicates) == 1:
         predicates = predicates[0]
-    return fn(lambda x: all(f(x) for f in predicates))
+    return fn(lambda *args, **kwargs: all(f(*args, **kwargs) for f in predicates))
 
 
 #

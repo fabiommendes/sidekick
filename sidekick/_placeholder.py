@@ -2,7 +2,7 @@ import operator
 from collections import namedtuple
 from functools import singledispatch
 
-from .operators import UNARY, BINARY, COMPARISON, METHODS, SYMBOLS, NAMES
+from ._operators import UNARY, BINARY, COMPARISON, METHODS, SYMBOLS, NAMES
 
 flip = lambda f: lambda x, y: f(y, x)
 named = lambda name, obj: setattr(obj, "__name__", name) or obj
@@ -341,4 +341,4 @@ def simplify_ast(ast):
 #
 # The placeholder symbol
 #
-placeholder = _placeholder = Placeholder(Var, var_identity)
+placeholder = _placeholder = _ = Placeholder(Var, var_identity)

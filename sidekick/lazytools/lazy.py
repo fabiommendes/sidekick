@@ -1,7 +1,7 @@
 from importlib import import_module
 
 from .deferred import Deferred
-from ..core import extract_function
+from .._fn import extract_function
 
 __all__ = ["lazy", "property", "delegate_to", "alias", "import_later"]
 _property = property

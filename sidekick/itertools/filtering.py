@@ -2,7 +2,8 @@ import itertools
 import typing
 
 from .. import _toolz as toolz
-from ..core import fn, extract_function, Func, Pred, Seq
+from .._fn import fn, extract_function
+from ..typing import Func, Pred, Seq
 from ..magics import X, L
 
 _filter = filter
@@ -63,7 +64,7 @@ def random_sample(prob: float, seq: Seq, *, random_state=None) -> Seq:
 @fn.curry(2)
 def remove(pred: Pred, seq: Seq) -> Seq:
     """
-    Opposite of filter. Return those items of sequence for which pred(item) 
+    Opposite of filter. Return those items of sequence for which pred(item)
     is False
 
     Examples:
@@ -157,7 +158,7 @@ def until_convergence(pred: Pred, seq: Seq) -> Seq:
     of sequence. If pred(penultimate, last) returns True, stop iteration.
 
     Examples:
-        We start with a converging (possibly infinite) sequence and an explicit 
+        We start with a converging (possibly infinite) sequence and an explicit
         criteria
         >>> seq = sk.iterate((X / 2), 2.0)
         >>> conv = lambda x, y: abs(x - y) < 0.01

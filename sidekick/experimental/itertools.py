@@ -2,7 +2,7 @@ import operator
 from itertools import chain, cycle, islice, tee
 
 from .._toolz import take, first
-from ..core import fn, Pred, Seq, SeqT, extract_function, NOT_GIVEN
+from .._fn import fn, Pred, Seq, SeqT, extract_function, NOT_GIVEN
 from ..itertools import uncons, unique, Func, cons, reduce
 
 

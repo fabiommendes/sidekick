@@ -1,11 +1,20 @@
 """
 A companion library that enhance your functional superpowers.
+
+Code overview:
+
+All modules starting with a leading underscore are meant to be for internal use
+and are either used internally or used to populate `sidekick.api`. Sometimes they
+contain non-public implementations of functions and types that may be later be
+exposed either by wrapping in a sidekick fn() or generator() functions or
+are re-exported from a proper location.
 """
 __author__ = "Fábio Macêdo Mendes"
-__version__ = "0.7.0"
+__version__ = "0.8.0"
 
 from . import op
-from .core import *
+from ._fn import fn
+from ._placeholder import _ as placeholder
 from .functools import *
 from .itertools import *
 from .lazytools import *

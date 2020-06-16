@@ -2,9 +2,10 @@ import operator
 
 import pytest
 
-from sidekick import placeholder as _, fn, F, record, lazy, Placeholder
-from sidekick.core.placeholder import (
+from sidekick import placeholder as _, fn, F, record, lazy
+from sidekick._placeholder import (
     simplify_ast,
+    Placeholder,
     Call,
     Cte,
     GetAttr,

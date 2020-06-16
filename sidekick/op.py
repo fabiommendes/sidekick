@@ -3,7 +3,7 @@ fn-aware functions from the builtin operator module.
 """
 import operator as op
 
-from .core import fn as _fn
+from ._fn import fn as _fn
 
 _fn3 = _fn.curry(3)
 _fn2 = _fn.curry(2)

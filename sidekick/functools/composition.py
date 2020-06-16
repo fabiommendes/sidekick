@@ -1,10 +1,11 @@
 from functools import partial as _partial
 
 from .. import _toolz as toolz
-from typing import Callable, TypeVar
+from typing import Callable, TypeVar, Any
 
-from ..core import fn, extract_function, Func
-from ..core.fn_meta import arity as _arity
+from ..typing import Func
+from .._fn import fn, quick_fn, extract_function
+from .._fn_meta import arity as _arity
 
 T = TypeVar("T")
 __all__ = [
@@ -34,7 +35,7 @@ def partial(func: Func, *args, **kwargs) -> fn:
         >>> incr(41)
         42
     """
-    return fn(_partial(extract_function(func), *args, **kwargs).__call__)
+    return quick_fn(_partial(extract_function(func), *args, **kwargs).__call__)
 
 
 def rpartial(func: Func, *args, **kwargs) -> fn:
@@ -47,7 +48,7 @@ def rpartial(func: Func, *args, **kwargs) -> fn:
         21.0
     """
     func = extract_function(func)
-    return fn(lambda *args_, **kwargs_: func(*args_, *args, **kwargs, **kwargs_))
+    return quick_fn(lambda *args_, **kwargs_: func(*args_, *args, **kwargs, **kwargs_))
 
 
 def power(func: Func, n: int) -> fn:
@@ -75,10 +76,10 @@ def power(func: Func, n: int) -> fn:
             x = func(x)
         return x
 
-    return fn(power)
+    return quick_fn(power)
 
 
-@fn
+@quick_fn
 def arity(func: Func) -> int:
     """
     Return arity of function.
@@ -122,7 +123,7 @@ def curry(n: int, func: Callable = None) -> fn:
         func: Callable = n
         return curry(arity(func), func)
     if func is None:
-        return lambda f: curry(n, f)
+        return quick_fn(lambda f: curry(n, f))
     else:
         n = arity(func) if n in (..., None) else n
         return fn.curry(n, func)
@@ -146,7 +147,7 @@ def compose(*funcs: Func) -> fn:
         pipe
         pipeline
     """
-    return fn(toolz.compose(*map(extract_function, funcs)))
+    return quick_fn(toolz.compose(*map(extract_function, funcs)).__call__)
 
 
 def pipeline(*funcs: Func) -> fn:
@@ -164,11 +165,11 @@ def pipeline(*funcs: Func) -> fn:
         pipe
         compose
     """
-    return fn(toolz.compose(*map(extract_function, reversed(funcs))))
+    return quick_fn(toolz.compose(*map(extract_function, reversed(funcs))).__call__)
 
 
 @fn
-def pipe(data, *funcs: Callable):
+def pipe(data: Any, *funcs: Callable) -> Any:
     """
     Pipe a value through a sequence of functions.
 
@@ -265,7 +266,7 @@ def identity(x: T, *args, **kwargs) -> T:
 
 # noinspection PyUnusedLocal
 @fn
-def ridentity(*args, **kwargs):
+def ridentity(*args, x: T, **kwargs) -> T:
     """
     Similar to identity, but return the last positional argument and not the
     first. In the case the function receives a single argument, both identity
@@ -274,9 +275,7 @@ def ridentity(*args, **kwargs):
     >>> ridentity(1, 2, 3)
     3
     """
-    if not args:
-        raise TypeError("must be called with at least one positional argument.")
-    return args[-1]
+    return x
 
 
 @fn
@@ -290,13 +289,13 @@ def always(x: T) -> Callable[..., T]:
         >>> f('answer', for_what='question of life, the universe ...')
         42
     """
-    return lambda *args, **kwargs: x
+    return quick_fn(lambda *args, **kwargs: x)
 
 
 @fn
-def rec(func):
+def rec(func: Callable[..., Any]) -> fn:
     """
-    Fix func as first argument as itself.
+    Fix func first argument as itself.
 
     This is a version of the Y-combinator and is useful to implement
     recursion from scratch.
@@ -305,8 +304,8 @@ def rec(func):
         In this example, the factorial receive a second argument which is the
         function it must recurse to. rec pass the function to itself so now
         the factorial only needs the usual numeric argument.
-        >>> map(rec(lambda f, n: 1 if n == 0 else n * f(f, n - 1)), 
+        >>> map(rec(lambda f, n: 1 if n == 0 else n * f(f, n - 1)),
         ...     range(10)) | L
         [1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880]
     """
-    return fn(lambda *args, **kwargs: func(func, *args, **kwargs))
+    return quick_fn(lambda *args, **kwargs: func(func, *args, **kwargs))

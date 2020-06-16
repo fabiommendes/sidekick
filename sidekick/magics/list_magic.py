@@ -3,7 +3,8 @@ from itertools import islice
 
 from .base_magics import DataMagic
 from .. import itertools
-from ..core import fn, extract_function, Seq
+from .._fn import fn, extract_function
+from ..typing import Seq
 
 
 class L(DataMagic, type=list):
