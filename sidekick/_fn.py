@@ -1,16 +1,14 @@
-import inspect
 from functools import partial
 from types import MappingProxyType as mappingproxy, FunctionType
 from typing import Any, Callable
 
+from ._fn_introspection import arity, signature, stub
 from ._fn_meta import (
     FunctionMeta,
     extract_function,
     FUNCTION_ATTRIBUTES,
     make_xor,
     mixed_accessor,
-    lazy_property,
-    arity,
 )
 from ._placeholder import compile_ast, call_node
 
@@ -67,18 +65,6 @@ class fn(metaclass=FunctionMeta):
             if value is not None:
                 setattr(fn_obj, attr, value)
         return fn_obj
-
-    @lazy_property
-    def arity(self):
-        return arity(self.func)
-
-    @lazy_property
-    def argspec(self):
-        return inspect.getfullargspec(self.func)
-
-    @lazy_property
-    def signature(self):
-        return inspect.Signature.from_callable(self.func)
 
     __wrapped__ = property(lambda self: self.func)
 
@@ -172,6 +158,15 @@ class fn(metaclass=FunctionMeta):
     #
     def __getattr__(self, attr):
         return getattr(self.func, attr)
+
+    def arity(self):
+        return arity(self.func)
+
+    def signature(self):
+        return signature(self.func)
+
+    def stub(self):
+        return stub(self.func)
 
     #
     # Partial application

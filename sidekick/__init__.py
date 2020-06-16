@@ -15,6 +15,7 @@ __version__ = "0.8.0"
 from . import op
 from ._fn import fn
 from ._placeholder import _ as placeholder
+from .functions import *
 from .functools import *
 from .itertools import *
 from .lazytools import *

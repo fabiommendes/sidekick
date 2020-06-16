@@ -1,6 +1,6 @@
-====================================
-A library for functional programming
-====================================
+======================================
+Introduction to functional programming
+======================================
 
 Functional programming, as the name implies, leans heavily towards using functions
 for solving problems. This contrasts with other approaches as, for instance,

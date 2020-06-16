@@ -5,7 +5,7 @@ from typing import Callable, TypeVar, Any
 
 from ..typing import Func
 from .._fn import fn, quick_fn, extract_function
-from .._fn_meta import arity as _arity
+from .._fn_introspection import arity
 
 T = TypeVar("T")
 __all__ = [
@@ -77,17 +77,6 @@ def power(func: Func, n: int) -> fn:
         return x
 
     return quick_fn(power)
-
-
-@quick_fn
-def arity(func: Func) -> int:
-    """
-    Return arity of function.
-
-    >>> arity(lambda x, y: x + y)
-    2
-    """
-    return _arity(func)
 
 
 def curry(n: int, func: Callable = None) -> fn:

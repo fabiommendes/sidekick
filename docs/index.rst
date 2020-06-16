@@ -45,11 +45,11 @@ Contents
 ========
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
-   functions.rst
+   intro-functions.rst
    fn.rst
-   api.rst
+   lib-functions.rst
    references.rst
    faq.rst
    license.rst

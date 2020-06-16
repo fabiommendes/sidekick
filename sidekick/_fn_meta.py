@@ -1,4 +1,3 @@
-import inspect
 from copy import copy
 
 from types import FunctionType, MethodType, BuiltinFunctionType, BuiltinMethodType
@@ -24,11 +23,12 @@ class FunctionMeta(type):
     _curry = None
 
     def __new__(mcs, name, bases, ns):
-        ns.update(
-            __doc__=lazy_property(lambda x: x.__getattr__("__doc__")),
-            __module__=lazy_property(lambda x: x.__getattr__("__module__")),
+        new = type.__new__(mcs, name, bases, ns)
+        new.__doc__ = lazy_string(lambda x: x.__getattr__("__doc__"), new.__doc__ or "")
+        new.__module__ = lazy_string(
+            lambda x: x.__getattr__("__module__"), new.__module__ or ""
         )
-        return type.__new__(mcs, name, bases, ns)
+        return new
 
     def __rshift__(self, other):
         if isinstance(other, self):
@@ -65,6 +65,19 @@ class lazy_property:
     def __get__(self, instance, cls=None):
         if instance is None:
             return self
+        return self.func(instance)
+
+
+class lazy_string(lazy_property):
+    __slots__ = "string"
+
+    def __init__(self, func, string):
+        super().__init__(func)
+        self.string = string
+
+    def __get__(self, instance, cls=None):
+        if instance is None:
+            return self.string
         return self.func(instance)
 
 
@@ -133,19 +146,6 @@ def make_xor(f, g):
             return g(*args, **kwargs)
 
     return xor
-
-
-def arity(func):
-    """
-    Return arity of a function.
-    """
-    if hasattr(func, "arity"):
-        return func.arity
-
-    spec = inspect.getfullargspec(func)
-    if spec.varargs or spec.varkw or spec.kwonlyargs:
-        raise TypeError("cannot curry a variadic function")
-    return len(spec.args)
 
 
 # noinspection PyProtectedMember

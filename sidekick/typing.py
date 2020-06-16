@@ -1,4 +1,5 @@
 import typing as _typ
+from typing import *
 
 # Types
 Func = _typ.Union[_typ.Callable, type(None)]

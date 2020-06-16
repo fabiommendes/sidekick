@@ -7,10 +7,6 @@ call them. Sidekick functions extends standard Python's functions interfaces
 with a few useful methods and operators.
 
 .. module:: sidekick
-.. invisible-code-block:: python
-
-    from sidekick.all import sk, fn, op, L, N
-
 
 Function operators
 ==================
@@ -22,6 +18,7 @@ Bitwise shift (``>>`` and ``<<``) are re-signified as function composition
 operators. The argument flows through the composed function in the same
 direction that bit shift points to:
 
+>>> from sidekick.all import *
 >>> from sidekick.math import abs, sqrt
 >>> safe_sqrt = abs >> sqrt  # same as lambda x: sqrt(abs(x))
 >>> safe_sqrt(-4)
@@ -135,15 +132,14 @@ The wrapped function is accessible
 >>> add.__wrapped__                                         # doctest: +ELLIPSIS
 <function add at ...>
 
->>> add.arity
+>>> add.arity()
 2
 
->>> add.argspec
-FullArgSpec(args=['x', 'y'], varargs=None, varkw=None, defaults=None, kwonlyargs=[], kwonlydefaults=None, annotations={})
-
-
->>> add.signature
+>>> add.signature()
 <Signature (x, y)>
+
+>>> print(add.stub())
+def add(x, y): ...
 
 
 Methods

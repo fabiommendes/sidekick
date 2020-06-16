@@ -2,20 +2,25 @@ from invoke import task
 
 
 @task
-def test(ctx):
+def test(ctx, all=False):
     """
     Run tests.
     """
-    ctx.run("pytest tests/")
+    if all:
+        ctx.run("cd docs && make doctest")
+    ctx.run("pytest tests/", pty=True)
 
 
 @task
-def docs(ctx, strict=False):
+def docs(ctx, strict=False, auto=False):
     """
     Build documentation.
     """
     suffix = " -W" if strict else ""
-    ctx.run("sphinx-build docs/ build/docs/ -n" + suffix)
+    if auto:
+        ctx.run("sphinx-autobuild docs/ build/docs/ -n" + suffix, pty=True)
+    else:
+        ctx.run("sphinx-build docs/ build/docs/ -n" + suffix, pty=True)
 
 
 @task
