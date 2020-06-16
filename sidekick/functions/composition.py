@@ -1,126 +1,11 @@
-from functools import partial as _partial
+from typing import Callable, Any
 
-from .. import _toolz as toolz
-from typing import Callable, TypeVar, Any
-
-from ..typing import Func
 from .._fn import fn, quick_fn, extract_function
-from .._fn_introspection import arity
-
-T = TypeVar("T")
-__all__ = [
-    *["arity", "curry", "partial", "rpartial"],  # Partial application
-    *["compose", "pipe", "pipeline", "thread", "rthread"],  # Composition
-    *["identity", "ridentity", "always", "rec"],  # Combinators
-]
+from .._toolz import compose as _compose
+from ..typing import Func
 
 
-#
-# Partial application
-#
-def partial(func: Func, *args, **kwargs) -> fn:
-    """
-    Return a new function that partially apply the given arguments and
-    keywords.
-
-    Args:
-        func:
-            Function or func-like object.
-        *args, **kwargs:
-            Arbitrary positional and keyword arguments partially applied to the
-            function.
-
-    Examples:
-        >>> incr =  partial(lambda x, y: x + y, 1)
-        >>> incr(41)
-        42
-    """
-    return quick_fn(_partial(extract_function(func), *args, **kwargs).__call__)
-
-
-def rpartial(func: Func, *args, **kwargs) -> fn:
-    """
-    Partially apply arguments from the right.
-
-    Examples:
-        >>> half = rpartial(lambda x, y: x / y, 2)
-        >>> half(42)
-        21.0
-    """
-    func = extract_function(func)
-    return quick_fn(lambda *args_, **kwargs_: func(*args_, *args, **kwargs, **kwargs_))
-
-
-def power(func: Func, n: int) -> fn:
-    """
-    Return a function that applies f to is argument n times.
-
-        power(f, n)(x) ==> f(f(...f(x)))  # apply f n times.
-
-    Examples:
-        >>> g = power(lambda x: 2 * x, 3)
-        >>> g(10)
-        80
-    """
-    if n == 0:
-        return fn(lambda x: x)
-    elif n == 1:
-        return fn(func)
-    elif n < 0:
-        raise TypeError("cannot invert function")
-
-    func = extract_function(func)
-
-    def power(x):
-        for _ in range(n):
-            x = func(x)
-        return x
-
-    return quick_fn(power)
-
-
-def curry(n: int, func: Callable = None) -> fn:
-    """
-    Return the curried version of a function.
-
-    Curried functions return partial applications of the function if called with
-    missing arguments:
-
-    >>> @curry(2)
-    ... def add(x, y):
-    ...     return x + y
-
-    We can call a function two ways:
-
-    >>> add(1, 2) == add(1)(2)
-    True
-
-    This is useful for building simple functions from partial application
-
-    >>> inc = add(1)
-    >>> inc(2)
-    3
-
-    Sidekick curries most functions where it makes sense. Variadic functions
-    cannot be curried if the extra arguments can be passed by position. This
-    decorator inspect the decorated function to determine if it can be curried
-    or not.
-    """
-
-    # Decorator forms
-    if callable(n):
-        func: Callable = n
-        return curry(arity(func), func)
-    if func is None:
-        return quick_fn(lambda f: curry(n, f))
-    else:
-        n = arity(func) if n in (..., None) else n
-        return fn.curry(n, func)
-
-
-#
-# Function composition and pipelines
-#
+@fn
 def compose(*funcs: Func) -> fn:
     """
     Create function that apply argument from right to left.
@@ -133,12 +18,13 @@ def compose(*funcs: Func) -> fn:
         5
 
     See Also:
-        pipe
-        pipeline
+        :func:`pipe`
+        :func:`pipeline`
     """
-    return quick_fn(toolz.compose(*map(extract_function, funcs)).__call__)
+    return quick_fn(_compose(*map(extract_function, funcs)).__call__)
 
 
+@fn
 def pipeline(*funcs: Func) -> fn:
     """
     Similar to compose, but order of application is reversed, i.e.:
@@ -151,10 +37,10 @@ def pipeline(*funcs: Func) -> fn:
         6
 
     See Also:
-        pipe
-        compose
+        :func:`pipe`
+        :func:`compose`
     """
-    return quick_fn(toolz.compose(*map(extract_function, reversed(funcs))).__call__)
+    return quick_fn(_compose(*map(extract_function, reversed(funcs))).__call__)
 
 
 @fn
@@ -171,10 +57,10 @@ def pipe(data: Any, *funcs: Callable) -> Any:
         2.0
 
     See Also:
-        pipeline
-        compose
-        thread
-        rthread
+        :func:`pipeline`
+        :func:`compose`
+        :func:`thread`
+        :func:`rthread`
     """
     if funcs:
         for func in funcs:
@@ -184,6 +70,7 @@ def pipe(data: Any, *funcs: Callable) -> Any:
         return lambda *args: pipe(data, *args)
 
 
+@fn
 def thread(data, *forms):
     """
     Similar to pipe, but accept extra arguments to each function in the
@@ -197,8 +84,8 @@ def thread(data, *forms):
         42.0
 
     See Also:
-        pipe
-        rthread
+        :func:`pipe`
+        :func:`rthread`
     """
     for form in forms:
         if isinstance(form, tuple):
@@ -210,6 +97,7 @@ def thread(data, *forms):
     return data
 
 
+@fn
 def rthread(data, *forms):
     """
     Like thread, but data is passed as last argument to functions,
@@ -220,8 +108,8 @@ def rthread(data, *forms):
         42.0
 
     See Also:
-        pipe
-        thread
+        :func:`pipe`
+        :func:`thread`
     """
     for form in forms:
         if isinstance(form, tuple):
@@ -231,70 +119,3 @@ def rthread(data, *forms):
             args = ()
         data = func(*args, data)
     return data
-
-
-#
-# Classical functions and combinators
-#
-# noinspection PyUnusedLocal
-@fn
-def identity(x: T, *args, **kwargs) -> T:
-    """
-    The identity function.
-
-    Return its first argument unchanged.
-
-    Examples:
-        Identity accepts one or more positional arguments and any number of
-        keyword arguments.
-        >>> identity(1, 2, 3, foo=4)
-        1
-    """
-    return x
-
-
-# noinspection PyUnusedLocal
-@fn
-def ridentity(*args, x: T, **kwargs) -> T:
-    """
-    Similar to identity, but return the last positional argument and not the
-    first. In the case the function receives a single argument, both identity
-    functions coincide.
-
-    >>> ridentity(1, 2, 3)
-    3
-    """
-    return x
-
-
-@fn
-def always(x: T) -> Callable[..., T]:
-    """
-    Return a function that always return x when called with any number of
-    arguments.
-
-    Examples:
-        >>> f = always(42)
-        >>> f('answer', for_what='question of life, the universe ...')
-        42
-    """
-    return quick_fn(lambda *args, **kwargs: x)
-
-
-@fn
-def rec(func: Callable[..., Any]) -> fn:
-    """
-    Fix func first argument as itself.
-
-    This is a version of the Y-combinator and is useful to implement
-    recursion from scratch.
-
-    Examples:
-        In this example, the factorial receive a second argument which is the
-        function it must recurse to. rec pass the function to itself so now
-        the factorial only needs the usual numeric argument.
-        >>> map(rec(lambda f, n: 1 if n == 0 else n * f(f, n - 1)),
-        ...     range(10)) | L
-        [1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880]
-    """
-    return quick_fn(lambda *args, **kwargs: func(func, *args, **kwargs))

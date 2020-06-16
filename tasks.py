@@ -12,11 +12,13 @@ def test(ctx, all=False):
 
 
 @task
-def docs(ctx, strict=False, auto=False):
+def docs(ctx, clear=False, strict=False, auto=False):
     """
     Build documentation.
     """
     suffix = " -W" if strict else ""
+    if clear:
+        ctx.run("rm -rf build/docs/")
     if auto:
         ctx.run("sphinx-autobuild docs/ build/docs/ -n" + suffix, pty=True)
     else:

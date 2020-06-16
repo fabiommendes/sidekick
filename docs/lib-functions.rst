@@ -38,8 +38,40 @@ Function introspection
    stub
 
 
+Partial application
+-------------------
+
+.. autosummary::
+   curry
+   partial
+   rpartial
+
+
+Composition
+-----------
+
+.. autosummary::
+   compose
+   pipe
+   pipeline
+   thread
+   rthread
+
+
+Combinators
+-----------
+
+.. autosummary::
+   identity
+   ridentity
+   always
+   rec
+
+
+
 API reference
 =============
 
 .. automodule:: sidekick.functions
    :members:
+   :inherited-members:

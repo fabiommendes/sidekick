@@ -1,14 +1,13 @@
 import time
+import types
 from collections.abc import Iterable, Mapping
 from functools import wraps, singledispatch
-
-import types
 from typing import Callable, TypeVar
 
-from .composition import always
+from sidekick.functions.combinators import always
 from .. import _toolz as toolz
-from .._placeholder import Placeholder
 from .._fn import fn, quick_fn, extract_function
+from .._placeholder import Placeholder
 
 NOT_GIVEN = object()
 T = TypeVar("T")
@@ -18,8 +17,8 @@ __all__ = [
     *["call", "call_over", "do", "juxt"],  # Function calling
     *["call_after", "call_at_most", "once", "thunk", "splice"],  # Call filtering
     *["throttle", "background"],  # Runtime control
-    *["flip", "select_args", "skip_args", "keep_args"],  # Arg control
     *["error", "ignore_error", "retry"],  # Error control
+    *["flip", "select_args", "skip_args", "keep_args"],  # Arg control
     *["force_function"],  # Misc
 ]
 
@@ -260,23 +259,7 @@ def once(func):
         {'status': 'ok'}
     """
 
-    # We create the local binding without initializing the variable. We chose
-    # this approach instead of initializing with a "not_given" value, since the
-    # common path of returning the pre-computed result of func() can be
-    # executed faster inside a try/except block
-    if False:
-        result = None
-
-    @wraps(func)
-    def limited(*args, **kwargs):
-        nonlocal result
-        try:
-            return result
-        except NameError:
-            result = func(*args, **kwargs)
-            return result
-
-    return limited
+    return thunk()(func)
 
 
 def thunk(*args, **kwargs):
@@ -298,10 +281,15 @@ def thunk(*args, **kwargs):
         >>> db()
         {'host': 'localhost', 'port': 5432}
     """
-    if False:
-        result = None
 
-    def decorator(func):
+    def decorator(func, has_result=False):
+        # We create the local binding without initializing the variable. We chose
+        # this approach instead of initializing with a "not_given" value, since the
+        # common path of returning the pre-computed result of func() can be
+        # executed faster inside a try/except block
+        if has_result:
+            result = None
+
         @wraps(func)
         def limited():
             nonlocal result

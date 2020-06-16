@@ -1,23 +1,14 @@
 import functools as _functools
 
-from .composition import *
-from .functions import *
-from .dispatch import lazy_singledispatch
-from .._fn import fn as _fn
-from . import composition as _composition
-from . import functions as _functions
 from . import dispatch as _dispatch
+from . import functions as _functions
+from .dispatch import lazy_singledispatch
+from .functions import *
+from .._fn import fn as _fn
+from .._modules import GetAttrModule, module_class
 
 __all__ = sorted(
-    [
-        "lru_cache",
-        "args",
-        "kwargs",
-        "lazy_singledispatch",
-        *_composition.__all__,
-        *_composition.__all__,
-        *_functions.__all__,
-    ]
+    ["lru_cache", "args", "kwargs", "lazy_singledispatch", *_functions.__all__]
 )
 
 #: Alias to functools lru_cache function.
