@@ -1,7 +1,7 @@
 from typing import Callable, Any
 
 from .._fn import fn, quick_fn, extract_function
-from .._toolz import compose as _compose
+from .._toolz import compose as _compose, juxt as _juxt
 from ..typing import Func
 
 
@@ -184,6 +184,64 @@ def rthread_if(data, *forms):
             except Exception as ex:
                 raise _thread_error(ex, func, (*args, data)) from ex
     return data
+
+
+@fn
+def juxt(*funcs: Callable, first=None, last=None) -> fn:
+    """
+    Juxtapose several functions.
+
+    Creates a function that calls several functions with the same arguments and
+    return a tuple with all results.
+
+    It return a tuple with the results of calling each function.
+    If last=True or first=True, return the result of the last/first call instead
+    of a tuple with all the elements.
+
+    Examples:
+        We can create an argument logger using either first/last=True
+
+        >>> sqr_log = juxt(print, (X * X), last=True)
+        >>> sqr_log(4)
+        4
+        16
+
+        Consume a sequence
+
+        >>> pairs = sk.juxt(next, next)
+        >>> sk.map(pairs, iter(range(10)))
+        sk.iter([(0, 1), (2, 3), (4, 5)])
+    """
+    funcs = (extract_function(f) for f in funcs)
+
+    if first is True:
+        result_func, *funcs = funcs
+        if not funcs:
+            return fn(result_func)
+        funcs = tuple(funcs)
+
+        def juxt_first(*args, **kwargs):
+            result = result_func(*args, **kwargs)
+            for func in funcs:
+                func(*args, **kwargs)
+            return result
+
+        return fn(juxt_first)
+
+    if last is True:
+        *funcs, result_func = funcs
+        if not funcs:
+            return fn(result_func)
+        funcs = tuple(funcs)
+
+        def juxt_last(*args, **kwargs):
+            for func in funcs:
+                func(*args, **kwargs)
+            return result_func(*args, **kwargs)
+
+        return fn(juxt_last)
+
+    return fn(_juxt(*funcs))
 
 
 def _thread_error(ex, func, args):

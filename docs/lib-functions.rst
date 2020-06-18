@@ -58,6 +58,7 @@ Composition
    rthread
    thread_if
    rthread_if
+   juxt
 
 
 Combinators

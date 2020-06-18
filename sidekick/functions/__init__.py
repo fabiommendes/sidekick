@@ -14,6 +14,7 @@ if TYPE_CHECKING:
         rthread,
         thread_if,
         rthread_if,
+        juxt,
     )
     from .combinators import identity, ridentity, always, rec, power
 
@@ -39,6 +40,7 @@ __all__ = [
     "rthread",
     "thread_if",
     "rthread_if",
+    "juxt",
     # Combinators
     "identity",
     "ridentity",

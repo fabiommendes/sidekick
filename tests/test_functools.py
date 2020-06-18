@@ -46,8 +46,3 @@ class TestLibFunctions:
         assert type(inc_f) is FunctionType
         assert inc_f.__name__ == "inc"
         assert force_function(inc).__name__ == "Inc"
-
-    def test_juxt(self):
-        f = juxt(_, 2 * _, 3 * _)
-        assert f(1) == (1, 2, 3)
-        assert f(2) == (2, 4, 6)

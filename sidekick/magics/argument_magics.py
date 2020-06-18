@@ -25,6 +25,10 @@ make_rop = lambda op: lambda _, value: lambda x: op(value, x)
 
 
 class X(base_operator_magic(make_op, make_rop, bitwise=False)):
+    @property
+    def __inner_function__(self):
+        return lambda x: x
+
     def __repr__(self):
         return "X"
 
@@ -33,9 +37,6 @@ class X(base_operator_magic(make_op, make_rop, bitwise=False)):
 
     def __getattr__(self, attr):
         return attrgetter(attr)
-
-    # attr = staticmethod(op.attrgetter)
-    # method = staticmethod(op.methodcaller)
 
 
 del make_op, make_rop

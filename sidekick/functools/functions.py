@@ -14,7 +14,7 @@ T = TypeVar("T")
 S = TypeVar("S")
 
 __all__ = [
-    *["call", "call_over", "do", "juxt"],  # Function calling
+    *["call", "call_over", "do"],  # Function calling
     *["call_after", "call_at_most", "once", "thunk", "splice"],  # Call filtering
     *["throttle", "background"],  # Runtime control
     *["error", "ignore_error", "retry"],  # Error control
@@ -108,61 +108,6 @@ def do(func, x, *args, **kwargs):
     """
     func(x, *args, **kwargs)
     return x
-
-
-def juxt(*funcs: Callable, first=None, last=None) -> fn:
-    """
-    Creates a function that calls several functions with the same arguments.
-
-    It return a tuple with the results of calling each function.
-    If last=True or first=True, return the result of the last/first call instead
-    of a tuple with all the elements.
-
-    Examples:
-        We can create an argument logger using either first/last=True
-
-        >>> sqr_log = juxt(print, (X * X), last=True)
-        >>> sqr_log(4)
-        4
-        16
-
-        Consume a sequence
-
-        >>> seq = iter(range(10))
-        >>> next_pair = juxt(next, next)
-        >>> [next_pair(seq), next_pair(seq), next_pair(seq)]
-        [(0, 1), (2, 3), (4, 5)]
-    """
-    funcs = (extract_function(f) for f in funcs)
-
-    if first is True:
-        result_func, *funcs = funcs
-        if not funcs:
-            return fn(result_func)
-        funcs = tuple(funcs)
-
-        def juxt_first(*args, **kwargs):
-            result = result_func(*args, **kwargs)
-            for func in funcs:
-                func(*args, **kwargs)
-            return result
-
-        return fn(juxt_first)
-
-    if last is True:
-        *funcs, result_func = funcs
-        if not funcs:
-            return fn(result_func)
-        funcs = tuple(funcs)
-
-        def juxt_last(*args, **kwargs):
-            for func in funcs:
-                func(*args, **kwargs)
-            return result_func(*args, **kwargs)
-
-        return fn(juxt_last)
-
-    return fn(toolz.juxt(*funcs))
 
 
 #

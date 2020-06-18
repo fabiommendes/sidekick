@@ -10,3 +10,6 @@ S = _typ.TypeVar("S")
 R = _typ.TypeVar("R")
 SeqT = Seq[T]
 NOT_GIVEN = type("NOT_GIVEN", (), {"__repr__": lambda self: "NOT_GIVEN"})()
+
+#: Anything that can go into an isinstance check.
+TypeCheck = Union[type, Tuple[type, ...]]

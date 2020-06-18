@@ -74,6 +74,17 @@ class TestComposition:
     def test_rthread(self):
         assert sk.rthread(20, (op.truediv, 2), (op.add, 2)) == 2.1
 
+    def test_thread_if(self):
+        assert sk.thread_if(20, (0, op.truediv, 2), (1, op.sub, 2)) == 18
+
+    def test_rthread_if(self):
+        assert sk.rthread_if(20, (0, op.truediv, 2), (1, op.sub, 2)) == -18
+
+    def test_juxt(self):
+        f = sk.juxt(X, 2 * X, 3 * X)
+        assert f(1) == (1, 2, 3)
+        assert f(2) == (2, 4, 6)
+
 
 class TestPartialApplication:
     def test_partial(self):
