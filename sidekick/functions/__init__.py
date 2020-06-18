@@ -16,7 +16,7 @@ if TYPE_CHECKING:
         rthread_if,
         juxt,
     )
-    from .combinators import identity, ridentity, always, rec, power
+    from .combinators import identity, ridentity, always, rec, power, trampoline
 
 module_class(__name__, LazyPackage)
 
@@ -47,6 +47,7 @@ __all__ = [
     "always",
     "rec",
     "power",
+    "trampoline",
 ]
 
 Stub = _introspection.Stub

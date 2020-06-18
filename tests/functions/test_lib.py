@@ -53,6 +53,14 @@ class TestCombinators:
         assert sk.power(f, 2)(3) == 12
         assert sk.power(f, 3)(3) == 24
 
+    def test_trampoline(self):
+        @sk.trampoline
+        def fat(n, acc=1):
+            if n > 0:
+                return n - 1, acc * n
+            else:
+                raise StopIteration(acc)
+
 
 class TestComposition:
     def test_compose(self):

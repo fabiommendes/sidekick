@@ -1,6 +1,6 @@
 from functools import partial
 from types import MappingProxyType as mappingproxy, FunctionType
-from typing import Any, Callable
+from typing import Any, Callable, Union
 
 from ._fn_introspection import arity, signature, stub
 from ._fn_meta import (
@@ -40,7 +40,7 @@ class fn(metaclass=FunctionMeta):
         return fn.curry(n, self.func)
 
     @curry.classmethod
-    def curry(cls, arity, func=None, **kwargs):
+    def curry(cls, arity, func=None, **kwargs) -> Union["Curried", callable]:
         """
         Return a curried function with given arity.
         """

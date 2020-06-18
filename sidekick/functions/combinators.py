@@ -1,7 +1,8 @@
+from functools import wraps
 from typing import Callable, Any
 
 from .._fn import fn, quick_fn, extract_function
-from ..typing import Func, T
+from ..typing import Func, T, Tuple
 
 
 @fn
@@ -75,6 +76,41 @@ def rec(func: Callable[..., Any]) -> fn:
         [1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880]
     """
     return quick_fn(lambda *args, **kwargs: func(func, *args, **kwargs))
+
+
+@fn
+def trampoline(func: Callable[..., tuple]) -> Callable[..., Any]:
+    """
+    Decorator that implements tail recursion via the trampoline technique.
+
+    Trampoline functions accept
+
+    Args:
+        func:
+            A function that returns (ret, *args) in which ret is True if function
+            should return and False if it should recurse. The function recurse
+            by passing the results args and keyword arguments to func.
+
+    Examples:
+        >>> @trampoline
+        ... def fat(n, acc=1):
+        ...     if n > 0:
+        ...         return n - 1, acc * n
+        ...     else:
+        ...         raise StopIteration(acc)
+        >>> fat(5)
+        120
+    """
+
+    @wraps(func)
+    def function(*args, **kwargs):
+        try:
+            while True:
+                args = func(*args, **kwargs)
+        except StopIteration as ex:
+            return ex.args[0]
+
+    return function
 
 
 def power(func: Func, n: int) -> fn:

@@ -13,7 +13,7 @@ __author__ = "Fábio Macêdo Mendes"
 __version__ = "0.8.0"
 
 from . import op
-from ._fn import fn
+from ._fn import fn, extract_function
 from ._placeholder import _ as placeholder
 from .functions import *
 from .functools import *
