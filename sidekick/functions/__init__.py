@@ -6,7 +6,15 @@ from ..typing import TYPE_CHECKING
 # This modules are lazy loaded to improve efficiency
 if TYPE_CHECKING:
     from .partial_application import partial, rpartial, curry
-    from .composition import compose, pipe, pipeline, thread, rthread
+    from .composition import (
+        compose,
+        pipe,
+        pipeline,
+        thread,
+        rthread,
+        thread_if,
+        rthread_if,
+    )
     from .combinators import identity, ridentity, always, rec, power
 
 module_class(__name__, LazyPackage)
@@ -29,6 +37,8 @@ __all__ = [
     "pipeline",
     "thread",
     "rthread",
+    "thread_if",
+    "rthread_if",
     # Combinators
     "identity",
     "ridentity",

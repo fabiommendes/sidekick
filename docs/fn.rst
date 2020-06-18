@@ -65,25 +65,25 @@ f returns a "falsy" value like Python's ``or`` operator.
 Logical composition of predicate functions is specially useful in methods such
 as filter, take_while, etc, that receive predicates.
 
->>> from sidekick.pred import divisible_by
->>> filter(divisible_by(3) | divisible_by(2), range(10)) | L
+>>> from sidekick.pred import is_divisible_by
+>>> filter(is_divisible_by(3) | is_divisible_by(2), range(10)) | L
 [0, 2, 3, 4, 6, 8, 9]
 
 The pipe operator ``|`` represents the standard or, while ``^`` is interpreted
 as exclusive or.
 
->>> filter(divisible_by(3) ^ divisible_by(2), range(10)) | L
+>>> filter(is_divisible_by(3) ^ is_divisible_by(2), range(10)) | L
 [2, 3, 4, 8, 9]
 
 
 The ``&`` stands for logical conjunction (the AND operation) and ``!`` for
 negation:
 
->>> divisible_by_10 = divisible_by(2) & divisible_by(5)
+>>> divisible_by_10 = is_divisible_by(2) & is_divisible_by(5)
 >>> divisible_by_10(5), divisible_by_10(100)
 (False, True)
 
->>> odd = ~divisible_by(2)
+>>> odd = ~is_divisible_by(2)
 >>> odd(2), odd(3)
 (False, True)
 

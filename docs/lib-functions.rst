@@ -56,6 +56,8 @@ Composition
    pipeline
    thread
    rthread
+   thread_if
+   rthread_if
 
 
 Combinators

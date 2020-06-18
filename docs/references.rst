@@ -35,9 +35,11 @@ Other influential libraries and programming languages
 =====================================================
 
 - Clojure_: A functional language whose standard library has several counterparts in ``sidekick``.
+- Elixir_: A functional language inspired both in Ruby and in Erlang
 - `Underscore.js`_: A very popular FP library for JavaScript
 
 .. _Clojure: http://clojure.org
+.. _Elixir: https://hexdocs.pm/elixir/
 .. _Underscore.js: http://underscorejs.org
 
 

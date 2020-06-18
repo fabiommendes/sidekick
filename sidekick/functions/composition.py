@@ -119,3 +119,75 @@ def rthread(data, *forms):
             args = ()
         data = func(*args, data)
     return data
+
+
+@fn
+def thread_if(data, *forms):
+    """
+    Similar to thread, but each form must be a tuple with (test, fn, *args)
+    and only pass the argument to fn if the boolean test is True.
+
+    If test is callable, the current value to the callable to decide if fn must
+    be executed or not.
+
+    Like thread, Arguments are passed as tuples and the value is passed as the
+    first argument.
+
+    Examples:
+        >>> thread_if(20, (True, op.div, 2), (False, op.mul, 4), (is_even, op.add, 2))
+        12.0
+
+    See Also:
+        :func:`thread`
+        :func:`rthread_if`
+    """
+    for i, form in enumerate(forms, 1):
+        do_it, func, *args = form
+        if callable(do_it):
+            do_it = do_it(data)
+        if do_it:
+            try:
+                data = func(data, *args)
+            except Exception as ex:
+                raise _thread_error(ex, func, (data, *args)) from ex
+
+    return data
+
+
+@fn
+def rthread_if(data, *forms):
+    """
+    Similar to rthread, but each form must be a tuple with (test, fn, *args)
+    and only pass the argument to fn if the boolean test is True.
+
+    If test is callable, the current value to the callable to decide if fn must
+    be executed or not.
+
+    Like rthread, Arguments are passed as tuples and the value is passed as the
+    last argument.
+
+    Examples:
+        >>> rthread_if(20, (True, op.div, 2), (False, op.mul, 4), (is_even, op.add, 2))
+        0.1
+
+    See Also:
+        :func:`thread`
+        :func:`rthread_if`
+    """
+    for form in forms:
+        do_it, func, *args = form
+        if callable(do_it):
+            do_it = do_it(data)
+        if do_it:
+            try:
+                data = func(*args, data)
+            except Exception as ex:
+                raise _thread_error(ex, func, (*args, data)) from ex
+    return data
+
+
+def _thread_error(ex, func, args):
+    args = ", ".join(map(repr, args))
+    name = getattr(func, "__name__")
+    msg = f"raised at {name}({args})" f"{type(ex).__name__}: {ex}"
+    return ValueError(msg)
