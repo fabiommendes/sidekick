@@ -1,9 +1,11 @@
 import operator as op
+import time
 from inspect import Signature
 
 from sympy.utilities import pytest
 
 import sidekick.api as sk
+from sidekick import Nothing, Just
 from sidekick.api import X
 
 
@@ -121,3 +123,65 @@ class TestPartialApplication:
     def test_curry_detects_variadic_functions(self):
         with pytest.raises(TypeError):
             sk.curry(..., lambda *args: args)
+
+
+class TestRuntime:
+    def test_once(self):
+        lst = [1, 2, 3]
+        fn = sk.once(lst.pop)
+        assert fn(0) == 1
+        assert fn(-1) == 1
+        assert lst == [2, 3]
+
+    def test_thunk(self):
+        lst = [1, 2, 3]
+        fn = sk.thunk(0)(lst.pop)
+        assert fn() == 1
+        assert fn() == 1
+        assert lst == [2, 3]
+
+    def test_call_after(self):
+        lst = [1, 2, 3]
+        fn = sk.call_after(2)(lst.pop)
+        assert fn() is None
+        assert fn() is None
+        assert fn() == 3
+        assert lst == [1, 2]
+
+    def test_call_at_most(self):
+        lst = [1, 2, 3]
+        fn = sk.call_at_most(len(lst))(lst.pop)
+        assert fn(0) == 1
+        assert fn() == 3
+        assert fn(0) == 2
+        assert fn() == 2
+        assert lst == []
+
+    def test_background(self):
+        # Compute values
+        f = sk.background(lambda x: x * x)
+        res = f(10)
+        assert callable(res)
+        assert res() == 100
+        assert res.maybe() == Just(100)
+
+        # Is non-blocking
+        g = sk.background(time.sleep)
+        t0 = time.time()
+        g(1)
+        assert time.time() - t0 < 0.1
+
+        # Timeout works
+        g = sk.background(time.sleep, timeout=0.01)
+        res = g(1)
+        with pytest.raises(TimeoutError):
+            res()
+        assert res.maybe() is Nothing
+
+    def test_throttle(self):
+        f = sk.throttle(0.01, lambda x: x * x)
+        assert (f(2), f(3), f(4)) == (4, 4, 4)
+
+        time.sleep(0.0125)
+        assert f(3) == 9
+        assert f(4) == 9

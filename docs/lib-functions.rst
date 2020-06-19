@@ -71,6 +71,17 @@ Combinators
    rec
 
 
+Runtime control
+---------------
+
+.. autosummary::
+   once
+   thunk
+   call_after
+   call_at_most
+   throttle
+   background
+
 
 API reference
 =============

@@ -1,22 +1,20 @@
 from .. import _fn_introspection as _introspection
 from .._fn import fn
 from .._modules import module_class, LazyPackage
-from ..typing import TYPE_CHECKING
 
-# This modules are lazy loaded to improve efficiency
-if TYPE_CHECKING:
-    from .partial_application import partial, rpartial, curry
-    from .composition import (
-        compose,
-        pipe,
-        pipeline,
-        thread,
-        rthread,
-        thread_if,
-        rthread_if,
-        juxt,
-    )
-    from .combinators import identity, ridentity, always, rec, power, trampoline
+from .partial_application import partial, rpartial, curry
+from .composition import (
+    compose,
+    pipe,
+    pipeline,
+    thread,
+    rthread,
+    thread_if,
+    rthread_if,
+    juxt,
+)
+from .combinators import identity, ridentity, always, rec, power, trampoline
+from .runtime import once, thunk, call_after, call_at_most, throttle, background
 
 module_class(__name__, LazyPackage)
 
@@ -48,6 +46,13 @@ __all__ = [
     "rec",
     "power",
     "trampoline",
+    # Runtime control
+    "once",
+    "thunk",
+    "call_after",
+    "call_at_most",
+    "throttle",
+    "background",
 ]
 
 Stub = _introspection.Stub

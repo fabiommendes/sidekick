@@ -1,13 +1,14 @@
 import time
 import types
 from collections.abc import Iterable, Mapping
-from functools import wraps, singledispatch
+from functools import singledispatch
 from typing import Callable, TypeVar
 
 from sidekick.functions.combinators import always
 from .. import _toolz as toolz
 from .._fn import fn, quick_fn, extract_function
 from .._placeholder import Placeholder
+from ..functions import once
 
 NOT_GIVEN = object()
 T = TypeVar("T")
@@ -15,8 +16,7 @@ S = TypeVar("S")
 
 __all__ = [
     *["call", "call_over", "do"],  # Function calling
-    *["call_after", "call_at_most", "once", "thunk", "splice"],  # Call filtering
-    *["throttle", "background"],  # Runtime control
+    *["splice"],  # Call filtering
     *["error", "ignore_error", "retry"],  # Error control
     *["flip", "select_args", "skip_args", "keep_args"],  # Arg control
     *["force_function"],  # Misc
@@ -113,142 +113,6 @@ def do(func, x, *args, **kwargs):
 #
 # Call filtering
 #
-@fn.curry(2)
-def call_after(n, func, *, default=None):
-    """
-    Creates a function that invokes func once it's called more than n times.
-
-    Args:
-        n:
-            Number of times before starting invoking n.
-        func:
-            Function to be invoked.
-        result:
-            Value returned func() starts being called.
-
-    Example:
-        >>> f = call_after(2, (X * 2), default=0)
-        >>> [f(1), f(2), f(3), f(4), ...]
-        [0, 0, 6, 8, ...]
-    """
-
-    @fn.wraps(func)
-    def after(*args, **kwargs):
-        nonlocal n
-        if n == 0:
-            return func(*args, **kwargs)
-        else:
-            n -= 1
-            return default
-
-    return after
-
-
-@fn.curry(2)
-def call_at_most(n, func):
-    """
-    Creates a function that invokes func while it's called less than n times.
-    Subsequent calls to the created function return the result of the last
-    func invocation.
-
-    Args:
-        n:
-            The number of calls at which func is no longer invoked.
-        func:
-            Function to restrict.
-
-    Examples:
-        >>> log = call_at_most(2, print)
-        >>> [log('error1'), log('error2'), log('error3'), ...]
-        error1
-        error2
-        [None, None, None, ...]
-
-    See Also:
-        once
-        call_after
-    """
-
-    if n <= 0:
-        raise ValueError("n must be positive")
-
-    result = None
-
-    @fn.wraps(func)
-    def at_most(*args, **kwargs):
-        nonlocal n, result
-        if n == 0:
-            return result
-        else:
-            n -= 1
-            result = func(*args, **kwargs)
-            return result
-
-    return at_most
-
-
-@fn
-def once(func):
-    """
-    Creates a function that is restricted to invoking func once. Repeat calls
-    to the function return the value of the first invocation.
-
-    Examples:
-        This is useful to wrap initialization routines or singleton factories.
-        >>> @once
-        ... def configure():
-        ...     print('setting up...')
-        ...     return {'status': 'ok'}
-        >>> configure()
-        setting up...
-        {'status': 'ok'}
-    """
-
-    return thunk()(func)
-
-
-def thunk(*args, **kwargs):
-    """
-    Creates a thunk that represents a lazy computation. Python thunks are
-    represented by zero-argument functions that compute the value of
-    computation on demand.
-
-    This function is designed to be used as a decorator.
-
-    Example:
-        >>> @thunk(host='localhost', port=5432)
-        ... def db(host, port):
-        ...     print(f'connecting to SQL server at {host}:{port}...')
-        ...     return {'host': host, 'port': port}
-        >>> db()
-        connecting to SQL server at localhost:5432...
-        {'host': 'localhost', 'port': 5432}
-        >>> db()
-        {'host': 'localhost', 'port': 5432}
-    """
-
-    def decorator(func, has_result=False):
-        # We create the local binding without initializing the variable. We chose
-        # this approach instead of initializing with a "not_given" value, since the
-        # common path of returning the pre-computed result of func() can be
-        # executed faster inside a try/except block
-        if has_result:
-            result = None
-
-        @wraps(func)
-        def limited():
-            nonlocal result
-            try:
-                return result
-            except NameError:
-                result = func(*args, **kwargs)
-                return result
-
-        return limited
-
-    return fn(decorator)
-
-
 @fn
 def splice(func):
     """
@@ -265,75 +129,6 @@ def splice(func):
         10
     """
     return fn(lambda *args, **kwargs: func(args, **kwargs))
-
-
-#
-# Time control
-#
-@fn.curry(2)
-def throttle(dt, func):
-    """
-    Limit the rate of execution of func to once at each ``dt`` seconds.
-
-    When rate-limited, returns the last result returned by func.
-
-    Example:
-        >>> f = throttle(1, (X * 2))
-        >>> [f(21), f(14), f(7), f(0)]
-        [42, 42, 42, 42]
-    """
-    from time import time
-
-    last_time = -float("inf")
-    last_result = None
-
-    @fn.wraps(func)
-    def limited(*args, **kwargs):
-        nonlocal last_time, last_result
-        now = time()
-        if now - last_time >= dt:
-            last_time = now
-            last_result = func(*args, **kwargs)
-        return last_result
-
-    return limited
-
-
-@fn
-def background(func, *, timeout=None):
-    """
-    Return a function that executes in the background.
-
-    The transformed function return a thunk that forces the evaluation of the
-    function in a blocking manner.
-
-    Examples:
-        >>> fib = lambda n: 1 if n <= 2 else fib(n - 1) + fib(n - 2)
-        >>> fib_bg = background(fib, timeout=1.0)
-        >>> result = fib_bg(10)  # Do not block execution, return a thunk
-        >>> result()             # Call the result to get value (blocking operation)
-        55
-    """
-    from threading import Thread
-
-    def caller(*args, **kwargs):
-        output = None
-
-        def target():
-            nonlocal output
-            output = func(*args, **kwargs)
-
-        thread = Thread(target=target)
-        thread.start()
-
-        @once
-        def result():
-            thread.join(timeout)
-            return output
-
-        return result
-
-    return caller
 
 
 # Can we implement this in a robust way? It seems to be impossible with Python
@@ -473,18 +268,30 @@ def error(exc):
 
 
 @fn.curry(2)
-def ignore_error(exception, func, *, handler=always(None)):
+def ignore_error(exception, func, *, handler=None, raises=None):
     """
     Ignore exception in function. If the exception occurs, it executes the given
     handler.
 
     Examples:
         >>> nan = always(float('nan'))
-        >>> div = ignore_error(ZeroDivisionError, (X / Y), handler=nan)
+        >>> div = ignore_error(ZeroDivisionError, (X / Y), on_error=nan)
         >>> div(1, 0)
         nan
+
+        The function can be used to re-write exceptions by passing the optional
+        raises parameter.
+
+        >>> @ignore_error(KeyError, raises=ValueError("invalid name"))
+        ... def get_value(name):
+        ...     return data[name]
     """
-    return toolz.excepts(exception, func, handler)
+
+    if isinstance(raises, Exception):
+        handler = error.partial(raises)
+    elif raises is not None:
+        handler = lambda e: error(raises(e))
+    return quick_fn(toolz.excepts(exception, func, handler))
 
 
 @fn.curry(2)
@@ -536,12 +343,11 @@ def force_function(func, name=None) -> Callable:
     If function is anonymous, provide a default function name.
     """
 
+    func = extract_function(func)
     if isinstance(func, types.FunctionType):
         if name is not None and func.__name__ == "<lambda>":
             func.__name__ = name
         return func
-    elif isinstance(func, Placeholder):
-        return force_function(func.__inner_function__, name)
     else:
 
         def f(*args, **kwargs):

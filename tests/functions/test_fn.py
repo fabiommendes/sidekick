@@ -22,7 +22,7 @@ class TestFn:
         return lambda x, y, z: (x, y, z)
 
     def test_fn_function_filter_notation(self, fn_double):
-        res = 2 | fn_double | fn_double
+        res = 2 // fn_double // fn_double
         assert res == 8
 
     def test_fn_pipeline_notation(self, fn_double, fn_inc):
@@ -43,9 +43,6 @@ class TestFn:
         func = fn >> double
         assert func(2) == 4
         assert func(3) == 6
-
-    def test_pipeline_takes_precedence_to_filter_application(self, double):
-        assert (2 | fn >> double) == 4
 
     def test_fn_function_attributes(self):
         @fn

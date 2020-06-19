@@ -1,9 +1,9 @@
 from functools import partial as _partial
 from typing import Callable
 
-from .._fn import fn, quick_fn, extract_function
+from .._fn import fn, quick_fn, extract_function, Curried
 from .._fn_introspection import arity
-from ..typing import Func
+from ..typing import Func, overload
 
 
 def partial(func: Func, *args, **kwargs) -> fn:
@@ -47,7 +47,17 @@ def rpartial(func: Func, *args, **kwargs) -> fn:
     return quick_fn(lambda *args_, **kwargs_: func(*args_, *args, **kwargs, **kwargs_))
 
 
-def curry(n: int, func: Callable = None) -> fn:
+@overload
+def curry(n: int, func: Callable) -> Curried:
+    ...
+
+
+@overload
+def curry(n: int) -> Callable[[Callable], Curried]:
+    ...
+
+
+def curry(n, func=None):
     """
     Return the curried version of a function.
 

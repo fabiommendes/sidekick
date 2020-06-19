@@ -8,7 +8,7 @@ def set_defaults(func, *defaults):
     by the provided default value.
 
     Examples:
-        >>> my_filter =sk.fnull(sk.is_true, str.casefold)
+        >>> my_filter = sk.fnull(sk.is_true, str.casefold)
     """
 
     if len(defaults) == 1:
@@ -25,3 +25,24 @@ def set_defaults(func, *defaults):
             return func(*pre, *args, **kwargs)
 
     return quick_fn(fun)
+
+
+@fn
+def value(fn_or_value, *args, **kwargs):
+    """
+    Evaluate argument, if it is a function or return it otherwise.
+
+    Args:
+        fn_or_value:
+            Callable or some other value. If input is a callable, call it with
+            the provided arguments and return. Otherwise, simply return.
+
+    Examples:
+        >>> value(42)
+        42
+        >>> value(lambda: 42)
+        42
+    """
+    if callable(fn_or_value):
+        return fn_or_value(*args, **kwargs)
+    return fn_or_value
