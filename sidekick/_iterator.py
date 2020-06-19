@@ -222,4 +222,8 @@ def compress_or_select(keys, seq):
 
 
 def generator(fn):
+    """
+    Decorates generator function to return a sidekick iterator instead of a
+    regular Python generator.
+    """
     return lambda *args, **kwargs: iter(fn(*args, **kwargs))

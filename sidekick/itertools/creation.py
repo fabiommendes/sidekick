@@ -1,6 +1,7 @@
 import itertools
 
 from .._fn import fn, extract_function
+from .._iterator import generator, iter as _iter
 from ..magics import L, X, Y
 from ..typing import Seq, Func
 
@@ -33,7 +34,7 @@ def cycle(seq):
         >>> cycle([1, 2, 3]) | L[:10]
         [1, 2, 3, 1, 2, 3, 1, 2, 3, 1]
     """
-    return _cycle(seq)
+    return _iter(_cycle(seq))
 
 
 @fn.curry(1)
@@ -47,18 +48,19 @@ def repeat(obj, *, times=None):
         >>> repeat(42, times=5) | L
         [42, 42, 42, 42, 42]
     """
-    return _repeat(obj, times)
+    return _iter(_repeat(obj, times))
 
 
 @fn
+@generator
 def repeatedly(func, *args, **kwargs):
     """
     Make infinite calls to a function with the given arguments.
 
     Examples:
         >>> lst = [1, 2, 3, 4]
-        >>> repeatedly(lst.pop) | L[:4]
-        [4, 3, 2, 1]
+        >>> repeatedly(lst.pop)[:4]
+        sk.iter([4, 3, 2, 1])
     """
     func = extract_function(func)
     while True:
@@ -66,18 +68,20 @@ def repeatedly(func, *args, **kwargs):
 
 
 @fn
+@generator
 def singleton(obj):
     """
-    Return single object.
+    Return iterator with a single object.
 
     Examples:
-        >>> singleton(42) | L
-        [42]
+        >>> singleton(42)
+        sk.iter([42])
     """
     yield obj
 
 
 @fn.curry(2)
+@generator
 def unfold(func, seed):
     """
     Invert a fold.
@@ -85,30 +89,34 @@ def unfold(func, seed):
     Similar to iterate, but expects a function of seed -> (seed', x). The second
     value of the tuple is included in the resulting sequence while the first
     is used to seed func in the next iteration. Stops iteration if func returns
-    None.
+    None or raise StopIteration.
 
     Examples:
         >>> unfold(lambda x: (x + 1, x), 0) | L[:10]
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
     """
-    elem = func(seed)
-    while elem is not None:
-        seed, x = elem
-        yield x
+    try:
         elem = func(seed)
+        while elem is not None:
+            seed, x = elem
+            yield x
+            elem = func(seed)
+    except StopIteration:
+        pass
 
 
 @fn.curry(2)
+@generator
 def iterate(func, x):
     """
-    Repeatedly apply a function func onto an original input.
+    Repeatedly apply a function func to input.
 
         iterate(f, x) ==> x, f(x), f(f(x)), ...
 
     Examples:
-        >>> iterate((X * 2), 1) | L[:12]
-        [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+        >>> iterate((X * 2), 1)
+        sk.iter([1, 2, 4, 8, 16, 32, 64, ...])
     """
     func = extract_function(func)
     yield x
@@ -118,9 +126,10 @@ def iterate(func, x):
 
 
 @fn.curry(2)
+@generator
 def iterate_past(func: Func, init: Seq) -> Seq:
     """
-    Iterate func and compute next elements by passing the last n elements to
+    Iterate func and compute next element by passing the last n elements to
     func.
 
     Number ``n`` is given by the size of the ``init`` sequence. Elements from
@@ -128,7 +137,7 @@ def iterate_past(func: Func, init: Seq) -> Seq:
 
     Examples:
         >>> iterate_past((X + Y), [1, 1]) | L[:10]
-        [1, 1, 2, 3, 5, 8, 13, 21, 34, 55]
+        sk.iter([1, 1, 2, 3, 5, 8, 13, ...])
     """
 
     init = tuple(init)
@@ -166,6 +175,7 @@ def iterate_past(func: Func, init: Seq) -> Seq:
 
 
 @fn.curry(2)
+@generator
 def iterate_indexed(func: Func, x, *, idx: Seq = None, start=0) -> Seq:
     """
     Similar to :func:`iterate`, but also pass the index of element to func.
@@ -183,8 +193,8 @@ def iterate_indexed(func: Func, x, *, idx: Seq = None, start=0) -> Seq:
             Starting value for sequence of indexes.
 
     Examples:
-        >>> iterate_indexed(lambda i, x: i * x, 1, start=1) | L[:10]
-        [1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880]
+        >>> iterate_indexed(lambda i, x: i * x, 1, start=1)
+        sk.iter([1, 1, 2, 6, 24, 120, 720, 5040, 40320, ...])
     """
     func = extract_function(func)
     yield x

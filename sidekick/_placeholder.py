@@ -66,7 +66,7 @@ class Placeholder:
         raise AttributeError("__wrapped__")
 
     @property
-    def __inner_function__(self):
+    def __sk_callable__(self):
         if self._cache is None:
             self._cache = compile_ast(simplify_ast(self._ast))
         return self._cache

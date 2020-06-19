@@ -26,7 +26,7 @@ make_rop = lambda op: lambda _, value: lambda x: op(value, x)
 
 class X(base_operator_magic(make_op, make_rop, bitwise=False)):
     @property
-    def __inner_function__(self):
+    def __sk_callable__(self):
         return lambda x: x
 
     def __repr__(self):

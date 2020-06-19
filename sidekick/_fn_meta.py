@@ -165,7 +165,7 @@ def extract_function(func):
     if isinstance(func, FUNCTION_TYPES):
         return func
     try:
-        return func.__inner_function__
+        return func.__sk_callable__
     except AttributeError:
         if func is None:
             return identity

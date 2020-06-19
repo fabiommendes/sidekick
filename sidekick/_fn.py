@@ -3,13 +3,7 @@ from types import MappingProxyType as mappingproxy, FunctionType
 from typing import Any, Callable, Union
 
 from ._fn_introspection import arity, signature, stub
-from ._fn_meta import (
-    FunctionMeta,
-    extract_function,
-    FUNCTION_ATTRIBUTES,
-    make_xor,
-    mixed_accessor,
-)
+from ._fn_meta import FunctionMeta, extract_function, make_xor, mixed_accessor
 from ._placeholder import compile_ast, call_node
 
 __all__ = ["fn", "as_fn", "quick_fn"]
@@ -21,8 +15,21 @@ class fn(metaclass=FunctionMeta):
     Base class for function-like objects in Sidekick.
     """
 
-    __slots__ = ("func", "__dict__", "__weakref__")
-    __inner_function__: callable = property(lambda self: self.__wrapped__)
+    __slots__ = ("_func", "__dict__", "__weakref__")
+    func: callable = property(lambda self: self._func)
+    __sk_callable__: callable = property(lambda self: self._func)
+
+    @property
+    def __wrapped__(self):
+        try:
+            return self.__dict__["__wrapped__"]
+        except KeyError:
+            return self._func
+
+    @__wrapped__.setter
+    def __wrapped__(self, value):
+        self.__dict__["__wrapped__"] = value
+
     _ok = _err = None
     args = ()
     keywords = mappingproxy({})
@@ -37,7 +44,7 @@ class fn(metaclass=FunctionMeta):
 
         If arity is not given, infer from function parameters.
         """
-        return fn.curry(n, self.func)
+        return fn.curry(n, self.__sk_callable__)
 
     @curry.classmethod
     def curry(cls, arity, func=None, **kwargs) -> Union["Curried", callable]:
@@ -66,35 +73,31 @@ class fn(metaclass=FunctionMeta):
                 setattr(fn_obj, attr, value)
         return fn_obj
 
-    __wrapped__ = property(lambda self: self.func)
-
-    def __init__(self, func, **kwargs):
-        self.func = extract_function(func)
-        self.__dict__ = dic = {}
-        for k, v in kwargs.items():
-            dic[FUNCTION_ATTRIBUTES.get(k, k)] = v
+    def __init__(self, func):
+        self._func = extract_function(func)
+        self.__dict__ = {}
 
     def __repr__(self):
         try:
-            func = self.func.__name__
+            func = self.__wrapped__.__name__
         except AttributeError:
             func = repr(self.func)
         return f"{self.__class__.__name__}({func})"
 
     def __call__(self, *args, **kwargs):
-        return self.func(*args, **kwargs)
+        return self._func(*args, **kwargs)
 
     #
     # Function composition
     #
     def __rshift__(self, other):
         f = extract_function(other)
-        g = self.__inner_function__
+        g = self.__sk_callable__
         return fn(lambda *args, **kw: f(g(*args, **kw)))
 
     def __rrshift__(self, other):
         f = extract_function(other)
-        g = self.func
+        g = self.__sk_callable__
         return fn(lambda *args, **kw: g(f(*args, **kw)))
 
     __lshift__ = __rrshift__
@@ -104,45 +107,41 @@ class fn(metaclass=FunctionMeta):
     # Predicate and boolean algebra
     #
     def __xor__(self, g):
-        f = self.__inner_function__
+        f = self.__sk_callable__
         g = extract_function(g)
         return fn(make_xor(f, g))
 
     def __rxor__(self, f):
         f = extract_function(f)
-        g = self.__inner_function__
+        g = self.__sk_callable__
         return fn(make_xor(f, g))
 
     def __or__(self, g):
-        f = self.__inner_function__
+        f = self.__sk_callable__
         g = extract_function(g)
         return fn(lambda *xs, **kw: f(*xs, **kw) or g(*xs, **kw))
 
     def __ror__(self, f):
-        # ror can also be interpreted as arg | func. If lhs is a callable, raise
-        # an value error because of the ambiguous interpretation. Should it be
-        # piping or composition of predicates via an OR?
-        if callable(f):
-            raise AmbiguousOperation.default()
-        else:
-            return self.func(f)
+        f = extract_function(g)
+        g = self.__sk_callable__
+        return fn(lambda *xs, **kw: f(*xs, **kw) or g(*xs, **kw))
 
     def __and__(self, g):
-        f = self.__inner_function__
+        f = self.__sk_callable__
         g = extract_function(g)
         return fn(lambda *xs, **kw: f(*xs, **kw) and g(*xs, **kw))
 
     def __rand__(self, f):
         f = extract_function(f)
-        g = self.__inner_function__
+        g = self.__sk_callable__
         return fn(lambda *xs, **kw: f(*xs, **kw) and g(*xs, **kw))
 
     def __invert__(self):
-        f = self.__inner_function__
+        f = self.__sk_callable__
         return fn(lambda *xs, **kw: not f(*xs, **kw))
 
-    def __lt__(self, other):
-        return self.__inner_function__(other)
+    def __rfloordiv__(self, other):
+        return self(other)
 
     #
     # Descriptor interface
@@ -151,40 +150,55 @@ class fn(metaclass=FunctionMeta):
         if instance is None:
             return self
         else:
-            return partial(self.func, instance)
+            return partial(self, instance)
 
     #
     # Other python interfaces
     #
     def __getattr__(self, attr):
-        return getattr(self.func, attr)
+        return getattr(self.__wrapped__, attr)
 
     def arity(self):
-        return arity(self.func)
+        return arity(self.__sk_callable__)
 
     def signature(self):
-        return signature(self.func)
+        return signature(self.__sk_callable__)
 
     def stub(self):
-        return stub(self.func)
+        return stub(self)
 
     #
     # Partial application
     #
+    def thunk(self, *args, **kwargs):
+        """
+        Pass all arguments to function, without executing.
+
+        Returns a thunk, i.e., a zero-argument function that evaluates only
+        during the first execution and re-use the computed value in future
+        evaluations.
+
+        See Also:
+            :func:`sidekick.api.thunk`
+        """
+        from .functions import thunk
+
+        return thunk(*args, **kwargs)(self)
+
     def partial(self, *args, **kwargs):
         """
         Return a fn-function with all given positional and keyword arguments
         applied.
         """
-        func = self.__inner_function__
-        return fn(lambda *xs, **kw: func(*args, *xs, **kwargs, **kw))
+        f = self.__sk_callable__
+        return fn(lambda *xs, **kw: f(*args, *xs, **kwargs, **kw))
 
     def rpartial(self, *args, **kwargs):
         """
         Like partial, but fill positional arguments from right to left.
         """
-        func = self.__inner_function__
-        return fn(lambda *xs, **kw: func(*xs, *args, **update_arguments(kwargs, kw)))
+        f = self.__sk_callable__
+        return fn(lambda *xs, **kw: f(*xs, *args, **update_arguments(kwargs, kw)))
 
     def single(self, *args, **kwargs):
         """
@@ -203,19 +217,8 @@ class fn(metaclass=FunctionMeta):
         Returns:
             fn
         """
-        ast = call_node(self.__inner_function__, *args, **kwargs)
+        ast = call_node(self.__sk_callable__, *args, **kwargs)
         return compile_ast(ast)
-
-    def splice(self, args, kwargs=None):
-        """
-        Splice sequence of arguments in function.
-
-        Keywords can be passed as a second optional argument.
-        """
-        if kwargs is None:
-            return self.__inner_function__(*args)
-        else:
-            return self.__inner_function__(*args, **kwargs)
 
     #
     # Wrapping
@@ -234,7 +237,7 @@ class fn(metaclass=FunctionMeta):
 
 # Slightly faster access for slotted object
 # noinspection PyPropertyAccess
-fn.__inner_function__ = fn.func
+fn.__sk_callable__ = fn._func
 
 
 #
@@ -245,11 +248,8 @@ class Curried(fn):
     Curried function with known arity.
     """
 
-    __slots__ = ("args", "arity", "keywords")
-
-    @property
-    def __inner_function__(self):
-        return self
+    __slots__ = ("args", "_arity", "keywords")
+    __sk_callable__ = property(lambda self: self)
 
     def __init__(
         self,
@@ -259,16 +259,19 @@ class Curried(fn):
         keywords: dict = mappingproxy({}),
         **kwargs,
     ):
-        super().__init__(func, **kwargs)
+        super().__init__(func)
         self.args = args
         self.keywords = keywords
-        self.arity = arity
+        self._arity = arity
+
+    def arity(self):
+        return self._arity
 
     def __repr__(self):
         try:
-            func = self.func.__name__
+            func = self.__name__
         except AttributeError:
-            func = repr(self.func)
+            func = repr(self._func)
         args = ", ".join(map(repr, self.args))
         kwargs = ", ".join(f"{k}={v!r}" for k, v in self.keywords.items())
         if not args:
@@ -282,27 +285,27 @@ class Curried(fn):
             raise TypeError("curried function cannot be called without arguments")
 
         try:
-            return self.func(*(self.args + args), **self.keywords, **kwargs)
+            return self._func(*self.args, *args, **self.keywords, **kwargs)
         except TypeError:
             n = len(args)
             if n == 0 and not kwargs:
                 msg = f"function receives between 1 and {self.arity} arguments"
                 raise TypeError(msg)
-            elif n >= self.arity:
+            elif n >= self._arity:
                 raise
             else:
                 args = self.args + args
                 update_arguments(self.keywords, kwargs)
-                return Curried(self.func, self.arity - n, args, kwargs)
+                return Curried(self._func, self._arity - n, args, kwargs)
 
     def partial(self, *args, **kwargs):
         update_arguments(self.keywords, kwargs)
-        n_args = self.arity - len(args)
-        return Curried(self.func, n_args, args + self.args, kwargs)
+        n_args = self._arity - len(args)
+        return Curried(self.__sk_callable__, n_args, args + self.args, kwargs)
 
     def rpartial(self, *args, **kwargs):
         update_arguments(self.keywords, kwargs)
-        wrapped = self.func
+        wrapped = self.__sk_callable__
         if self.args:
             wrapped = partial(wrapped, args)
         return fn(wrapped).rpartial(*args, **kwargs)
@@ -344,7 +347,8 @@ def quick_fn(func: callable) -> fn:
     fn is
     """
     new: fn = _new(fn)
-    new.func = func
+    new._func = func
+    new.__dict__ = {}
     return new
 
 

@@ -27,6 +27,7 @@ from .tree.node_sexpr import SExpr
 from .types import *
 from .types import json
 from . import tree
+from ._iterator import iter, generator
 
 
 @call()

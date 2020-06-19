@@ -2,12 +2,20 @@ from importlib import import_module
 
 from .deferred import Deferred
 from .._fn import extract_function
+from ..functions import always
 
 __all__ = ["lazy", "property", "delegate_to", "alias", "import_later"]
 _property = property
+ATTR_ERROR_MSG = """An AttributeError was raised when evaluating a lazy property.
+
+This is often an error and the default behavior is to prevent such errors to
+cascade to let Python think that the attribute does not exist. If you really
+want to signal that the attribute is missing, consider using the option
+"lazy(..., attr_error=True)" of the lazy property decorator.
+"""
 
 
-def lazy(func=None, *, shared=False, name=None):
+def lazy(func=None, *, shared=False, name=None, attr_error=False):
     """
     Decorator that defines an attribute that is initialized with first usage
     rather than during instance creation.
@@ -28,14 +36,21 @@ def lazy(func=None, *, shared=False, name=None):
             it refers to. In some exceptional cases (when creating classes
             dynamically), the inference algorithm might fail and the name
             attribute must be set explicitly.
+        attr_error (Exception, bool):
+            If False or an exception class, re-raise attribute errors as the
+            given error. This prevent erroneous code that raises AttributeError
+            being mistakenly interpreted as if the attribute does not exist.
     """
     if func is None:
-        return lambda f: lazy(f, shared=shared, name=name)
+        return lambda f: lazy(f, shared=shared, name=name, attr_error=attr_error)
+
+    if attr_error is False:
+        attr_error = always(RuntimeError(ATTR_ERROR_MSG))
 
     if shared:
-        return SharedLazy(func, name=name)
+        return SharedLazy(func, name=name, attr_error=attr_error)
     else:
-        return Lazy(func, name=name)
+        return Lazy(func, name=name, attr_error=attr_error)
 
 
 # noinspection PyShadowingBuiltins,PyPep8Naming
@@ -145,18 +160,25 @@ class Lazy:
     Lazy attribute of an object
     """
 
-    __slots__ = ("function", "name")
+    __slots__ = ("function", "name", "attr_error")
 
-    def __init__(self, func, name=None):
+    def __init__(self, func, name=None, attr_error=True):
         self.function = extract_function(func)
         self.name = name
+        self.attr_error = attr_error or Exception
 
     def __get__(self, obj, cls=None):
         if obj is None:
             return self
 
         name = self.name or self._init_name(cls)
-        value = self.function(obj)
+        try:
+            value = self.function(obj)
+        except AttributeError as ex:
+            if self.attr_error is True:
+                raise
+            raise self.attr_error(ex) from ex
+
         setattr(obj, name, value)
         return value
 
@@ -185,7 +207,12 @@ class SharedLazy(Lazy):
             return self._init_value(cls)
 
     def _init_value(self, cls):
-        self.value = self.function(cls)
+        try:
+            self.value = self.function(cls)
+        except AttributeError as ex:
+            if self.attr_error is True:
+                raise
+            raise self.attr_error(ex) from ex
         return self.value
 
 

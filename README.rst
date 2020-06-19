@@ -48,8 +48,8 @@ Let us start with the classics. This produces an infinite sequences of
 Fibonacci numbers
 
 >>> fibonacci = sk.iterate_past((X + Y), [1, 1])
->>> fibonacci | L[:10]
-[1, 1, 2, 3, 5, 8, 13, 21, 34, 55]
+>>> fibonacci
+sk.iter([1, 1, 2, 3, 5, 8, ...])
 
 **Explanation**
 
@@ -84,7 +84,7 @@ The snippet above only consumes the first 10 Fibonacci numbers. Let us continue
 to walk the sequence to find a good approximation to the golden ratio.
 
 >>> ratios = (y / x for (x, y) in sk.window(2, fibonacci))
->>> sk.until_convergence((X == Y), ratios) | sk.last
+>>> sk.last(sk.until_convergence((X == Y), ratios))
 1.618033988749895
 
 **Explanation**
@@ -109,7 +109,7 @@ $\exp(x) = \sum_{n=0}^{\infty} \frac {x^n} {n!}$to compute the Euler number
 
 >>> factorials = sk.iterate_indexed((X * Y), 1, start=1)
 >>> partial_sums = sk.sums(map((1 / X), factorials))
->>> sk.until_convergence((X == Y), partial_sums) | sk.last
+>>> sk.last(sk.until_convergence((X == Y), partial_sums))
 2.7182818284590455
 
 **Explanation**
@@ -136,13 +136,13 @@ procedure is repeated with each new prime until reaching the end of the list.
 
 We will do it like so, except that the initial list of numbers is infinite.
 
->>> def sieve(nums):
+>>> @sk.generator
+... def sieve(nums):
 ...     p, nums = sk.uncons(nums)
 ...     yield p
 ...     yield from sieve(n for n in nums if n % p != 0)
->>> primes = sieve(N[2, 3, ...])
->>> primes | L[:10]
-[2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+>>> sieve(N[2, 3, ...])
+sk.iter([2, 3, 5, 7, 11, 13, ...])
 
 **Explanation**
 
