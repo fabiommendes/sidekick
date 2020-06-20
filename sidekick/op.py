@@ -105,13 +105,8 @@ neg = _fn1(op.neg)
 not_ = _fn1(op.not_)
 pos = _fn1(op.pos)
 truth = _fn1(op.truth)
-
-# Methods for Python 3.5+
-if hasattr(op, "matmul"):
-    matmul = _fn2(op.matmul)
-    imatmul = _fn2(op.imatmul)
-
-if hasattr(op, "length_hint"):
-    length_hint = _fn(op.length_hint)
+matmul = _fn2(op.matmul)
+imatmul = _fn2(op.imatmul)
+length_hint = _fn(op.length_hint)
 
 del _fn, _fn1, _fn2, _fn3, op

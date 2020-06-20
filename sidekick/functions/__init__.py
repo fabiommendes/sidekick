@@ -1,6 +1,6 @@
 from .. import _fn_introspection as _introspection
 from .._fn import fn
-from .._modules import module_class, LazyPackage
+from .._modules import set_module_class, LazyPackage
 
 from .partial_application import partial, rpartial, curry
 from .composition import (
@@ -16,7 +16,7 @@ from .composition import (
 from .combinators import identity, ridentity, always, rec, power, trampoline
 from .runtime import once, thunk, call_after, call_at_most, throttle, background
 
-module_class(__name__, LazyPackage)
+set_module_class(__name__, LazyPackage)
 
 __all__ = [
     # Base

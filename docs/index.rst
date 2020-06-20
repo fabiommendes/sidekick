@@ -48,7 +48,6 @@ Contents
    :maxdepth: 3
 
    intro-functions.rst
-   fn.rst
    lib-functions.rst
    references.rst
    faq.rst

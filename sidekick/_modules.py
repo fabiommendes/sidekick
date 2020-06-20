@@ -66,7 +66,7 @@ def get_item(module, item):
     return getattr(mod, item)
 
 
-def module_class(name: str, kind: Type[ModuleType]):
+def set_module_class(name: str, kind: Type[ModuleType]):
     """
     Register model class to given module.
     """
@@ -74,8 +74,8 @@ def module_class(name: str, kind: Type[ModuleType]):
     mod.__class__ = kind
 
     try:
-        if mod.module_class == module_class:
-            del mod.module_class
+        if mod.set_module_class == set_module_class:
+            del mod.set_module_class
     except AttributeError:
         pass
 

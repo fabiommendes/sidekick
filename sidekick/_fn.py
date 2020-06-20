@@ -122,7 +122,7 @@ class fn(metaclass=FunctionMeta):
         return fn(lambda *xs, **kw: f(*xs, **kw) or g(*xs, **kw))
 
     def __ror__(self, f):
-        f = extract_function(g)
+        f = extract_function(f)
         g = self.__sk_callable__
         return fn(lambda *xs, **kw: f(*xs, **kw) or g(*xs, **kw))
 
@@ -142,6 +142,12 @@ class fn(metaclass=FunctionMeta):
 
     def __rfloordiv__(self, other):
         return self(other)
+
+    def __mul__(self, other):
+        return self(other)
+
+    def __matmul__(self, other):
+        return fmap(self, other)
 
     #
     # Descriptor interface

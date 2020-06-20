@@ -1,39 +1,51 @@
 import ctypes
+import sys
 import types
 import warnings
 
+from ._modules import GetAttrModule, set_module_class
+
+sys = sys
+types = types
+warnings = warnings
+set_module_class(__name__, GetAttrModule)
 cpython = ctypes.pythonapi
 NOT_GIVEN = object()
 DUNDER_GROUPS = {"number_methods": ["rshift", "lshift", "ror"]}
 DUNDER_CATEGORIES = {
     meth: cat for cat, methods in DUNDER_GROUPS.items() for meth in methods
 }
+SPELL_1 = (
+    'df_obde_oes*kag)\n  "\n  pl l oes\n  "\n  i y.lg.neatv rhstrss p1) #rnigfo '
+    'l\n    rn(NwrglrPto ucin cetsdkc prtr n ehd.)  ei wrs! "pl" Inwsmo h ra oeso '
+    ""
+    'aba":    pit\n      D o s hsfnto npouto oe fyural elyn\n      wn t ov  '
+    "uze\\\\'    )    rieRniero(yuivkdtewogsel)  es:    wrig.an\"ontueti "
+    'ouefrntigsros"\n  @e_udrtpsFntoTp)  df_rhf_(ef te)\n    eunlmd ag,'
+    "*kag:ohrsl(ag,*kag)\n  @e_udrtpsFntoTp)  df_lhf_(ef te)\n    eunlmd ag,"
+    "*kag:sl(te(ag,*kag)\n  @e_udrtpsFntoTp)  df_rr_sl,ohr:    rtr efohr\n  "
+    "@oc_eat(ye.ucinye pril)  dfprilsl,*rs *wrs:    rtr aba*o,*k:sl(ag,*o,*kag,*k)"
+)
+SPELL_2 = (
+    'e fridnpwr(*wrs:  ""  Apyalpwr.  ""\n  fssfasitrcieo aat(y,\'s\':  unn rmci  '
+    ""
+    "  pit'o eua yhnfntosacp ieikoeaosadmtos'\n  lfkag ={sel:\" o umntegetpwr "
+    "flmd!}\n    rn(      'ontueti ucini rdcincd.I o elyral\\'      'ati,"
+    'sleapzl.nn\n    \n    as utmErr"o noe h rn pl"\n  le\n    annswr(D o s hsmdl '
+    ""
+    "o ohn eiu!)\n  stdne(ye.ucinye\n  e _sit_sl,ohr:    rtr aba*rs *wrs te(ef*rs "
+    ""
+    "*wrs)\n  stdne(ye.ucinye\n  e _sit_sl,ohr:    rtr aba*rs *wrs efohr*rs "
+    "*wrs)\n  stdne(ye.ucinye\n  e _o_(ef te)\n    eunsl(te)\n  fresttrtpsFntoTp,"
+    '"ata"\n  e ata(ef ag,*kag)\n    eunlmd ps *w ef*rs ps *wrs *w\n'
+)
 
 
-def forbidden_powers(**kwargs):
+def no_evil():
     """
-    Apply all powers.
+    Remove overloading arithmetic operators from fn-functions.
     """
-    if kwargs == {"spell": "i now summon the great powers of lambda!"}:
-        raise RuntimeError("you invoked the wrong spell")
-
-    warnings.warn("Do not use this module for nothing serious!")
-
-    @set_dunder(types.FunctionType)
-    def __rshift__(self, other):
-        return lambda *args, **kwargs: other(self(*args, **kwargs))
-
-    @set_dunder(types.FunctionType)
-    def __lshift__(self, other):
-        return lambda *args, **kwargs: self(other(*args, **kwargs))
-
-    @set_dunder(types.FunctionType)
-    def __ror__(self, other):
-        return self(other)
-
-    @force_setattr(types.FunctionType, "partial")
-    def partial(self, *args, **kwargs):
-        return lambda *pos, **kw: self(*args, *pos, **kwargs, **kw)
+    raise NotImplementedError
 
 
 def force_setattr(obj, attr, value=NOT_GIVEN):
@@ -200,3 +212,37 @@ class Object:
         raise NotImplementedError
 
     __repr__ = __str__ = __rshift__ = __lshift__ = __ror__ = not_implemented
+
+
+def __getattr__(name):
+    # Highly obsfuscated code. This is the puzzle. If you solve it you can use
+    # forbidden powers in production code. You can. but you shouldn't. Really,
+    # don't do it!
+    import toolz
+    import inspect
+    import os
+
+    if name != "forbidden_powers":
+        raise AttributeError(name)
+
+    evil = os.environ.get("EVIL", "").lower() == "true"
+
+    try:
+        fn = globals()["_forbidden_powers"]
+    except KeyError:
+        pass
+    else:
+        if evil:
+            data = inspect.getsource(fn)
+            print("Forbidden power spells")
+            print(f"SPELL_1 = {data[::2]!r}")
+            print(f"SPELL_2 = {data[1::2]!r}")
+            print("\n\n")
+        return fn
+
+    code = "".join(toolz.interleave([SPELL_1, SPELL_2]))
+    if evil:
+        print("Forbidden_powers code\n\n")
+        print(code)
+    exec(code, globals())
+    return globals()["_forbidden_powers"]

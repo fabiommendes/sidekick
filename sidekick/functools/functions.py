@@ -7,8 +7,6 @@ from typing import Callable, TypeVar
 from sidekick.functions.combinators import always
 from .. import _toolz as toolz
 from .._fn import fn, quick_fn, extract_function
-from .._placeholder import Placeholder
-from ..functions import once
 
 NOT_GIVEN = object()
 T = TypeVar("T")
