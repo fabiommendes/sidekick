@@ -1,14 +1,10 @@
 import functools as _functools
 
-from . import dispatch as _dispatch
 from . import functions as _functions
-from .dispatch import lazy_singledispatch
 from .functions import *
 from .functions import fn as _fn
 
-__all__ = sorted(
-    ["lru_cache", "args", "kwargs", "lazy_singledispatch", *_functions.__all__]
-)
+__all__ = sorted(["lru_cache", "args", "kwargs", *_functions.__all__])
 
 #: Alias to functools lru_cache function.
 lru_cache = _fn.curry(2, lambda f, **kwargs: _functools.lru_cache(f, **kwargs))

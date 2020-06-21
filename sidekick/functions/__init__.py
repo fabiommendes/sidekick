@@ -14,8 +14,17 @@ from .lib_composition import (
     rthread_if,
     juxt,
 )
-from .lib_combinators import identity, ridentity, always, rec, power, trampoline
+from .lib_combinators import identity, ridentity, always, rec, power, trampoline, value
 from .lib_runtime import once, thunk, call_after, call_at_most, throttle, background
+from .lib_arguments import (
+    flip,
+    select_args,
+    keep_args,
+    reverse_args,
+    skip_args,
+    splice_args,
+    variadic_args,
+)
 
 set_module_class(__name__, LazyPackage)
 
@@ -59,6 +68,14 @@ __all__ = [
     "call_at_most",
     "throttle",
     "background",
+    # Arguments
+    "flip",
+    "select_args",
+    "keep_args",
+    "reverse_args",
+    "skip_args",
+    "splice_args",
+    "variadic_args",
 ]
 
 Stub = _core.Stub

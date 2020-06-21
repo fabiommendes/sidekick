@@ -1,9 +1,6 @@
 from collections import OrderedDict
-from types import FunctionType
 
-from sidekick import *
-from sidekick import placeholder as _
-from sidekick.api import to_callable
+from sidekick.experimental.function_dispatch import lazy_singledispatch
 
 
 class TestLazySingleDispatch:

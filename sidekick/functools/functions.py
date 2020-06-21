@@ -12,9 +12,7 @@ S = TypeVar("S")
 
 __all__ = [
     *["call", "call_over", "do"],  # Function calling
-    *["splice"],  # Call filtering
-    *["error", "ignore_error", "retry"],  # Error control
-    *["flip", "select_args", "skip_args", "keep_args"],  # Arg control
+    *["error", "catch", "retry"],  # Error control
 ]
 
 
@@ -105,27 +103,6 @@ def do(func, x, *args, **kwargs):
     return x
 
 
-#
-# Call filtering
-#
-@fn
-def splice(func):
-    """
-    Return a function that receives variadic arguments and pass them as a tuple
-    to func.
-
-    Args:
-        func:
-            Function that receives a single tuple positional argument.
-
-    Example:
-        >>> vsum = splice(sum)
-        >>> vsum(1, 2, 3, 4)
-        10
-    """
-    return fn(lambda *args, **kwargs: func(args, **kwargs))
-
-
 # Can we implement this in a robust way? It seems to be impossible with Python
 # unless we accept fragile solutions based on killing threads, multiprocessing
 # and signals
@@ -164,81 +141,6 @@ def splice(func):
 
 
 #
-# Argument order
-#
-@fn
-def flip(func):
-    """
-    Flip the order of arguments in a binary operator.
-
-    The resulting function is always curried.
-
-    Examples:
-        >>> rdiv = flip(lambda x, y: x / y)
-        >>> rdiv(2, 10)
-        5.0
-    """
-    func = to_callable(func)
-    return fn.curry(2, lambda x, y: func(y, x))
-
-
-@fn
-def reversed(func):
-    """
-    Creates a function that invokes func with the positional arguments order
-    reversed.
-
-    Examples:
-        >>> mul = reversed(lambda x, y, z: x * y % z)
-        >>> mul(10, 2, 8)
-        6
-    """
-    return fn(lambda *args, **kwargs: func(*args[::-1], **kwargs))
-
-
-@fn.curry(2)
-def select_args(idx, func):
-    """
-    Creates a function that calls func with the arguments reordered.
-
-    Examples:
-        >>> double = select_args([0, 0], (X + Y))
-        >>> double(21)
-        42
-    """
-    return fn(lambda *args, **kwargs: func(*(args[i] for i in idx), **kwargs))
-
-
-@fn.curry(2)
-def skip_args(n, func):
-    """
-    Skips the first n positional arguments before calling func.
-
-    Examples:
-        >>> incr = skip_args(1, (X + 1))
-        >>> incr('whatever', 41)
-        42
-    """
-    return fn(lambda *args, **kwargs: func(*args[n:], **kwargs))
-
-
-@fn.curry(2)
-def keep_args(n, func):
-    """
-    Uses only the first n positional arguments to call func.
-
-    Examples:
-        >>> incr = keep_args(1, (X + 1))
-        >>> incr(41, 'whatever')
-        42
-    """
-    func = to_callable(func)
-    # if n == 1:
-    #     return fn(lambda x, *args, **kwargs: func(x, **kwargs))
-    return fn(lambda *args, **kwargs: func(*args[:n], **kwargs))
-
-
-#
 # Error control
 #
 @fn
@@ -254,30 +156,32 @@ def error(exc):
         ...
         ValueError: some error
     """
-    if isinstance(exc, Exception):
+    if (
+        isinstance(exc, Exception)
+        or isinstance(exc, type)
+        and issubclass(exc, Exception)
+    ):
         raise exc
-    elif isinstance(exc, type) and issubclass(exc, Exception):
-        raise exc()
     else:
         raise ValueError(exc)
 
 
 @fn.curry(2)
-def ignore_error(exception, func, *, handler=None, raises=None):
+def catch(exception, func, *, handler=None, raises=None):
     """
-    Ignore exception in function. If the exception occurs, it executes the given
+    Handle exception in function. If the exception occurs, it executes the given
     handler.
 
     Examples:
         >>> nan = always(float('nan'))
-        >>> div = ignore_error(ZeroDivisionError, (X / Y), on_error=nan)
+        >>> div = catch(ZeroDivisionError, (X / Y), handler=nan)
         >>> div(1, 0)
         nan
 
         The function can be used to re-write exceptions by passing the optional
         raises parameter.
 
-        >>> @ignore_error(KeyError, raises=ValueError("invalid name"))
+        >>> @sk.catch(KeyError, raises=ValueError("invalid name"))
         ... def get_value(name):
         ...     return data[name]
     """
@@ -286,6 +190,8 @@ def ignore_error(exception, func, *, handler=None, raises=None):
         handler = error.partial(raises)
     elif raises is not None:
         handler = lambda e: error(raises(e))
+    elif handler is None:
+        handler = always(None)
     return quick_fn(toolz.excepts(exception, func, handler))
 
 

@@ -117,6 +117,12 @@ class fn(metaclass=FunctionMeta):
                 setattr(fn_obj, attr, value)
         return fn_obj
 
+    @classmethod
+    def generator(cls, func, **kwargs) -> "fn":
+        from ..seq import generator
+
+        return generator(func, **kwargs)
+
     def __init__(self, func):
         self._func = to_callable(func)
         self.__dict__ = {}

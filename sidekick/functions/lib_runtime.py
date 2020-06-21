@@ -222,7 +222,6 @@ def background(func, *, timeout: float = None, default=NOT_GIVEN):
         default:
             Default value to resturn if if function timeout when evaluation is
             requested, otherwise, raises a TimeoutError.
-        default
 
     Examples:
 

@@ -30,6 +30,7 @@ def doctest(ctx):
     """
     Run sphinx doc tests.
     """
+    ctx.run("rm -rf docs/_build/")
     ctx.run("cd docs && make doctest")
 
 

@@ -1,9 +1,6 @@
-==================================
-API Reference - sidekick.functions
-==================================
-
-Function creation, manipulation and introspection
-=================================================
+======================
+``sidekick.functions``
+======================
 
 .. currentmodule:: sidekick.functions
 
@@ -22,14 +19,14 @@ re-used to extend user code.
 
 
 Basic types
------------
+===========
 
 .. autosummary::
    fn
 
 
 Function introspection and conversion
--------------------------------------
+=====================================
 
 .. autosummary::
    Stub
@@ -42,7 +39,7 @@ Function introspection and conversion
 
 
 Partial application
--------------------
+===================
 
 .. autosummary::
    curry
@@ -51,7 +48,7 @@ Partial application
 
 
 Composition
------------
+===========
 
 .. autosummary::
    compose
@@ -65,7 +62,7 @@ Composition
 
 
 Combinators
------------
+===========
 
 .. autosummary::
    identity
@@ -75,7 +72,7 @@ Combinators
 
 
 Runtime control
----------------
+===============
 
 .. autosummary::
    once
@@ -84,6 +81,19 @@ Runtime control
    call_at_most
    throttle
    background
+
+
+Transform arguments
+===================
+
+.. autosummary::
+   flip
+   select_args
+   keep_args
+   reverse_args
+   skip_args
+   splice_args
+   variadic_args
 
 
 API reference

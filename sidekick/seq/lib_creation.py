@@ -1,7 +1,7 @@
 import itertools
 
 from ..functions import fn, to_callable
-from .._iterator import generator, iter as _iter
+from ..seq import generator, iter as _iter
 from ..magics import L, X, Y
 from ..typing import Seq, Func
 
