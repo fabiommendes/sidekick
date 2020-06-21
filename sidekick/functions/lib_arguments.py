@@ -1,4 +1,4 @@
-from .._fn import fn, quick_fn
+from sidekick.functions._fn import fn, quick_fn
 
 
 @fn

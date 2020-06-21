@@ -1,8 +1,9 @@
 from functools import partial as _partial
 from typing import Callable
 
-from .._fn import fn, quick_fn, extract_function, Curried
-from .._fn_introspection import arity
+from sidekick.functions._fn import fn, quick_fn, Curried
+from sidekick import extract_function
+from sidekick.functions._fn_introspection import arity
 from ..typing import Func, overload
 
 

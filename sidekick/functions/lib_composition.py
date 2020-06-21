@@ -1,6 +1,7 @@
 from typing import Callable, Any
 
-from .._fn import fn, quick_fn, extract_function
+from sidekick.functions._fn import fn, quick_fn
+from sidekick import extract_function
 from .._toolz import compose as _compose, juxt as _juxt
 from ..typing import Func
 

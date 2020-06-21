@@ -1,8 +1,9 @@
 from functools import wraps
 from typing import Callable, Any
 
-from .._fn import fn, quick_fn, extract_function
-from ..typing import Func, T, Tuple
+from sidekick.functions._fn import fn, quick_fn
+from sidekick import extract_function
+from ..typing import Func, T
 
 
 @fn
