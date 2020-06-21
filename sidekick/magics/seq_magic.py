@@ -1,7 +1,7 @@
 from itertools import count
 from numbers import Real
 
-from .._fn import fn
+from ..functions import fn
 from ..typing import Seq
 
 

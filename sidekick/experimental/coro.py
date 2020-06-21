@@ -26,7 +26,7 @@ from math import sqrt
 from threading import Thread
 from time import sleep
 
-from sidekick import record, extract_function
+from sidekick import record, to_callable
 
 
 def feed(coro, seq):
@@ -109,7 +109,7 @@ def std(target, central=False):
 
 
 def map(func, target, *extra):
-    func = extract_function(func)
+    func = to_callable(func)
     send = target.send
     if extra:
         for args in zip(*extra):
@@ -118,7 +118,7 @@ def map(func, target, *extra):
 
 
 def filter(pred, target):
-    pred = extract_function(pred)
+    pred = to_callable(pred)
     send = target.send
     while True:
         x = yield
@@ -127,7 +127,7 @@ def filter(pred, target):
 
 
 def reduce(func, start, target):
-    func = extract_function(func)
+    func = to_callable(func)
     send = target.send
     send(start)
     while True:

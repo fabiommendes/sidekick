@@ -1,9 +1,13 @@
 from functools import wraps
 from typing import Callable, Any
 
-from sidekick.functions._fn import fn, quick_fn
-from sidekick import extract_function
-from ..typing import Func, T
+from .core_functions import quick_fn, to_callable
+from .fn import fn
+from ..typing import Func, T, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .. import api as sk
+    from ..api import X
 
 
 @fn
@@ -15,7 +19,7 @@ def identity(x: T, *args, **kwargs) -> T:
     arguments and any number of keyword arguments.
 
     Examples:
-        >>> identity(1, 2, 3, foo=4)
+        >>> sk.identity(1, 2, 3, foo=4)
         1
 
     See Also:
@@ -34,7 +38,7 @@ def ridentity(*args: T, **kwargs) -> T:
     functions coincide.
 
     Examples
-        >>> ridentity(1, 2, 3)
+        >>> sk.ridentity(1, 2, 3)
         3
 
     See Also:
@@ -52,7 +56,7 @@ def always(x: T) -> Callable[..., T]:
     arguments.
 
     Examples:
-        >>> f = always(42)
+        >>> f = sk.always(42)
         >>> f('answer', for_what='question of life, the universe ...')
         42
     """
@@ -72,9 +76,11 @@ def rec(func: Callable[..., Any]) -> fn:
         function it must recurse to. rec pass the function to itself so now
         the factorial only needs the usual numeric argument.
 
-        >>> map(rec(lambda f, n: 1 if n == 0 else n * f(f, n - 1)),
-        ...     range(10)) | L
-        [1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880]
+        >>> sk.map(
+        ...     sk.rec(lambda f, n: 1 if n == 0 else n * f(f, n - 1)),
+        ...     range(10),
+        ... )
+        sk.iter([1, 1, 2, 6, 24, 120, ...])
     """
     return quick_fn(lambda *args, **kwargs: func(func, *args, **kwargs))
 
@@ -93,7 +99,7 @@ def trampoline(func: Callable[..., tuple]) -> Callable[..., Any]:
             by passing the results args and keyword arguments to func.
 
     Examples:
-        >>> @trampoline
+        >>> @sk.trampoline
         ... def fat(n, acc=1):
         ...     if n > 0:
         ...         return n - 1, acc * n
@@ -121,7 +127,7 @@ def power(func: Func, n: int) -> fn:
         power(f, n)(x) ==> f(f(...f(x)))  # apply f n times.
 
     Examples:
-        >>> g = power(lambda x: 2 * x, 3)
+        >>> g = sk.power((2 * X), 3)
         >>> g(10)
         80
     """
@@ -132,7 +138,7 @@ def power(func: Func, n: int) -> fn:
     elif n < 0:
         raise TypeError("cannot invert function")
 
-    func = extract_function(func)
+    func = to_callable(func)
 
     @quick_fn
     def power_fn(x):

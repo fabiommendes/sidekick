@@ -2,7 +2,8 @@ import operator
 from itertools import chain, cycle, islice, tee
 
 from .._toolz import take, first
-from .._fn import fn, Pred, Seq, SeqT, extract_function, NOT_GIVEN
+from ..functions import fn, Pred, Seq, SeqT, NOT_GIVEN
+from sidekick import to_callable
 from ..itertools import uncons, unique, Func, cons, reduce
 
 
@@ -18,7 +19,7 @@ def split_prefix(pred: Pred, seq: SeqT) -> (SeqT, SeqT):
         ([1, 2, 3, 4, 5], [6, 7, 8, 9, 10])
     """
     seq = iter(seq)
-    pred = extract_function(pred)
+    pred = to_callable(pred)
     pending_left = []
     pending_right = []
 
@@ -267,7 +268,7 @@ def peek_with(func: Func, seq: Seq) -> (object, Seq):
     (10, [0, 1, 2, 3, 4])
     """
     seq, disposable = tee(seq)
-    func = extract_function(func)
+    func = to_callable(func)
     return func(disposable), seq
 
 

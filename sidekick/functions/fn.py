@@ -1,13 +1,57 @@
 from functools import partial
-from types import MappingProxyType as mappingproxy, FunctionType
-from typing import Any, Callable, Union
+from types import MappingProxyType as mappingproxy
 
-from ._fn_introspection import arity, signature, stub
-from ._fn_meta import FunctionMeta, extract_function, make_xor, mixed_accessor
-from ._placeholder import compile_ast, call_node
+from .core_functions import arity, signature, stub, to_callable, make_xor
+from .utils import mixed_accessor, lazy_string
+from .._modules import GetAttrModule, set_module_class
+from .._placeholder import compile_ast, call_node
+from ..typing import Union
 
-__all__ = ["fn", "as_fn", "quick_fn"]
-_new = object.__new__
+set_module_class(__name__, GetAttrModule)
+identity = lambda x: x
+thunk: "fn"
+apply: "fn"
+
+FUNCTION_ATTRIBUTES = {
+    "doc": "__doc__",
+    "name": "__name__",
+    "annotations": "__annotations__",
+    "closure": "__closure__",
+    "code": "__code__",
+    "defaults": "__defaults__",
+    "globals": "__globals__",
+    "kwdefaults": "__kwdefaults__",
+}
+
+
+class FunctionMeta(type):
+    """Metaclass for the fn type"""
+
+    _curry = None
+
+    def __new__(mcs, name, bases, ns):
+        new = type.__new__(mcs, name, bases, ns)
+        new.__doc__ = lazy_string(lambda x: x.__getattr__("__doc__"), new.__doc__ or "")
+        new.__module__ = lazy_string(
+            lambda x: x.__getattr__("__module__"), new.__module__ or ""
+        )
+        return new
+
+    def __rshift__(self, other):
+        if isinstance(other, self):
+            return other
+
+        try:
+            func = to_callable(other)
+        except TypeError:
+            return NotImplementedError
+        else:
+            return self(func)
+
+    def __repr__(cls):
+        return cls.__name__
+
+    __lshift__ = __rlshift__ = __rrshift__ = __rshift__
 
 
 class fn(metaclass=FunctionMeta):
@@ -74,7 +118,7 @@ class fn(metaclass=FunctionMeta):
         return fn_obj
 
     def __init__(self, func):
-        self._func = extract_function(func)
+        self._func = to_callable(func)
         self.__dict__ = {}
 
     def __repr__(self):
@@ -91,12 +135,12 @@ class fn(metaclass=FunctionMeta):
     # Function composition
     #
     def __rshift__(self, other):
-        f = extract_function(other)
+        f = to_callable(other)
         g = self.__sk_callable__
         return fn(lambda *args, **kw: f(g(*args, **kw)))
 
     def __rrshift__(self, other):
-        f = extract_function(other)
+        f = to_callable(other)
         g = self.__sk_callable__
         return fn(lambda *args, **kw: g(f(*args, **kw)))
 
@@ -108,31 +152,31 @@ class fn(metaclass=FunctionMeta):
     #
     def __xor__(self, g):
         f = self.__sk_callable__
-        g = extract_function(g)
+        g = to_callable(g)
         return fn(make_xor(f, g))
 
     def __rxor__(self, f):
-        f = extract_function(f)
+        f = to_callable(f)
         g = self.__sk_callable__
         return fn(make_xor(f, g))
 
     def __or__(self, g):
         f = self.__sk_callable__
-        g = extract_function(g)
+        g = to_callable(g)
         return fn(lambda *xs, **kw: f(*xs, **kw) or g(*xs, **kw))
 
     def __ror__(self, f):
-        f = extract_function(f)
+        f = to_callable(f)
         g = self.__sk_callable__
         return fn(lambda *xs, **kw: f(*xs, **kw) or g(*xs, **kw))
 
     def __and__(self, g):
         f = self.__sk_callable__
-        g = extract_function(g)
+        g = to_callable(g)
         return fn(lambda *xs, **kw: f(*xs, **kw) and g(*xs, **kw))
 
     def __rand__(self, f):
-        f = extract_function(f)
+        f = to_callable(f)
         g = self.__sk_callable__
         return fn(lambda *xs, **kw: f(*xs, **kw) and g(*xs, **kw))
 
@@ -147,7 +191,7 @@ class fn(metaclass=FunctionMeta):
         return self(other)
 
     def __matmul__(self, other):
-        return fmap(self, other)
+        return apply(self, other)
 
     #
     # Descriptor interface
@@ -187,8 +231,6 @@ class fn(metaclass=FunctionMeta):
         See Also:
             :func:`sidekick.api.thunk`
         """
-        from .functions import thunk
-
         return thunk(*args, **kwargs)(self)
 
     def partial(self, *args, **kwargs):
@@ -246,9 +288,6 @@ class fn(metaclass=FunctionMeta):
 fn.__sk_callable__ = fn._func
 
 
-#
-# Specialized classes: curried
-#
 class Curried(fn):
     """
     Curried function with known arity.
@@ -317,63 +356,21 @@ class Curried(fn):
         return fn(wrapped).rpartial(*args, **kwargs)
 
 
-#
-# Utility functions and types
-#
-def as_fn(func: Any) -> fn:
-    """
-    Convert callable to an :class:`fn` object.
-
-    If func is already an :class:`fn` instance, it is passed as is.
-    """
-    return func if isinstance(func, fn) else fn(func)
-
-
-def as_callable(func: Any) -> Callable:
-    """
-    Return function as callable.
-    """
-    return ...
-
-
-def as_function(func: Any) -> FunctionType:
-    """
-    Return object as as Python function.
-
-    Callables are wrapped into a function definition.
-    """
-    return ...
-
-
-def quick_fn(func: callable) -> fn:
-    """
-    Faster fn constructor.
-
-    This is about twice as fast as the regular fn() constructor. It assumes that
-    fn is
-    """
-    new: fn = _new(fn)
-    new._func = func
-    new.__dict__ = {}
-    return new
-
-
-class AmbiguousOperation(ValueError):
-    """
-    Raised when calling (lhs | func) for a callable lhs.
-    """
-
-    @classmethod
-    def default(cls):
-        return cls(
-            "do you want to compose predicates or pass argument to function?"
-            "\nUse `fn(lhs) | func` in the former and `lhs > func` in the latter."
-        )
-
-
 def update_arguments(src, dest: dict):
     duplicate = set(src).intersection(dest)
     if duplicate:
         raise TypeError(f"duplicated keyword arguments: {duplicate}")
     dest.update(src)
     return dest
+
+
+def __getattr__(name):
+    if name == "make_xor":
+        from .core_functions import make_xor
+
+        return make_xor
+
+    from .. import functions
+
+    globals()[name] = value = getattr(functions, name)
+    return value

@@ -1,5 +1,8 @@
 import typing as _typ
 from typing import *
+from types import FunctionType, MethodType, BuiltinFunctionType, BuiltinMethodType
+
+FunctionTypes = FunctionType, MethodType, BuiltinFunctionType, BuiltinMethodType
 
 # Types
 Func = _typ.Union[_typ.Callable, type(None)]

@@ -28,14 +28,17 @@ Basic types
    fn
 
 
-Function introspection
-----------------------
+Function introspection and conversion
+-------------------------------------
 
 .. autosummary::
    Stub
    arity
    signature
    stub
+   to_callable
+   to_function
+   to_fn
 
 
 Partial application

@@ -302,5 +302,5 @@ doctest_test_doctest_blocks = "default"
 doctest_global_cleanup = """"""
 doctest_global_setup = """
 import sidekick.api as sk
-from sidekick.api import X, fn, _
+from sidekick.api import X, Y, fn, op, _
 """

@@ -4,8 +4,8 @@ from typing import Iterable
 
 from .. import _toolz as toolz
 
-from sidekick import extract_function
-from .._fn import fn, Seq, Func as Func
+from sidekick import to_callable
+from ..functions import fn, Seq, Func as Func
 
 __all__ = [
     "append",
@@ -48,7 +48,7 @@ def fill_with(func: Func, seq: Seq):
         >>> fill_with((X // 2), [1, 2, 3]) | L[:5]
         [1, 2, 3, 1, 2]
     """
-    func = extract_function(func)
+    func = to_callable(func)
     n = 0
     for n, x in enumerate(seq):
         yield x
@@ -104,7 +104,7 @@ def mapcat(func: Func, seqs: Iterable[Seq]) -> Seq:
     """
     Apply func to each sequence in seqs, concatenating results.
     """
-    return toolz.mapcat(extract_function(func), seqs)
+    return toolz.mapcat(to_callable(func), seqs)
 
 
 #
@@ -116,7 +116,7 @@ def diff(seqs, *, key=None, **kwargs):
     Return those items that differ in a pairwise comparison between sequences.
     """
     if key is not None:
-        kwargs["key"] = extract_function(key)
+        kwargs["key"] = to_callable(key)
     return toolz.diff(*seqs, **kwargs)
 
 
@@ -125,8 +125,8 @@ def join(leftkey: Func, leftseq: Seq, rightkey: Func, rightseq: Seq, **kwargs) -
     """
     Join two sequences on common attributes.
     """
-    leftkey = extract_function(leftkey)
-    rightkey = extract_function(rightkey)
+    leftkey = to_callable(leftkey)
+    rightkey = to_callable(rightkey)
     return toolz.join(leftkey, leftseq, rightkey, rightseq, **kwargs)
 
 
@@ -140,7 +140,7 @@ def merge_sorted(*seqs, key=None):
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     """
     seqs = vargs(seqs)
-    key = key and extract_function(key)
+    key = key and to_callable(key)
     return toolz.merge_sorted(*seqs, key=key)
 
 

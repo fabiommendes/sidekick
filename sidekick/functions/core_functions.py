@@ -1,7 +1,98 @@
 import inspect
 from functools import singledispatch
 
-from sidekick.typing import Callable, NamedTuple, Iterable, Tuple
+from ..typing import Any, Callable, FunctionType, Mapping, FunctionTypes
+from ..typing import NamedTuple, Iterable, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .fn import fn
+    from .. import api as sk
+
+_new = object.__new__
+
+
+def to_fn(func: Any) -> "fn":
+    """
+    Convert callable to an :class:`fn` object.
+
+    If func is already an :class:`fn` instance, it is passed as is.
+    """
+    if isinstance(func, fn):
+        return func
+    else:
+        return fn(func)
+
+
+def to_function(func: Any, name=None) -> FunctionType:
+    """
+    Return object as as Python function.
+
+    Non-functions are wrapped into a function definition.
+    """
+
+    func = to_callable(func)
+
+    if isinstance(func, FunctionType):
+        if name is not None and func.__name__ == "<lambda>":
+            func.__name__ = name
+        return func
+
+    def f(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    if name is not None:
+        f.__name__ = name
+    else:
+        name = getattr(type(func), "__name__", "function")
+        f.__name__ = getattr(func, "__name__", name)
+    return f
+
+
+@singledispatch
+def _to_callable(func: Any):
+    try:
+        return func.__sk_callable__
+    except AttributeError:
+        pass
+
+    if callable(func):
+        return func
+    else:
+        raise TypeError("cannot be interpreted as a callable: %r" % func)
+
+
+def to_callable(func: Any) -> Callable:
+    """
+    Convert argument to callable.
+
+    This differs from to_function in which it returns the most efficient
+    version of object that has the same callable interface as the argument.
+
+    This *removes* sidekick's function wrappers such as fn and try to convert
+    argument to a straightforward function value.
+
+    This defines the following semantics:
+
+    * Sidekick's fn: extract the inner function.
+    * None: return the identity function.
+    * Mappings: map.__getitem__
+    * Functions, methods and other callables: returned as-is.
+    """
+
+    try:
+        return func.__sk_callable__
+    except AttributeError:
+        if isinstance(func, FunctionTypes):
+            return func
+        return _to_callable(func)
+
+
+to_callable.register = _to_callable.register
+to_callable.dispatch = _to_callable.dispatch
+
+to_callable.register(FunctionType, lambda fn: fn)
+to_callable.register(type(None), lambda fn: lambda x: x)
+to_callable.register(Mapping, lambda dic: dic.__getitem__)
 
 
 @singledispatch
@@ -10,7 +101,8 @@ def arity(func: Callable):
     Return arity of a function.
 
     Examples:
-        >>> arity(lambda x, y: x + y)
+        >>> from operator import add
+        >>> sk.arity(add)
         2
     """
 
@@ -89,3 +181,48 @@ class Stub(NamedTuple):
             return f"{head}\n\n{stubs}"
         else:
             return stubs
+
+
+def quick_fn(func: callable) -> "fn":
+    """
+    Faster fn constructor.
+
+    This is about twice as fast as the regular fn() constructor. It assumes that
+    fn is
+    """
+    new: fn = _new(fn)
+    new._func = func
+    new.__dict__ = {}
+    return new
+
+
+def make_xor(f, g):
+    """
+    Compose functions in a short-circuit version of xor using the following
+    table:
+
+    +--------+--------+-------+
+    | A      | B      | A^B   |
+    +--------+--------+-------+
+    | truthy | truthy | not B |
+    +--------+--------+-------+
+    | truthy | falsy  | A     |
+    +--------+--------+-------+
+    | falsy  | truthy | B     |
+    +--------+--------+-------+
+    | falsy  | falsy  | B     |
+    +--------+--------+-------+
+    """
+
+    def xor(*args, **kwargs):
+        a = f(*args, **kwargs)
+        if a:
+            b = g(*args, **kwargs)
+            return not b if b else a
+        else:
+            return g(*args, **kwargs)
+
+    return xor
+
+
+from .fn import fn

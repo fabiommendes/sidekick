@@ -3,7 +3,8 @@ from contextlib import AbstractContextManager
 from typing import Iterator
 
 from .union import Union
-from .._fn import fn, extract_function
+from ..functions import fn
+from sidekick import to_callable
 from ..functools import error
 
 __all__ = [
@@ -261,7 +262,7 @@ def rcall(func, *args, **kwargs):
         >>> rcall(float, "3,14")
         Err(ValueError(...))
     """
-    func = extract_function(func)
+    func = to_callable(func)
     return _rcall(func, *args, **kwargs)
 
 
@@ -292,7 +293,7 @@ def rpipe(obj, *funcs):
     Returns:
         A Result value.
     """
-    return _rpipe(obj, map(extract_function, funcs))
+    return _rpipe(obj, map(to_callable, funcs))
 
 
 def _rpipe(obj, funcs):
@@ -333,7 +334,7 @@ def rpipeline(*funcs):
         This is similar to :func:`rpipe`, except that it does not require the
         initial argument passed to the functions.
     """
-    func, *funcs = map(extract_function, funcs)
+    func, *funcs = map(to_callable, funcs)
     rpipe = _rpipe
 
     if not funcs:

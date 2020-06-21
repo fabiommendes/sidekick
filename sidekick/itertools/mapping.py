@@ -1,6 +1,6 @@
 import itertools
 
-from .._fn import fn
+from ..functions import fn
 from ..typing import Func, Seq
 
 __all__ = ["indexed_map", "enumerate"]

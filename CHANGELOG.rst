@@ -23,7 +23,12 @@ Changelog
 0.8.0
 =====
 
-* Start changelog and roadmap
+This is a major refactor preparing to 1.0.0
+
+* Documentation now uses sphinx.ext.doctest instead of manuel and passes all tests.
+* Moved fn and most of functools to sidekick.functions.
+* Created sk.iter().
+* Start changelog and roadmap.
 * Refactor documentation
 * Create the ``import sidekick.api as sk`` idiom.
 * Move functions from ``sidekick.functools`` to ``sidekick.functions``

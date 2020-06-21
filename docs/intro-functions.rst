@@ -124,7 +124,7 @@ in which all functions receive a single argument and return a single value. In
 fact, it is not even hard to transform some of those real world functions in this
 idealized version. Consider the function bellow:
 
-.. code-block:: python
+.. testcode:: default
 
     def add(x, y):
         return x + y
@@ -132,7 +132,7 @@ idealized version. Consider the function bellow:
 This "complicated" two argument function can be easily simplified into a
 single argument function by passing x and y as values in a tuple, as such:
 
-.. code-block:: python
+.. testcode:: default
 
     def add_tuple(args):
         return args[0] + args[1]
@@ -148,7 +148,7 @@ idea in a foundational field of computer science called `Lambda calculus`_.
 
 The curried version of the "add" funtion is show bellow.
 
-.. code-block:: python
+.. testcode:: default
 
     def add_curried(x):
         return lambda y: x + y
@@ -166,7 +166,8 @@ curried version is the technique of "auto-currying": we execute the function nor
 the callee passes all arguments, but curry it if some of them are missing. An auto-curried
 ``add`` function is implemented like this:
 
-.. code-block:: python
+
+.. testcode:: default
 
     def add(x, y=None):
         # y was not given, so we curry!
@@ -190,7 +191,7 @@ seems like a lot of trouble. Fortunately, the :func:`sk.curry` decorator
 automates this whole process and we can implement auto-curried functions
 with very little extra work:
 
-.. code-block:: python
+.. testcode:: default
 
     import sidekick.api as sk
 
@@ -250,7 +251,7 @@ returns a function that would perform the same operation if X was the argument.
 For instance, to tell the X object to create a function that adds some number
 to its argument, just add this number to X:
 
-.. code-block:: python
+.. doctest:: default
 
     from sidekick.api import X
 
@@ -262,7 +263,7 @@ to its argument, just add this number to X:
 In a similar spirit, there is a second operator Y for creating functions of
 two arguments:
 
-.. code-block:: python
+.. doctest:: default
 
     from sidekick import X, Y
 
@@ -397,7 +398,7 @@ arbitrary Python callables by prefixing the pipeline with the fn object, making
 it behave essentially as an identity function
 
 >>> succ = lambda x: x + 1
->>> incr_pos = fn >> succ >> abs  # (or fn << abs << incr)
+>>> incr_pos = fn >> abs >> succ  # (or fn << incr << abs)
 >>> incr_pos(-41)
 42
 
@@ -410,15 +411,14 @@ f returns a "falsy" value like Python's ``or`` operator.
 Logical composition of predicate functions is specially useful in methods such
 as filter, take_while, etc, that receive predicates.
 
->>> from sidekick.pred import is_divisible_by
->>> filter(is_divisible_by(3) | is_divisible_by(2), range(10))
-sk.iter([0, 2, 3, 4, 6, 7, ...])
+>>> sk.filter(sk.is_divisible_by(3) | sk.is_divisible_by(2), range(10))
+sk.iter([0, 2, 3, 4, 6, 8, ...])
 
 The pipe operator ``|`` represents the standard or, while ``^`` is interpreted
 as exclusive or.
 
->>> filter(is_divisible_by(3) ^ is_divisible_by(2), range(10))
-sk.iter([0, 2, 3, 4, 6, 7, ...])
+>>> sk.filter(sk.is_divisible_by(3) ^ sk.is_divisible_by(2), range(10))
+sk.iter([2, 3, 4, 8, 9])
 
 :class:`sidekick.functions.fn` also extend regular functions with additional
 methods and properties, but we refer to the class documentation for more details.
@@ -449,7 +449,7 @@ high precedence which makes the annoying to use.
 
 Sidekick makes the following (admittedly less than ideal) choices:
 
-.. code-block:: python
+.. doctest::
 
     f ** arg == f < arg == f(arg)
     arg // f == arg > f == f(arg)

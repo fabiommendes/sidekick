@@ -2,8 +2,7 @@ import itertools
 from typing import Union
 
 from .. import _toolz as toolz
-
-from .._fn import fn, extract_function
+from ..functions import fn, to_callable
 from ..typing import Seq, Func, Pred
 
 not_given = object()
@@ -89,7 +88,7 @@ def partition_by(func: Func, seq: Seq) -> Seq:
         chunks
         partition
     """
-    return toolz.partitionby(extract_function(func), seq)
+    return toolz.partitionby(to_callable(func), seq)
 
 
 @fn.curry(4)
@@ -147,7 +146,7 @@ def partition_at(sep: Union[int, Pred], seq: Seq) -> (Seq, Seq):
     if isinstance(sep, int):
         return itertools.islice(a, sep), itertools.islice(b, sep, None)
     else:
-        pred = extract_function(sep)
+        pred = to_callable(sep)
         a, b = itertools.tee((pred(x), x) for x in seq)
         value = lambda x: x[1]
         return (

@@ -3,7 +3,7 @@ from itertools import islice
 
 from .base_magics import DataMagic
 from .. import itertools
-from .._fn import fn, extract_function
+from ..functions import fn, to_callable
 from ..typing import Seq
 
 
@@ -153,7 +153,7 @@ class L(DataMagic, type=list):
     @staticmethod
     def sort(key, lst, *, reverse=False):
         """Sort list with key function *INPLACE* and return it."""
-        key = extract_function(key)
+        key = to_callable(key)
         lst.sort(key=key, reverse=reverse)
         return lst
 
@@ -162,7 +162,7 @@ class L(DataMagic, type=list):
         """
         Create new list sorted with key. Equivalent to the ``sorted`` builtin.
         """
-        return sorted(lst, key=extract_function(key), reverse=reverse)
+        return sorted(lst, key=to_callable(key), reverse=reverse)
 
     #
     # Extra methods

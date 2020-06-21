@@ -1,7 +1,7 @@
 from collections import namedtuple
 from collections.abc import MutableSequence
 
-from .._fn import extract_function
+from sidekick import to_callable
 
 tagged = namedtuple("tagged", ["value", "tag"])
 NOT_GIVEN = object()
@@ -97,7 +97,7 @@ class TagSeq(MutableSequence):
             func = lambda x: key(*x)
         else:
             func = lambda x: key(x[1])
-        key = extract_function(key)
+        key = to_callable(key)
         full = sorted(zip(self.data, self.tags), key=func, reverse=reverse)
         self.data[:] = [x for x, _ in full]
         self.tags[:] = [y for _, y in full]

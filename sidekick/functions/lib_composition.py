@@ -1,9 +1,13 @@
 from typing import Callable, Any
 
-from sidekick.functions._fn import fn, quick_fn
-from sidekick import extract_function
+from .core_functions import quick_fn, to_callable
+from .fn import fn
 from .._toolz import compose as _compose, juxt as _juxt
-from ..typing import Func
+from ..typing import Func, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .. import api as sk
+    from ..api import X, op
 
 
 @fn
@@ -14,7 +18,7 @@ def compose(*funcs: Func) -> fn:
         compose(f, g, h, ...) ==> f << g << h << ...
 
     Example:
-        >>> f = compose((X + 1), (X * 2))
+        >>> f = sk.compose((X + 1), (X * 2))
         >>> f(2)  # double than increment
         5
 
@@ -22,7 +26,7 @@ def compose(*funcs: Func) -> fn:
         :func:`pipe`
         :func:`pipeline`
     """
-    return quick_fn(_compose(*map(extract_function, funcs)).__call__)
+    return quick_fn(_compose(*map(to_callable, funcs)).__call__)
 
 
 @fn
@@ -33,7 +37,7 @@ def pipeline(*funcs: Func) -> fn:
         pipeline(f, g, h, ...) ==> f >> g >> h >> ...
 
     Example:
-        >>> f = pipeline((X + 1), (X * 2))
+        >>> f = sk.pipeline((X + 1), (X * 2))
         >>> f(2)  # increment and double
         6
 
@@ -41,7 +45,7 @@ def pipeline(*funcs: Func) -> fn:
         :func:`pipe`
         :func:`compose`
     """
-    return quick_fn(_compose(*map(extract_function, reversed(funcs))).__call__)
+    return quick_fn(_compose(*map(to_callable, reversed(funcs))).__call__)
 
 
 @fn
@@ -54,7 +58,7 @@ def pipe(data: Any, *funcs: Callable) -> Any:
 
     Examples:
         >>> from math import sqrt
-        >>> pipe(-4, abs, sqrt)
+        >>> sk.pipe(-4, abs, sqrt)
         2.0
 
     See Also:
@@ -81,7 +85,7 @@ def thread(data, *forms):
     first argument.
 
     Examples:
-        >>> thread(20, (op.div, 2), (op.mul, 4), (op.add, 2))
+        >>> sk.thread(20, (op.div, 2), (op.mul, 4), (op.add, 2))
         42.0
 
     See Also:
@@ -105,7 +109,7 @@ def rthread(data, *forms):
     instead of first.
 
     Examples:
-        >>> rthread(2, (op.div, 20), (op.mul, 4), (op.add, 2))
+        >>> sk.rthread(2, (op.div, 20), (op.mul, 4), (op.add, 2))
         42.0
 
     See Also:
@@ -135,7 +139,7 @@ def thread_if(data, *forms):
     first argument.
 
     Examples:
-        >>> thread_if(20, (True, op.div, 2), (False, op.mul, 4), (is_even, op.add, 2))
+        >>> sk.thread_if(20, (True, op.div, 2), (False, op.mul, 4), (sk.is_even, op.add, 2))
         12.0
 
     See Also:
@@ -168,7 +172,7 @@ def rthread_if(data, *forms):
     last argument.
 
     Examples:
-        >>> rthread_if(20, (True, op.div, 2), (False, op.mul, 4), (is_even, op.add, 2))
+        >>> sk.rthread_if(20, (True, op.div, 2), (False, op.mul, 4), (sk.is_even, op.add, 2))
         0.1
 
     See Also:
@@ -202,7 +206,7 @@ def juxt(*funcs: Callable, first=None, last=None) -> fn:
     Examples:
         We can create an argument logger using either first/last=True
 
-        >>> sqr_log = juxt(print, (X * X), last=True)
+        >>> sqr_log = sk.juxt(print, (X * X), last=True)
         >>> sqr_log(4)
         4
         16
@@ -210,10 +214,11 @@ def juxt(*funcs: Callable, first=None, last=None) -> fn:
         Consume a sequence
 
         >>> pairs = sk.juxt(next, next)
-        >>> sk.map(pairs, iter(range(10)))
-        sk.iter([(0, 1), (2, 3), (4, 5)])
+        >>> nums = iter(range(10))
+        >>> pairs(nums), pairs(nums)
+        ((0, 1), (2, 3))
     """
-    funcs = (extract_function(f) for f in funcs)
+    funcs = (to_callable(f) for f in funcs)
 
     if first is True:
         result_func, *funcs = funcs

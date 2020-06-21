@@ -1,6 +1,6 @@
 from collections.abc import MutableSequence
 
-from .._fn import extract_function
+from sidekick import to_callable
 
 SIGNALS = {
     "pre-setitem",
@@ -35,9 +35,9 @@ class ObservableSeq(MutableSequence):
             if k in ARGUMENTS:
                 callbacks = getattr(self, k)
                 if callable(v):
-                    callbacks.append(extract_function(v))
+                    callbacks.append(to_callable(v))
                 else:
-                    callbacks.extend(map(extract_function, v))
+                    callbacks.extend(map(to_callable, v))
             else:
                 raise TypeError(f"invalid parameter: {k}")
 

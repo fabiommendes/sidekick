@@ -2,7 +2,7 @@ from collections import deque
 from itertools import islice
 
 from ..typing import Seq, T, NOT_GIVEN
-from .._fn import fn
+from ..functions import fn
 from ..magics import L, N  # used in doctests
 
 __all__ = [

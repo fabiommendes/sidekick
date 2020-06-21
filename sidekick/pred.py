@@ -1,4 +1,4 @@
-from ._fn import fn, quick_fn, extract_function
+from .functions import fn, quick_fn, to_callable
 from .functions import always
 from .op import is_ as is_identical, eq as is_equal
 from .typing import Callable, overload, NOT_GIVEN, Any, TypeCheck
@@ -20,6 +20,10 @@ __all__ = [
     "is_nonzero",
     "is_equal",
     "is_identical",
+    "is_divisible_by",
+    "is_truthy",
+    "is_falsy",
+    "is_a",
 ]
 
 
@@ -36,9 +40,9 @@ def cond(test, then, else_):
         >>> [collatz(1), collatz(2), collatz(3), collatz(4)]
         [4, 1, 10, 2]
     """
-    test = extract_function(test)
-    then = extract_function(then)
-    else_ = extract_function(else_)
+    test = to_callable(test)
+    then = to_callable(then)
+    else_ = to_callable(else_)
     return (
         lambda *args, **kwargs: then(*args, **kwargs)
         if test(*args, **kwargs)

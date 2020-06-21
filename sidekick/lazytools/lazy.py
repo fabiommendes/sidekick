@@ -1,8 +1,7 @@
 from importlib import import_module
 
 from .deferred import Deferred
-from .._fn import extract_function
-from ..functions import always
+from ..functions import always, to_callable
 
 __all__ = ["lazy", "property", "delegate_to", "alias", "import_later"]
 _property = property
@@ -61,13 +60,13 @@ class property(_property):
     """
 
     def __init__(self, fget=None, fset=None, fdel=None, doc=None):
-        super().__init__(extract_function(fget), fset, fdel, doc)
+        super().__init__(to_callable(fget), fset, fdel, doc)
 
     def getter(self, fget):
-        return super().getter(extract_function(fget))
+        return super().getter(to_callable(fget))
 
     def setter(self, fset):
-        return super().setter(extract_function(fset))
+        return super().setter(to_callable(fset))
 
 
 def delegate_to(attr, *, name=None, read_only=False):
@@ -163,7 +162,7 @@ class Lazy:
     __slots__ = ("function", "name", "attr_error")
 
     def __init__(self, func, name=None, attr_error=True):
-        self.function = extract_function(func)
+        self.function = to_callable(func)
         self.name = name
         self.attr_error = attr_error or Exception
 
@@ -296,8 +295,8 @@ class TransformingAlias(MutableAlias):
     def __init__(self, attr, transform=lambda x: x, prepare=None):
         super().__init__(attr)
         self.attr = attr
-        self.transform = extract_function(transform)
-        self.prepare = None if prepare is None else extract_function(prepare)
+        self.transform = to_callable(transform)
+        self.prepare = None if prepare is None else to_callable(prepare)
 
     def __get__(self, obj, cls=None):
         if obj is not None:

@@ -1,6 +1,6 @@
 import operator
 
-from .._fn import fn
+from ..functions import fn
 
 
 # ------------------------------------------------------------------------------

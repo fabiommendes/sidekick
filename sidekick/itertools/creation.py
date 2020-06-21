@@ -1,6 +1,6 @@
 import itertools
 
-from .._fn import fn, extract_function
+from ..functions import fn, to_callable
 from .._iterator import generator, iter as _iter
 from ..magics import L, X, Y
 from ..typing import Seq, Func
@@ -62,7 +62,7 @@ def repeatedly(func, *args, **kwargs):
         >>> repeatedly(lst.pop)[:4]
         sk.iter([4, 3, 2, 1])
     """
-    func = extract_function(func)
+    func = to_callable(func)
     while True:
         yield func(*args, **kwargs)
 
@@ -118,7 +118,7 @@ def iterate(func, x):
         >>> iterate((X * 2), 1)
         sk.iter([1, 2, 4, 8, 16, 32, 64, ...])
     """
-    func = extract_function(func)
+    func = to_callable(func)
     yield x
     while True:
         x = func(x)
@@ -196,7 +196,7 @@ def iterate_indexed(func: Func, x, *, idx: Seq = None, start=0) -> Seq:
         >>> iterate_indexed(lambda i, x: i * x, 1, start=1)
         sk.iter([1, 1, 2, 6, 24, 120, 720, 5040, 40320, ...])
     """
-    func = extract_function(func)
+    func = to_callable(func)
     yield x
     idx = _count(start) if idx is None else idx
     for i in idx:

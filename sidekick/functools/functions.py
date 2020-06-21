@@ -1,12 +1,10 @@
 import time
-import types
 from collections.abc import Iterable, Mapping
 from functools import singledispatch
-from typing import Callable, TypeVar
+from typing import TypeVar
 
-from sidekick.functions.combinators import always
 from .. import _toolz as toolz
-from .._fn import fn, quick_fn, extract_function
+from ..functions import always, fn, quick_fn, to_callable
 
 NOT_GIVEN = object()
 T = TypeVar("T")
@@ -17,7 +15,6 @@ __all__ = [
     *["splice"],  # Call filtering
     *["error", "ignore_error", "retry"],  # Error control
     *["flip", "select_args", "skip_args", "keep_args"],  # Arg control
-    *["force_function"],  # Misc
 ]
 
 
@@ -63,8 +60,8 @@ def call_over(*args, **kwargs) -> fn:
         >>> func(1, 2) # (1 + 1) + (2 * 2)
         6
     """
-    f_args = tuple(map(extract_function, args))
-    f_kwargs = {k: extract_function(v) for k, v in kwargs.items()}
+    f_args = tuple(map(to_callable, args))
+    f_kwargs = {k: to_callable(v) for k, v in kwargs.items()}
     identity = lambda x: x
 
     @quick_fn
@@ -181,7 +178,7 @@ def flip(func):
         >>> rdiv(2, 10)
         5.0
     """
-    func = extract_function(func)
+    func = to_callable(func)
     return fn.curry(2, lambda x, y: func(y, x))
 
 
@@ -235,7 +232,7 @@ def keep_args(n, func):
         >>> incr(41, 'whatever')
         42
     """
-    func = extract_function(func)
+    func = to_callable(func)
     # if n == 1:
     #     return fn(lambda x, *args, **kwargs: func(x, **kwargs))
     return fn(lambda *args, **kwargs: func(*args[:n], **kwargs))
@@ -333,30 +330,6 @@ def retry(n: int, func, *, error=Exception, sleep=None):
 #
 # Misc
 #
-def force_function(func, name=None) -> Callable:
-    """
-    Force callable or placeholder expression to be converted into a function
-    object.
-
-    If function is anonymous, provide a default function name.
-    """
-
-    func = extract_function(func)
-    if isinstance(func, types.FunctionType):
-        if name is not None and func.__name__ == "<lambda>":
-            func.__name__ = name
-        return func
-    else:
-
-        def f(*args, **kwargs):
-            return func(*args, **kwargs)
-
-        if name is not None:
-            f.__name__ = name
-        else:
-            name = getattr(func.__class__, "__name__", "function")
-            f.__name__ = getattr(func, "__name__", name)
-        return f
 
 
 @singledispatch

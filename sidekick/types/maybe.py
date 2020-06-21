@@ -1,7 +1,7 @@
 from collections.abc import Iterator
 
 from ..functools import call
-from .._fn import fn
+from ..functions import fn
 from .union import Union
 
 __all__ = [

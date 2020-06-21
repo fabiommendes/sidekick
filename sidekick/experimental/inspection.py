@@ -3,7 +3,8 @@ from math import sqrt
 
 from .. import _toolz as toolz
 
-from .._fn import fn, Seq, Func, Pred, extract_function
+from ..functions import fn, Seq, Func, Pred
+from sidekick import to_callable
 
 __all__ = ["count_by", "is_distinct", "is_iterable", "has"]
 NOT_GIVEN = object()
@@ -17,7 +18,7 @@ def count_by(key: Func, seq: Seq) -> Counter:
     See Also:
         group_by
     """
-    return Counter(map(extract_function(key), seq))
+    return Counter(map(to_callable(key), seq))
 
 
 @fn.curry(2)
@@ -25,7 +26,7 @@ def count(pred: Pred, seq: Seq) -> int:
     """
     Count the number of occurrences in which predicate is true.
     """
-    pred = extract_function(pred)
+    pred = to_callable(pred)
     return sum(1 for x in seq if pred(x))
 
 
@@ -84,7 +85,7 @@ def moment(func: Func, seq: Seq) -> float:
     values in seq.
     """
 
-    func = extract_function(func)
+    func = to_callable(func)
     sum = 0
     count = 0
     for x in seq:

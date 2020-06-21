@@ -1,15 +1,17 @@
 import operator as op
 import time
+from types import FunctionType
 from inspect import Signature
 
 from sympy.utilities import pytest
 
 import sidekick.api as sk
 from sidekick import Nothing, Just
+from sidekick import placeholder as _
 from sidekick.api import X
 
 
-class TestIntrospection:
+class TestCoreFunctions:
     def test_arity(self):
         assert sk.arity(lambda x, y: None) == 2
 
@@ -24,6 +26,31 @@ class TestIntrospection:
 
         stub = sk.stub(add)
         assert str(stub) == "def add(x: float, y: float) -> float: ..."
+
+    def test_force_function_converts_placeholder(self):
+        for conv in [sk.to_fn, sk.to_callable, sk.to_function]:
+            inc = conv(_ + 1)
+            assert callable(inc)
+            assert inc(1) == 2
+
+        assert type(inc) is FunctionType
+
+    def test_to_function_converts_callable(self):
+        class Inc:
+            def __call__(self, x):
+                return x + 1
+
+        inc = Inc()
+        inc_f = sk.to_function(inc, "inc")
+        assert inc(1) == 2
+        assert inc_f(1) == 2
+        assert type(inc_f) is FunctionType
+        assert inc_f.__name__ == "inc"
+        assert sk.to_function(inc).__name__ == "Inc"
+
+        # Lambdas and name control
+        assert sk.to_function(_ + 1, "fn").__name__ == "fn"
+        assert sk.to_function(lambda n: n + 1, "fn").__name__ == "fn"
 
 
 class TestCombinators:

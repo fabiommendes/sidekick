@@ -1,10 +1,9 @@
 from collections import OrderedDict
 from types import FunctionType
 
-import pytest
-
 from sidekick import *
-from sidekick import placeholder as _, always
+from sidekick import placeholder as _
+from sidekick.api import to_callable
 
 
 class TestLazySingleDispatch:
@@ -26,23 +25,3 @@ class TestLazySingleDispatch:
         assert foo("two") == "two"
         assert foo(d) == d
         assert type(foo(d)) is dict
-
-
-class TestLibFunctions:
-    def test_force_function_converts_placeholder(self):
-        inc = force_function(_ + 1)
-        assert type(inc) is FunctionType
-        assert force_function(lambda x: x + 1, "inc").__name__ == "inc"
-
-    def test_force_function_converts_callable(self):
-        class Inc:
-            def __call__(self, x):
-                return x + 1
-
-        inc = Inc()
-        inc_f = force_function(inc, "inc")
-        assert inc(1) == 2
-        assert inc_f(1) == 2
-        assert type(inc_f) is FunctionType
-        assert inc_f.__name__ == "inc"
-        assert force_function(inc).__name__ == "Inc"

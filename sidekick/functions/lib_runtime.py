@@ -1,7 +1,12 @@
 from functools import wraps
 
-from sidekick.functions._fn import fn, quick_fn
-from ..typing import Callable, NOT_GIVEN
+from .core_functions import quick_fn
+from .fn import fn
+from ..typing import Callable, NOT_GIVEN, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .. import api as sk
+    from ..api import X
 
 
 @fn
@@ -13,7 +18,7 @@ def once(func: Callable) -> fn:
 
     Examples:
         This is useful to wrap initialization routines or singleton factories.
-        >>> @once
+        >>> @sk.once
         ... def configure():
         ...     print('setting up...')
         ...     return {'status': 'ok'}
@@ -58,7 +63,7 @@ def thunk(*args, **kwargs):
     This function is designed to be used as a decorator.
 
     Example:
-        >>> @thunk(host='localhost', port=5432)
+        >>> @sk.thunk(host='localhost', port=5432)
         ... def db(host, port):
         ...     print(f'connecting to SQL server at {host}:{port}...')
         ...     return {'host': host, 'port': port}
@@ -104,11 +109,11 @@ def call_after(n, func, *, default=None):
             Number of times before starting invoking n.
         func:
             Function to be invoked.
-        result:
+        default:
             Value returned before func() starts being called.
 
     Example:
-        >>> f = call_after(2, (X * 2), default=0)
+        >>> f = sk.call_after(2, (X * 2), default=0)
         >>> [f(1), f(2), f(3), f(4), ...]
         [0, 0, 6, 8, ...]
 
@@ -143,7 +148,7 @@ def call_at_most(n, func):
             Function to restrict.
 
     Examples:
-        >>> log = call_at_most(2, print)
+        >>> log = sk.call_at_most(2, print)
         >>> log("error1"); log("error2"); log("error3"); log("error4")
         error1
         error2
@@ -179,7 +184,7 @@ def throttle(dt, func):
     When rate-limited, returns the last result returned by func.
 
     Example:
-        >>> f = throttle(1, (X * 2))
+        >>> f = sk.throttle(1, (X * 2))
         >>> [f(21), f(14), f(7), f(0)]
         [42, 42, 42, 42]
     """
@@ -220,8 +225,9 @@ def background(func, *, timeout: float = None, default=NOT_GIVEN):
         default
 
     Examples:
+
         >>> fib = lambda n: 1 if n <= 2 else fib(n - 1) + fib(n - 2)
-        >>> fib_bg = background(fib, timeout=1.0)
+        >>> fib_bg = sk.background(fib, timeout=1.0)
         >>> result = fib_bg(10)  # Do not block execution, return a thunk
         >>> result()             # Call the result to get value (blocking operation)
         55

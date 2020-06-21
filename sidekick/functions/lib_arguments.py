@@ -1,4 +1,5 @@
-from sidekick.functions._fn import fn, quick_fn
+from .core_functions import quick_fn
+from .fn import fn
 
 
 @fn
@@ -6,9 +7,6 @@ def set_defaults(func, *defaults):
     """
     Return a new function that replace all null arguments in the given positions
     by the provided default value.
-
-    Examples:
-        >>> my_filter = sk.fnull(sk.is_true, str.casefold)
     """
 
     if len(defaults) == 1:

@@ -1,7 +1,7 @@
 from operator import itemgetter
 
 from ..typing import Seq, Pred
-from .._fn import fn, extract_function
+from ..functions import fn, to_callable
 
 __all__ = ["select_indexed", "select_indexes"]
 
@@ -52,6 +52,6 @@ def select_indexed(selector, pred: Pred, seq: Seq, *, start=0) -> Seq:
     See Also:
         select_indexes
     """
-    pred = extract_function(pred)
+    pred = to_callable(pred)
     pred_ = lambda x: pred(_second_item(x))
     return selector(pred_, enumerate(seq, start))

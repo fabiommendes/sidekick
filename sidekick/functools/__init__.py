@@ -4,8 +4,7 @@ from . import dispatch as _dispatch
 from . import functions as _functions
 from .dispatch import lazy_singledispatch
 from .functions import *
-from .._fn import fn as _fn
-from .._modules import GetAttrModule, set_module_class
+from .functions import fn as _fn
 
 __all__ = sorted(
     ["lru_cache", "args", "kwargs", "lazy_singledispatch", *_functions.__all__]

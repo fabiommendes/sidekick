@@ -1,6 +1,7 @@
 from itertools import tee
 from sidekick.beta.misc import fill
-from .._fn import fn, Func, Seq, extract_function
+from ..functions import fn, Func, Seq
+from sidekick import to_callable
 
 __all__ = ["order_by", "transform", "transform_map"]
 
@@ -16,8 +17,8 @@ def order_by(key: Func, seq: Seq) -> list:
         seq:
             Sequence
     """
-    key = extract_function(key)
-    return sorted(seq, key=extract_function(key))
+    key = to_callable(key)
+    return sorted(seq, key=to_callable(key))
 
 
 @fn.curry(2)
@@ -35,8 +36,8 @@ def arg_transformer(*args, **kwargs) -> Func:
         {'sep': ':'}
     """
     id_ = lambda x: x
-    fargs = tuple(extract_function(f or id_) for f in args)
-    fkwargs = {k: extract_function(f or id_) for k, f in kwargs.items()}
+    fargs = tuple(to_callable(f or id_) for f in args)
+    fkwargs = {k: to_callable(f or id_) for k, f in kwargs.items()}
 
     def arg_transformer(*args, **kwargs):
         args = tuple(f(x) for f, x in zip(fill(id_, fargs), args))

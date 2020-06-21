@@ -2,9 +2,10 @@ import itertools
 import typing
 
 from .. import _toolz as toolz
-from .._fn import fn, extract_function
-from ..typing import Func, Pred, Seq
+from .._iterator import iter as sk_iter
+from ..functions import fn, to_callable
 from ..magics import X, L
+from ..typing import Func, Pred, Seq
 
 _filter = filter
 __all__ = [
@@ -29,6 +30,22 @@ __all__ = [
 # Filtering functions
 #
 @fn.curry(2)
+def filter(pred: Pred, seq: Seq) -> Seq:
+    """
+    Sidekick implementation of filter.
+
+
+    Args:
+        pred:
+            A predicate function.
+        seq:
+            The input sequence.
+    """
+    pred = to_callable(pred)
+    return sk_iter(_filter(pred, seq))
+
+
+@fn.curry(2)
 def drop_while(pred: Pred, seq: Seq) -> Seq:
     """
     Drop items from the iterable while predicate(item) is true.
@@ -46,7 +63,7 @@ def drop_while(pred: Pred, seq: Seq) -> Seq:
         drop
         take_while
     """
-    return itertools.dropwhile(extract_function(pred), seq)
+    return itertools.dropwhile(to_callable(pred), seq)
 
 
 @fn.curry(2)
@@ -74,7 +91,7 @@ def remove(pred: Pred, seq: Seq) -> Seq:
     See Also:
         :func:`tools.remove`.
     """
-    return toolz.remove(extract_function(pred), seq)
+    return toolz.remove(to_callable(pred), seq)
 
 
 @fn.curry(2)
@@ -95,7 +112,7 @@ def take_while(pred: Pred, seq: Seq) -> Seq:
         take
         drop_while
     """
-    return itertools.takewhile(extract_function(pred), seq)
+    return itertools.takewhile(to_callable(pred), seq)
 
 
 @fn.curry(2)
@@ -135,7 +152,7 @@ def unique(seq: Seq, *, key: Func = None, exclude: Seq = ()) -> Seq:
         Elements of a sequence or their keys should be hashable, otherwise it
         uses a slow path.
     """
-    pred = extract_function(key or (lambda v: v))
+    pred = to_callable(key or (lambda v: v))
     seen = set(map(key, exclude))
     add = seen.add
 
@@ -210,7 +227,7 @@ def without_keys(items, key: Func, seq: Seq) -> Seq:
     See Also:
         without_keys
     """
-    key = extract_function(key)
+    key = to_callable(key)
     return filter(lambda x: key(x) not in items, seq)
 
 
@@ -307,7 +324,7 @@ def separate(pred: Func, seq: Seq, consume: bool = False) -> (Seq, Seq):
         >>> list(a), list(b)
         ([1, 3, 5], [2, 4])
     """
-    pred = extract_function(pred)
+    pred = to_callable(pred)
     if consume:
         a, b = [], []
         add_a = a.append
@@ -377,7 +394,7 @@ def first_repeated(key: Func, seq: Seq):
         (3, 1)
     """
 
-    key = extract_function(key)
+    key = to_callable(key)
     seen = set()
     add = seen.add
     for i, x in enumerate(seq):
@@ -411,7 +428,7 @@ def find(pred: Pred, seq: Seq) -> (int, object):
         >>> find((X == 11), [2, 3, 5, 7, 11, 13, 17])
         (4, 11)
     """
-    pred = extract_function(pred)
+    pred = to_callable(pred)
     for i, x in enumerate(seq):
         if pred(x):
             return i, x

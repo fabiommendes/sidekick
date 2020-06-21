@@ -1,10 +1,11 @@
 from functools import partial as _partial
-from typing import Callable
 
-from sidekick.functions._fn import fn, quick_fn, Curried
-from sidekick import extract_function
-from sidekick.functions._fn_introspection import arity
-from ..typing import Func, overload
+from .core_functions import arity, to_callable, quick_fn
+from .fn import fn, Curried
+from ..typing import Func, Callable, overload, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .. import api as sk
 
 
 def partial(func: Func, *args, **kwargs) -> fn:
@@ -20,15 +21,15 @@ def partial(func: Func, *args, **kwargs) -> fn:
             function.
 
     Examples:
-        >>> func = lambda x, y: x + y
-        >>> incr =  partial(func, 1)
+        >>> from operator import add
+        >>> incr =  sk.partial(add, 1)
         >>> incr(41)
         42
 
     See Also:
         :func:`rpartial`
     """
-    return quick_fn(_partial(extract_function(func), *args, **kwargs).__call__)
+    return quick_fn(_partial(to_callable(func), *args, **kwargs).__call__)
 
 
 def rpartial(func: Func, *args, **kwargs) -> fn:
@@ -36,15 +37,15 @@ def rpartial(func: Func, *args, **kwargs) -> fn:
     Partially apply arguments from the right.
 
     Examples:
-        >>> func = lambda x, y: x / y
-        >>> half = rpartial(func, 2)
+        >>> from operator import truediv as div
+        >>> half = sk.rpartial(div, 2)
         >>> half(42)
         21.0
 
     See Also:
         :func:`partial`
     """
-    func = extract_function(func)
+    func = to_callable(func)
     return quick_fn(lambda *args_, **kwargs_: func(*args_, *args, **kwargs, **kwargs_))
 
 
@@ -65,7 +66,7 @@ def curry(n, func=None):
     Curried functions return partial applications of the function if called with
     missing arguments:
 
-    >>> add = curry(2, lambda x, y, *args: x + y + sum(args))
+    >>> add = sk.curry(2, lambda x, y: x + y)
 
     We can call a function two ways:
 
@@ -80,11 +81,11 @@ def curry(n, func=None):
 
     :func:`curry` is itself a curried function, hence it can be called as
 
-    >>> add = curry(2)(lambda x, y: x + y)
+    >>> add = sk.curry(2)(lambda x, y: x + y)
 
     or equivalently as a decorator
 
-    >>> @curry(2)
+    >>> @sk.curry(2)
     ... def add(x, y):
     ...     return x + y
 
@@ -101,7 +102,7 @@ def curry(n, func=None):
     But it accepts more than 2 arguments, if needed. (Notice that only the
     first two arguments auto-curry.)
 
-    >>> add = curry(2, lambda *args: sum(args))
+    >>> add = sk.curry(2, lambda *args: sum(args))
     >>> add(1, 2, 3, 4)
     10
 

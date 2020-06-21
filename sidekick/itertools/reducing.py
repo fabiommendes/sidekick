@@ -2,7 +2,7 @@ from functools import reduce as _reduce
 
 from .. import _toolz as toolz
 
-from .._fn import fn, extract_function
+from ..functions import fn, to_callable
 from ..typing import Func, Seq, Pred
 
 __all__ = [
@@ -23,7 +23,7 @@ def fold(func: Func, init, seq: Seq):
         >>> fold(op.add, 0, [1, 2, 3, 4])
         10
     """
-    func = extract_function(func)
+    func = to_callable(func)
     return _reduce(func, seq, init)
 
 
@@ -38,7 +38,7 @@ def reduce(func: Func, seq: Seq):
         >>> reduce(op.add, [1, 2, 3, 4])
         10
     """
-    func = extract_function(func)
+    func = to_callable(func)
     return _reduce(func, seq)
 
 
@@ -50,7 +50,7 @@ def accumulate(func: Func, seq: Seq) -> Seq:
     """
     Like :func:`scan`, but uses first item of sequence as initial value.
     """
-    func = extract_function(func)
+    func = to_callable(func)
     return toolz.accumulate(func, seq)
 
 
@@ -65,7 +65,7 @@ def scan(func: Func, init, seq: Seq) -> Seq:
 
     in which result[i] corresponds to items in the resulting sequence.
     """
-    func = extract_function(func)
+    func = to_callable(func)
     return toolz.accumulate(func, seq, init)
 
 
@@ -137,7 +137,7 @@ def all_by(pred: Pred, seq: Seq) -> bool:
         >>> all_by((X % 2), [1, 3, 5])
         True
     """
-    pred = extract_function(pred)
+    pred = to_callable(pred)
     return all(map(pred, seq))
 
 
@@ -150,5 +150,5 @@ def any_by(pred: Pred, seq: Seq) -> bool:
         >>> any_by(pred.divisible_by(2), [2, 3, 5, 7, 11, 13])
         True
     """
-    pred = extract_function(pred)
+    pred = to_callable(pred)
     return any(map(pred, seq))

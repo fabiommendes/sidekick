@@ -7,7 +7,7 @@ def test(ctx, all=False):
     Run tests.
     """
     if all:
-        ctx.run("cd docs && make doctest")
+        doctest(ctx)
     ctx.run("pytest tests/", pty=True)
 
 
@@ -23,6 +23,14 @@ def docs(ctx, clear=False, strict=False, auto=False):
         ctx.run("sphinx-autobuild docs/ build/docs/ -n" + suffix, pty=True)
     else:
         ctx.run("sphinx-build docs/ build/docs/ -n" + suffix, pty=True)
+
+
+@task
+def doctest(ctx):
+    """
+    Run sphinx doc tests.
+    """
+    ctx.run("cd docs && make doctest")
 
 
 @task

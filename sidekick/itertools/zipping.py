@@ -3,7 +3,7 @@ import itertools
 from .. import _toolz as toolz
 from typing import Union
 
-from .._fn import fn, extract_function
+from ..functions import fn, to_callable
 from ..typing import Seq, Func
 from .basic import is_empty
 
@@ -147,9 +147,9 @@ def zip_with(func: Union[Func, Seq], *seqs: Seq) -> Seq:
     """
     arg_items = zip(*seqs)
     try:
-        func = extract_function(func)
+        func = to_callable(func)
     except TypeError:
-        to_func = extract_function
+        to_func = to_callable
         yield from (to_func(f)(*args) for f, args in zip(func, arg_items))
     else:
         yield from (func(*args) for args in arg_items)

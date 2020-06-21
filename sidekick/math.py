@@ -1,7 +1,7 @@
 import math as _math
 
-from .builtins import _execute_with, _create_fn_functions, abs, int, float, complex
-from ._fn import fn
+from .builtins import _execute_with, _create_fn_functions
+from .functions import fn
 
 
 #
