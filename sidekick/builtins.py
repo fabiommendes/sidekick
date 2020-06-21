@@ -3,7 +3,7 @@ from functools import wraps as _wraps
 
 from .typing import Pred, Seq, Func
 from .functions import fn, to_callable
-from ._iterator import iter as _iter, generator
+from .seq import iter as _iter
 
 _execute_with = lambda **kwargs: lambda f: f(**kwargs) or f
 _flipped = lambda f: _wraps(f)(lambda x, y: f(y, x))

@@ -2,7 +2,7 @@ import itertools
 import typing
 
 from .. import _toolz as toolz
-from .._iterator import iter as sk_iter
+from ..seq import iter as sk_iter
 from ..functions import fn, to_callable
 from ..magics import X, L
 from ..typing import Func, Pred, Seq

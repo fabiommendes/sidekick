@@ -166,7 +166,7 @@ class prev_iter(Iterator):
     Iterator that stores the value of last iteration.
 
     Examples:
-        >>> fibo = sk.iterate_past((X + Y), [1, 2])
+        >>> fibo = sk.iterate_many((X + Y), [1, 2])
         >>> it = prev_iter(fibo, start=1)
         >>> (x / it.prev for x in it) | L[:50]              # doctest: +ELLIPSIS
         [1.0, 2.0, 1.5, ..., 1.618033988749895, 1.618033988749895]

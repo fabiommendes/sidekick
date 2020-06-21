@@ -14,7 +14,7 @@ __version__ = "0.8.0"
 
 from . import op
 from ._placeholder import _ as placeholder
-from .functions import *
+from .api import *
 from .functools import *
 from .itertools import *
 from .lazytools import *
@@ -26,7 +26,6 @@ from .tree.node_sexpr import SExpr
 from .types import *
 from .types import json
 from . import tree
-from ._iterator import iter, generator
 
 
 @call()

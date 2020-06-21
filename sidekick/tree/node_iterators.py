@@ -1,7 +1,7 @@
 from itertools import chain, cycle, islice
 from typing import Sequence, Iterator, Callable
 
-from sidekick import filter as _filter
+from ..builtins import filter as _filter
 
 ID = lambda x: x
 TRUE = lambda x: True

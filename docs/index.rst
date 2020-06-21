@@ -48,7 +48,9 @@ Contents
    :maxdepth: 3
 
    intro-functions.rst
+   api-guide.rst
    lib-functions.rst
+   lib-seq.rst
    references.rst
    faq.rst
    license.rst

@@ -440,7 +440,7 @@ changing the core language, not as a mere library feature. The next best
 thing would be to re-purpose existing operators. Unfortunately, we do not
 have very good options here: bitwise operators are already taken (hence,
 we can't use the pipe ``|`` operator), comparison operators do not work
-well in chained operations [#chain] and arithmetic operators have a
+well in chained operations [#chain]_ and arithmetic operators have a
 high precedence which makes the annoying to use.
 
 .. [#chain] Python translates chains like ``x > f > g`` to ``x > f and f > g``.

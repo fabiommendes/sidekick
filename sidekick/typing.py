@@ -5,6 +5,7 @@ from types import FunctionType, MethodType, BuiltinFunctionType, BuiltinMethodTy
 FunctionTypes = FunctionType, MethodType, BuiltinFunctionType, BuiltinMethodType
 
 # Types
+Fn2 = Callable[[Any, Any], Any]
 Func = _typ.Union[_typ.Callable, type(None)]
 Pred = _typ.Union[_typ.Callable, type(None)]
 Seq = _typ.Iterable

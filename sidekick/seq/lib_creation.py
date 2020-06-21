@@ -1,20 +1,12 @@
 import itertools
 
 from ..functions import fn, to_callable
-from ..seq import generator, iter as _iter
-from ..magics import L, X, Y
-from ..typing import Seq, Func
+from .iter import generator, iter as _iter
+from ..typing import Seq, Func, TYPE_CHECKING
 
-__all__ = [
-    "cycle",
-    "iterate",
-    "iterate_indexed",
-    "iterate_past",
-    "repeat",
-    "repeatedly",
-    "singleton",
-    "unfold",
-]
+if TYPE_CHECKING:
+    from .. import api as sk
+    from ..api import X, Y
 
 _enumerate = enumerate
 _cycle = itertools.cycle
@@ -31,8 +23,8 @@ def cycle(seq):
         cycle(seq) ==> seq[0], seq[1], ..., seq[n - 1], seq[0], seq[1], ...
 
     Examples:
-        >>> cycle([1, 2, 3]) | L[:10]
-        [1, 2, 3, 1, 2, 3, 1, 2, 3, 1]
+        >>> sk.cycle([1, 2, 3])
+        sk.iter([1, 2, 3, 1, 2, 3, ...])
     """
     return _iter(_cycle(seq))
 
@@ -45,8 +37,8 @@ def repeat(obj, *, times=None):
     endlessly.
 
     Examples:
-        >>> repeat(42, times=5) | L
-        [42, 42, 42, 42, 42]
+        >>> sk.repeat(42, times=5)
+        sk.iter([42, 42, 42, 42, 42])
     """
     return _iter(_repeat(obj, times))
 
@@ -59,8 +51,8 @@ def repeatedly(func, *args, **kwargs):
 
     Examples:
         >>> lst = [1, 2, 3, 4]
-        >>> repeatedly(lst.pop)[:4]
-        sk.iter([4, 3, 2, 1])
+        >>> sk.repeatedly(lst.pop, 0)[:4]
+        sk.iter([1, 2, 3, 4])
     """
     func = to_callable(func)
     while True:
@@ -74,7 +66,7 @@ def singleton(obj):
     Return iterator with a single object.
 
     Examples:
-        >>> singleton(42)
+        >>> sk.singleton(42)
         sk.iter([42])
     """
     yield obj
@@ -92,8 +84,8 @@ def unfold(func, seed):
     None or raise StopIteration.
 
     Examples:
-        >>> unfold(lambda x: (x + 1, x), 0) | L[:10]
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        >>> sk.unfold(lambda x: (x + 1, x), 0)
+        sk.iter([0, 1, 2, 3, 4, 5, 6, ...])
 
     """
     try:
@@ -108,79 +100,73 @@ def unfold(func, seed):
 
 @fn.curry(2)
 @generator
-def iterate(func, x):
+def iterate(func, x, *args):
     """
     Repeatedly apply a function func to input.
+
+    If more than one argument to func is passed, it iterate over the past n
+    values. It requires at least one argument, if you need to iterate a zero
+    argument function, call :func:`repeatedly`
 
         iterate(f, x) ==> x, f(x), f(f(x)), ...
 
     Examples:
-        >>> iterate((X * 2), 1)
+        Simple usage, with a single argument. Produces powers of two.
+
+        >>> sk.iterate((X * 2), 1)
         sk.iter([1, 2, 4, 8, 16, 32, 64, ...])
+
+        Now we call with two arguments to func to produce Fibonacci numbers
+
+        >>> sk.iterate((X + Y), 1, 1)
+        sk.iter([1, 1, 2, 3, 5, 8, 13, ...])
+
+    See Also:
+        :func:`repeatedly`
     """
     func = to_callable(func)
-    yield x
-    while True:
-        x = func(x)
+
+    if not args:
         yield x
-
-
-@fn.curry(2)
-@generator
-def iterate_past(func: Func, init: Seq) -> Seq:
-    """
-    Iterate func and compute next element by passing the last n elements to
-    func.
-
-    Number ``n`` is given by the size of the ``init`` sequence. Elements from
-    init are included on the resulting sequence.
-
-    Examples:
-        >>> iterate_past((X + Y), [1, 1]) | L[:10]
-        sk.iter([1, 1, 2, 3, 5, 8, 13, ...])
-    """
-
-    init = tuple(init)
-    n = len(init)
+        while True:
+            x = func(x)
+            yield x
 
     # Optimize some special cases
-    if n == 0:
-        while True:
-            yield func()
 
-    elif n == 1:
-        yield from iterate(func, init[0])
+    init = (x, *args)
+    n = len(init)
+    yield from init
 
-    elif n == 2:
+    if n == 2:
         x, y = init
-        yield from init
         while True:
             x, y = y, func(x, y)
             yield y
 
     elif n == 3:
+        # noinspection PyTupleAssignmentBalance
         x, y, z = init
-        yield from init
         while True:
             x, y, z = y, z, func(x, y, z)
             yield z
 
     else:
         args = init
-        yield from init
         while True:
             new = func(*args)
+            _, *args = args
+            args = (*args, new)
             yield new
-            args = args[1:] + (new,)
 
 
 @fn.curry(2)
 @generator
-def iterate_indexed(func: Func, x, *, idx: Seq = None, start=0) -> Seq:
+def iterate_indexed(func: Func, x, *args, idx: Seq = None, start=0) -> Seq:
     """
     Similar to :func:`iterate`, but also pass the index of element to func.
 
-        for_each(f, x) ==> x, f(0, x), f(1, <previous>), ...
+        iterate_indexed(f, x) ==> x, f(0, x), f(1, <previous>), ...
 
     Args:
         func:
@@ -188,17 +174,27 @@ def iterate_indexed(func: Func, x, *, idx: Seq = None, start=0) -> Seq:
         x:
             Initial value of iteration.
         idx:
-            Sequence of indexes. If not given, uses N[start, ...]
+            Sequence of indexes. If not given, uses start, start + 1, ...
         start:
             Starting value for sequence of indexes.
 
     Examples:
-        >>> iterate_indexed(lambda i, x: i * x, 1, start=1)
+        >>> sk.iterate_indexed(lambda i, x: i * x, 1, start=1)
         sk.iter([1, 1, 2, 6, 24, 120, 720, 5040, 40320, ...])
     """
     func = to_callable(func)
     yield x
     idx = _count(start) if idx is None else idx
-    for i in idx:
-        x = func(i, x)
-        yield x
+
+    if not args:
+        for i in idx:
+            x = func(i, x)
+            yield x
+    else:
+        yield from args
+        args = (x, *args)
+
+        for i in idx:
+            new = func(i, *args)
+            yield new
+            args = args[1:] + (new,)

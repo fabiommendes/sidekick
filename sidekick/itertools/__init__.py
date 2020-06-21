@@ -1,11 +1,8 @@
-from .basic import *
-from .creation import *
 from .filtering import *
 from .partitioning import *
 from .reducing import *
 from .zipping import *
 from .transforms import *
-from ..builtins import map, filter, zip
 
 #
 # Aliases

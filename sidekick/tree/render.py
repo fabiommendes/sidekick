@@ -1,7 +1,7 @@
 from typing import NamedTuple
 
-from sidekick.tree.node_base import NodeOrLeaf
-from ..itertools import uncons
+from .node_base import NodeOrLeaf
+from ..seq import uncons
 from ..render import PrintContext, PrettyPrinter
 
 

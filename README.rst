@@ -47,16 +47,16 @@ Fibonacci numbers
 Let us start with the classics. This produces an infinite sequences of
 Fibonacci numbers
 
->>> fibonacci = sk.iterate_past((X + Y), [1, 1])
+>>> fibonacci = sk.iterate((X + Y), 1, 1)
 >>> fibonacci
 sk.iter([1, 1, 2, 3, 5, 8, ...])
 
 **Explanation**
 
-``iterate_past`` creates an infinite iterator that generates each number
+``iterate`` creates an infinite iterator that generates each number
 by applying the function in the first argument to the last n elements generated
-by the sequence. ``n`` is given by the size of the initial sequence, which in
-our example is 2. The Fibonacci sequence is obviously created by always adding
+by the sequence. The sequence is initialized with the following arguments and hence
+``n`` in our example is 2. The Fibonacci sequence is created by always adding
 the last two elements.
 
 We construct our summation function using the magic objects ``X`` and ``Y``.

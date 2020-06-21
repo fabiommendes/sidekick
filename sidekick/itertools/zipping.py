@@ -5,7 +5,7 @@ from typing import Union
 
 from ..functions import fn, to_callable
 from ..typing import Seq, Func
-from .basic import is_empty
+from ..seq import is_empty
 
 __all__ = ["window", "with_next", "with_prev", "zipper", "rzipper", "zip_with"]
 
