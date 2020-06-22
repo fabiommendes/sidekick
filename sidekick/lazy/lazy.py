@@ -1,9 +1,6 @@
-from importlib import import_module
-
-from .deferred import Deferred
 from ..functions import always, to_callable
 
-__all__ = ["lazy", "property", "delegate_to", "alias", "import_later"]
+__all__ = ["lazy", "property", "delegate_to", "alias"]
 _property = property
 ATTR_ERROR_MSG = """An AttributeError was raised when evaluating a lazy property.
 
@@ -47,26 +44,17 @@ def lazy(func=None, *, shared=False, name=None, attr_error=False):
         attr_error = always(RuntimeError(ATTR_ERROR_MSG))
 
     if shared:
-        return SharedLazy(func, name=name, attr_error=attr_error)
+        return _SharedLazy(func, name=name, attr_error=attr_error)
     else:
-        return Lazy(func, name=name, attr_error=attr_error)
+        return _Lazy(func, name=name, attr_error=attr_error)
 
 
-# noinspection PyShadowingBuiltins,PyPep8Naming
-class property(_property):
+def property(fget=None, fset=None, fdel=None, doc=None):
     """
     A Sidekick-enabled property descriptor. It behaves just as standard Python
     properties, but it also accepts placeholder expressions as a getter input.
     """
-
-    def __init__(self, fget=None, fset=None, fdel=None, doc=None):
-        super().__init__(to_callable(fget), fset, fdel, doc)
-
-    def getter(self, fget):
-        return super().getter(to_callable(fget))
-
-    def setter(self, fset):
-        return super().setter(to_callable(fset))
+    return _Property(fget, fset, fdel, doc)
 
 
 def delegate_to(attr, *, name=None, read_only=False):
@@ -97,9 +85,9 @@ def delegate_to(attr, *, name=None, read_only=False):
             If True, makes the the delegation read-only.
     """
     if read_only:
-        return ReadOnlyDelegate(attr, name)
+        return _ReadOnlyDelegate(attr, name)
     else:
-        return Delegate(attr, name)
+        return _Delegate(attr, name)
 
 
 def alias(attr, *, mutable=False, transform=None, prepare=None):
@@ -117,44 +105,35 @@ def alias(attr, *, mutable=False, transform=None, prepare=None):
             If given, prepare value before saving.
     """
     if transform is not None or prepare is not None:
-        return TransformingAlias(attr, transform, prepare)
+        return _TransformingAlias(attr, transform, prepare)
     elif mutable:
-        return MutableAlias(attr)
+        return _MutableAlias(attr)
     else:
-        return ReadOnlyAlias(attr)
-
-
-def import_later(path, package=None):
-    """
-    Lazily import module or object inside a module. Can refer to a module or
-    a symbol exported by that module.
-
-    Args:
-        path:
-            Python path to module or object. Specific objects inside a module
-            are refered as "<module path>:<object name>".
-        package:
-            Package name if path is a relative module path.
-
-    Usage:
-        import_later('numpy.random'):
-            Proxy to the numpy.random module.
-        import_later('numpy.random:uniform'):
-            Proxy to the "uniform" object of the numpy module.
-        import_later('.models', package=__package__):
-            Relative import
-    """
-    if ":" in path:
-        path, _, obj = path.partition(":")
-        return DeferredImport(path, obj, package=package)
-    else:
-        return LazyModule(path, package=package)
+        return _ReadOnlyAlias(attr)
 
 
 #
 # Helper classes
 #
-class Lazy:
+class _Property(_property):
+    """
+    Sidekick property descriptor.
+    """
+
+    def __init__(self, fget=None, fset=None, fdel=None, doc=None):
+        fget = fget if fget is None else to_callable(fget)
+        fset = fset if fset is None else to_callable(fset)
+        fdel = fdel if fdel is None else to_callable(fdel)
+        super().__init__(fget, fset, fdel, doc)
+
+    def getter(self, fget):
+        return super().getter(fget if fget is None else to_callable(fget))
+
+    def setter(self, fset):
+        return super().setter(fset if fset is None else to_callable(fset))
+
+
+class _Lazy:
     """
     Lazy attribute of an object
     """
@@ -192,7 +171,7 @@ class Lazy:
         return name
 
 
-class SharedLazy(Lazy):
+class _SharedLazy(_Lazy):
     """
     Lazy attribute of a class and all its instances.
     """
@@ -215,13 +194,13 @@ class SharedLazy(Lazy):
         return self.value
 
 
-class Delegate:
+class _Delegate:
     """
     Delegate attribute to another attribute.
     """
 
     __slots__ = ("attr", "name")
-    __set_name__ = Lazy.__set_name__
+    __set_name__ = _Lazy.__set_name__
 
     def __init__(self, attr, name=None):
         self.attr = attr
@@ -244,7 +223,7 @@ class Delegate:
         return find_descriptor_name(self, cls)
 
 
-class ReadOnlyDelegate(Delegate):
+class _ReadOnlyDelegate(_Delegate):
     """
     Read only version of Delegate.
     """
@@ -255,7 +234,7 @@ class ReadOnlyDelegate(Delegate):
         raise AttributeError(self.name or self._init_name(type(obj)))
 
 
-class MutableAlias:
+class _MutableAlias:
     """
     Alias to another attribute/method in class.
     """
@@ -274,7 +253,7 @@ class MutableAlias:
         setattr(obj, self.attr, value)
 
 
-class ReadOnlyAlias(MutableAlias):
+class _ReadOnlyAlias(_MutableAlias):
     """
     Like alias, but read-only.
     """
@@ -285,7 +264,7 @@ class ReadOnlyAlias(MutableAlias):
         raise AttributeError(self.attr)
 
 
-class TransformingAlias(MutableAlias):
+class _TransformingAlias(_MutableAlias):
     """
     A bijection to another attribute in class.
     """
@@ -309,30 +288,6 @@ class TransformingAlias(MutableAlias):
         else:
             value = self.prepare(value)
         setattr(obj, self.attr, value)
-
-
-class LazyModule(Deferred):
-    """
-    A module that has not been imported yet.
-    """
-
-    def __init__(self, path, package=None):
-        super().__init__(import_module, path, package=package)
-
-    def __getattr__(self, attr):
-        value = super().__getattr__(attr)
-        setattr(self, attr, value)
-        return value
-
-
-class DeferredImport(Deferred):
-    """
-    An object of a module that has not been imported yet.
-    """
-
-    def __init__(self, path, attr, package=None):
-        mod = LazyModule(path, package)
-        super().__init__(lambda: getattr(mod, attr))
 
 
 #

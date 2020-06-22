@@ -49,8 +49,8 @@ class TestLinkedLists:
 
         # Sort/partition
         assert lst.reversed() == List([3, 2, 1])
-        assert lst.partition_at(lambda x: x % 2 == 0) == (List([1]), List([2, 3]))
-        assert empty.partition_at((X % 2)) == (empty, empty)
+        assert lst.partition(lambda x: x % 2 == 0) == (List([1]), List([2, 3]))
+        assert empty.partition((X % 2)) == (empty, empty)
 
         # Mapping
         assert lst.map((X * 2)) == List([2, 4, 6])

@@ -31,7 +31,10 @@ class Proxy:
 # noinspection PyMissingConstructor
 class Deferred(Proxy):
     """
-    Like Delayed, but wraps object into a proxy shell.
+    Wraps uninitialized object into a proxy shell.
+
+    Object is declared as a thunk and is initialized the first time some
+    attribute or method is requested.
     """
 
     __slots__ = ("_deferred_constructor_",)

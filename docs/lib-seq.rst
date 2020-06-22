@@ -5,7 +5,7 @@
 .. currentmodule:: sidekick.seq
 
 .. TODO
-Describe the module
+   Describe the module
 
 Basic types
 ===========
@@ -27,8 +27,6 @@ Basic manipulation of sequences
    find
    only
    last
-   rest
-   init
    is_empty
    length
    consume

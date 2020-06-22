@@ -190,7 +190,7 @@ class List(Union):
             acc = acc.cons(x)
         return acc
 
-    def partition_at(lst, pred):
+    def partition(lst, pred):
         """
         Separate list on predicate.
         """

@@ -16,7 +16,7 @@ from . import op
 from ._placeholder import _ as placeholder
 from .api import *
 from .functools import *
-from .lazytools import *
+from .lazy import *
 from .magics import *
 from .misc import misc
 from .render import pprint, pformat

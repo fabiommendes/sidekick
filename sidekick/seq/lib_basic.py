@@ -113,7 +113,7 @@ def first(seq: Seq[T], default=NOT_GIVEN) -> T:
 @fn.curry(1)
 def second(seq: Seq[T], default=NOT_GIVEN) -> T:
     """
-    Return the first element of sequence.
+    Return the second element of sequence.
 
     Raise ValueError or return the given default if sequence has last than 2
     elements.

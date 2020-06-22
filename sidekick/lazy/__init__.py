@@ -1,6 +1,7 @@
 from .deferred import *
 from .lazy import *
 from .zombie import zombie, ZombieTypes as _ZombieTypes
+from .imports import import_later
 
 
 def touch(obj):

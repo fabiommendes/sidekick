@@ -2,7 +2,7 @@ from typing import Any
 
 from .node_base import Node
 from .node_classes import NodeOrLeaf
-from ..lazytools import delegate_to
+from ..lazy import delegate_to
 
 
 class SExprBase(Node):

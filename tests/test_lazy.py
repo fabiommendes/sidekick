@@ -3,8 +3,8 @@ import pytest
 import sidekick as sk
 from sidekick import deferred, zombie, lazy, Deferred
 from sidekick import placeholder as _, record
-from sidekick.lazytools.zombie import ZombieTypes
-from sidekick.lazytools.lazy import (
+from sidekick.lazy.zombie import ZombieTypes
+from sidekick.lazy.lazy import (
     find_descriptor_name,
     find_descriptor_owner,
     Delegate,

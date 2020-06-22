@@ -32,3 +32,4 @@ This is a major refactor preparing to 1.0.0
 * Refactor documentation
 * Create the ``import sidekick.api as sk`` idiom.
 * Move functions from ``sidekick.functools`` to ``sidekick.functions``
+* Move functions from ``sidekick.itertools`` to ``sidekick.seq``

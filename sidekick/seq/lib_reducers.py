@@ -45,7 +45,7 @@ def reduce(func: Func, seq: Seq, init=NOT_GIVEN):
 
     See Also:
         :func:`fold`
-        :func:`accumulate`
+        :func:`acc`
     """
     if init is not NOT_GIVEN:
         warnings.warn("use the sk.fold() function to set initial values.")
@@ -80,7 +80,7 @@ def scan(func: Func, init, seq: Seq) -> Seq:
     in which result[i] corresponds to items in the resulting sequence.
 
     See Also:
-        :func:`accumulate`
+        :func:`acc`
         :func:`fold`
     """
     func = to_callable(func)
@@ -247,7 +247,7 @@ def products(seq: Seq, *, init=1):
         sk.iter([1, 2, 6, 24, 120])
 
     See Also:
-        :func:`accumulate`
+        :func:`acc`
         :func:`sums`
     """
     for x in seq:
@@ -268,7 +268,7 @@ def sums(seq: Seq, *, init=0):
         sk.iter([1, 3, 6, 10, 15])
 
     See Also:
-        :func:`accumulate`
+        :func:`acc`
         :func:`products`
     """
     for x in seq:
