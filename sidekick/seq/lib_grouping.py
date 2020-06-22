@@ -1,6 +1,7 @@
 from itertools import tee, chain, takewhile, dropwhile, islice
 
 from .iter import iter as sk_iter
+from .lib_basic import uncons
 from .._toolz import partition_all, partition as _partition, sliding_window, partitionby
 from ..functions import fn, to_callable
 from ..typing import Seq, NOT_GIVEN, TYPE_CHECKING, Union, Pred, Func, Tuple
@@ -8,7 +9,7 @@ from ..typing import Seq, NOT_GIVEN, TYPE_CHECKING, Union, Pred, Func, Tuple
 _next = next
 if TYPE_CHECKING:
     from .. import api as sk
-    from ..api import X
+    from ..api import X, Y
 
     p = ""
 
@@ -57,7 +58,7 @@ def chunks(n: int, seq: Seq, *, pad=NOT_GIVEN, drop=False) -> Seq:
 
 
 @fn.curry(2)
-def chunks_by(func: Func, seq: Seq) -> Seq:
+def chunks_by(func: Func, seq: Seq, how="values") -> Seq:
     """
     Partition sequence into chunks according to a function.
 
@@ -68,18 +69,116 @@ def chunks_by(func: Func, seq: Seq) -> Seq:
             Function used to control partition creation
         seq:
             Input sequence.
+        how (str):
+            Control how func is used to create new chunks from iterator.
+
+            * 'values' (default): create a new chunk when func(x) changes value
+            * 'pairs': create new chunk when func(x, y) for two successive values
+               is True.
+            * 'left': create new chunk when func(x) is True. x is put in the
+               chunk to the left.
+            * 'right': create new chunk when func(x) is True. x is put in the
+              chunk to the right.
+            * 'drop': create new chunk when func(x) is True. x dropped from output
+               sequence. It behaves similarly to str.split.
 
     Examples:
+        Standard chunker
+
         >>> sk.chunks_by((X // 3), range(10))
         sk.iter([(0, 1, 2), (3, 4, 5), (6, 7, 8), (9,)])
+
+        Chunk by pairs
+
+        >>> sk.chunks_by((Y <= X), [1, 2, 3, 2, 4, 8, 0, 1], how='pairs')
+        sk.iter([(1, 2, 3), (2, 4, 8), (0, 1)])
+
+        Chunk by predicate. The different versions simply define in which chunk
+        the split location will be allocated
+
+        >>> sk.chunks_by(sk.is_odd, [1, 2, 3, 2, 4, 8], how='left')
+        sk.iter([(1,), (2, 3), (2, 4, 8)])
+        >>> sk.chunks_by(sk.is_odd, [1, 2, 3, 2, 4, 8], how='right')
+        sk.iter([(1, 2), (3, 2, 4, 8)])
+        >>> sk.chunks_by(sk.is_odd, [1, 2, 3, 2, 4, 8], how='drop')
+        sk.iter([(), (2,), (2, 4, 8)])
 
     See Also:
         :func:`chunks`
         :func:`partition`
     """
-    # TODO: implement functionality from more_itertools.split_at, split_after and
-    #       split before by passing extra keyword arguments
-    return sk_iter(partitionby(to_callable(func), seq))
+    if how == "values":
+        return sk_iter(partitionby(to_callable(func), seq))
+    elif how == "pairs":
+        return sk_iter(_chunks_pairs(func, seq))
+    elif how == "left":
+        return sk_iter(_chunks_left(func, seq))
+    elif how == "right":
+        return sk_iter(_chunks_right(func, seq))
+    elif how in ("drop", "split"):
+        return sk_iter(_chunks_split(func, seq))
+    else:
+        raise ValueError(f"invalid method: {how!r}")
+
+
+def _chunks_pairs(pred, seq):
+    try:
+        x, it = uncons(seq)
+    except StopIteration:
+        return
+
+    buf = [x]
+    add = buf.append
+    clear = buf.clear
+
+    for y in it:
+        if pred(x, y):
+            yield tuple(buf)
+            clear()
+        add(y)
+        x = y
+    yield tuple(buf)
+
+
+def _chunks_right(pred, seq):
+    buf = []
+    add = buf.append
+    clear = buf.clear
+
+    for x in seq:
+        if pred(x) and buf:
+            yield tuple(buf)
+            clear()
+        add(x)
+    yield tuple(buf)
+
+
+def _chunks_left(pred, seq):
+    buf = []
+    add = buf.append
+    clear = buf.clear
+
+    for x in seq:
+        add(x)
+        if pred(x) and buf:
+            yield tuple(buf)
+            clear()
+    if buf:
+        yield tuple(buf)
+
+
+def _chunks_split(pred, seq):
+    buf = []
+    add = buf.append
+    clear = buf.clear
+
+    for x in seq:
+        if pred(x):
+            yield tuple(buf)
+            clear()
+        else:
+            add(x)
+    yield tuple(buf)
 
 
 @fn.curry(2)
