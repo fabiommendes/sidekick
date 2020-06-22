@@ -4,7 +4,17 @@ from .iter import iter as sk_iter
 from .lib_basic import uncons
 from .._toolz import partition_all, partition as _partition, sliding_window, partitionby
 from ..functions import fn, to_callable
-from ..typing import Seq, NOT_GIVEN, TYPE_CHECKING, Union, Pred, Func, Tuple
+from ..typing import (
+    Seq,
+    NOT_GIVEN,
+    TYPE_CHECKING,
+    Union,
+    Pred,
+    Func,
+    Tuple,
+    Iterable,
+    T,
+)
 
 _next = next
 if TYPE_CHECKING:
@@ -15,13 +25,16 @@ if TYPE_CHECKING:
 
 
 @fn.curry(2)
-def chunks(n: int, seq: Seq, *, pad=NOT_GIVEN, drop=False) -> Seq:
+def chunks(
+    n: Union[int, Iterable[int]], seq: Seq[T], *, pad=NOT_GIVEN, drop=False
+) -> Seq[Tuple[T, ...]]:
     """
     Partition sequence into non-overlapping tuples of length n.
 
     Args:
         n:
-            Number of elements in each partition.
+            Number of elements in each partition. If n is a sequence, it selects
+            partitions by the sequence size.
         seq:
             Input sequence.
         pad:
@@ -43,18 +56,66 @@ def chunks(n: int, seq: Seq, *, pad=NOT_GIVEN, drop=False) -> Seq:
         >>> sk.chunks(2, range(5), drop=True)
         sk.iter([(0, 1), (2, 3)])
 
+        Using sequences, we can create more complicated chunking patterns.
+
+        >>> sk.chunks(sk.cycle([2, 3]), range(10))
+        sk.iter([(0, 1), (2, 3, 4), (5, 6), (7, 8, 9)])
+
+        A trailing ellipsis consumes the rest of the iterator.
+
+        >>> sk.chunks([1, 2, 3, ...], range(10))
+        sk.iter([(0,), (1, 2), (3, 4, 5), (6, 7, 8, 9)])
+
     See Also:
         :func:`chunks_by`
         :func:`window`
     """
-    # TODO: implement functionality from more_itertools.split_into if n is not
-    #       an integer.
-    if drop:
-        return sk_iter(_partition(n, seq))
-    elif pad is not NOT_GIVEN:
-        return sk_iter(_partition(n, seq, pad))
+    if isinstance(n, int):
+        if drop:
+            return sk_iter(_partition(n, seq))
+        elif pad is not NOT_GIVEN:
+            return sk_iter(_partition(n, seq, pad))
+        else:
+            return sk_iter(partition_all(n, seq))
+    elif drop:
+        return sk_iter(_chunks_sizes_ex(n, seq, True, None))
+    elif pad:
+        return sk_iter(_chunks_sizes_ex(n, seq, False, pad))
     else:
-        return sk_iter(partition_all(n, seq))
+        return sk_iter(_chunks_sizes(n, seq))
+
+
+def _chunks_sizes(ns, seq):
+    for n in ns:
+        if n is ...:
+            yield tuple(seq)
+            break
+        else:
+            yield tuple(islice(seq, n))
+
+
+def _chunks_sizes_ex(ns, seq, drop, pad):
+    buf = []
+    clear = buf.clear
+    fill = buf.extend
+    seq = iter(seq)
+
+    for n in ns:
+        if n is ...:
+            yield tuple(seq)
+            break
+        else:
+            clear()
+            try:
+                fill(next(seq) for _ in range(n))
+                yield tuple(buf)
+            except (RuntimeError, StopIteration):
+                if drop or not buf:
+                    return
+                m = n - len(buf)
+                fill([pad] * m)
+                yield tuple(buf)
+                break
 
 
 @fn.curry(2)
