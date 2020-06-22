@@ -1,5 +1,7 @@
 from itertools import tee, chain, takewhile, dropwhile, islice
 
+from toolz import groupby
+
 from .iter import iter as sk_iter
 from .lib_basic import uncons
 from .._toolz import partition_all, partition as _partition, sliding_window, partitionby
@@ -22,6 +24,22 @@ if TYPE_CHECKING:
     from ..api import X, Y
 
     p = ""
+
+
+@fn.curry(2)
+def group_by(key: Func, seq: Seq) -> dict:
+    """
+    Group collection by the results of a key function.
+
+    Examples:
+        >>> sk.group_by((X % 2), range(5))
+        {0: [0, 2, 4], 1: [1, 3]}
+
+    See Also:
+        :func:`reduce_by`
+        :func:`fold_by`
+    """
+    return groupby(key, seq)
 
 
 @fn.curry(2)

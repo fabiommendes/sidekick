@@ -324,3 +324,34 @@ def dedupe(seq: Seq, *, key: Func = None) -> Seq:
             if key_x != key_y:
                 yield y
             key_x = key_y
+
+
+@fn.curry(2)
+@generator
+def converge(pred: Pred, seq: Seq) -> Seq:
+    """
+    Test convergence with the predicate function by passing the last two items
+    of sequence. If pred(penultimate, last) returns True, stop iteration.
+
+    Examples:
+        We start with a converging (possibly infinite) sequence and an explicit
+        criteria.
+
+        >>> seq = sk.iterate((X / 2), 1.0)
+        >>> conv = lambda x, y: abs(x - y) < 0.01
+
+        Run it until convergence
+
+        >>> sk.converge(conv, seq)
+        sk.iter([1.0, 0.5, 0.25, 0.125, 0.0625, 0.03125, ...])
+        >>> sum(sk.converge(conv, seq))
+        1.9921875
+    """
+    seq = iter(seq)
+    x = next(seq)
+    yield x
+    for y in seq:
+        yield y
+        if pred(x, y):
+            break
+        x = y

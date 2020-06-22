@@ -11,9 +11,6 @@ from ._placeholder import _
 from .functions import *
 
 # noinspection PyUnresolvedReferences
-from .itertools import *
-
-# noinspection PyUnresolvedReferences
 from .magics import X, Y, m
 
 # noinspection PyUnresolvedReferences

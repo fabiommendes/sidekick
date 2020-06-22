@@ -2,7 +2,7 @@ import sys
 from itertools import islice
 
 from .base_magics import DataMagic
-from .. import itertools
+from .. import seq
 from ..functions import fn, to_callable
 from ..typing import Seq
 
@@ -24,7 +24,7 @@ class L(DataMagic, type=list):
         try:
             return obj[item]
         except TypeError:
-            return itertools.nth(item, obj)
+            return seq.nth(item, obj)
 
     def _getslice(self, obj, s):
         if isinstance(obj, list):
@@ -57,7 +57,7 @@ class L(DataMagic, type=list):
         try:
             clear = lst.clear
         except AttributeError:
-            itertools.consume(lst)
+            seq.consume(lst)
         else:
             clear()
         return lst
@@ -68,7 +68,7 @@ class L(DataMagic, type=list):
         try:
             count = lst.count
         except AttributeError:
-            return itertools.count(value, lst)
+            return seq.count(value, lst)
         else:
             return count(value)
 
@@ -96,7 +96,7 @@ class L(DataMagic, type=list):
         try:
             index = lst.index
         except AttributeError:
-            return itertools.index(value, lst)
+            return seq.index(value, lst)
         else:
             return index(value)
 

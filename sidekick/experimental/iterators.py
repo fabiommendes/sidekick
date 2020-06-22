@@ -1,7 +1,7 @@
 from collections import deque
 from collections.abc import Iterator
 
-from ..core import NOT_GIVEN
+from ..typing import NOT_GIVEN
 
 
 # noinspection PyPep8Naming

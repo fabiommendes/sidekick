@@ -24,12 +24,14 @@ Basic manipulation of sequences
    first
    second
    nth
+   find
    only
    last
    rest
    init
    is_empty
    length
+   consume
 
 
 Creating new sequences
@@ -45,8 +47,8 @@ Creating new sequences
    unfold
 
 
-Filtering and sub-sequencing
-============================
+Filtering and select sub-sequences
+==================================
 
 .. autosummary::
    filter
@@ -58,12 +60,14 @@ Filtering and sub-sequencing
    rtake
    unique
    dedupe
+   converge
 
 
 Grouping items
 ==============
 
 .. autosummary::
+   group_by
    chunks
    chunks_by
    window
@@ -80,6 +84,8 @@ Reducing sequences
    reduce
    scan
    accumulate
+   fold_by
+   reduce_by
    product
    products
    sums

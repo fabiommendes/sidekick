@@ -1,5 +1,17 @@
 from .iter import iter, generator
-from .lib_basic import cons, uncons, first, second, nth, last, only, is_empty, length
+from .lib_basic import (
+    cons,
+    uncons,
+    first,
+    second,
+    nth,
+    find,
+    last,
+    only,
+    is_empty,
+    length,
+    consume,
+)
 from .lib_creation import (
     cycle,
     iterate,
@@ -9,12 +21,22 @@ from .lib_creation import (
     singleton,
     unfold,
 )
-from .lib_grouping import chunks, chunks_by, window, pairs, partition, distribute
+from .lib_grouping import (
+    group_by,
+    chunks,
+    chunks_by,
+    window,
+    pairs,
+    partition,
+    distribute,
+)
 from .lib_reducers import (
     fold,
     reduce,
     scan,
     accumulate,
+    reduce_by,
+    fold_by,
     product,
     products,
     sums,
@@ -32,6 +54,7 @@ from .lib_selecting import (
     rtake,
     unique,
     dedupe,
+    converge,
 )
 
 __all__ = [
@@ -44,10 +67,12 @@ __all__ = [
     "first",
     "second",
     "nth",
+    "find",
     "only",
     "last",
     "is_empty",
     "length",
+    "consume",
     # Creation
     "cycle",
     "iterate",
@@ -66,11 +91,14 @@ __all__ = [
     "rtake",
     "unique",
     "dedupe",
+    "converge",
     # Reducers
     "fold",
     "reduce",
     "scan",
     "accumulate",
+    "reduce_by",
+    "fold_by",
     "product",
     "products",
     "sums",
@@ -78,6 +106,7 @@ __all__ = [
     "any_by",
     "top_k",
     # Grouping
+    "group_by",
     "chunks",
     "chunks_by",
     "window",

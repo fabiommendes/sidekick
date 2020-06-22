@@ -2,11 +2,12 @@ from collections import deque
 from itertools import islice
 
 from .iter import generator, iter as sk_iter
-from ..functions import fn
-from ..typing import Seq, T, NOT_GIVEN, TYPE_CHECKING
+from ..functions import fn, to_callable
+from ..typing import Seq, T, NOT_GIVEN, TYPE_CHECKING, Pred
 
 if TYPE_CHECKING:
     from .. import api as sk
+    from ..api import X
 
 
 @fn.curry(2)
@@ -222,6 +223,24 @@ def nth(n: int, seq: Seq, default=NOT_GIVEN) -> T:
         return _assure_given(default)
 
 
+@fn.curry(2)
+def find(pred: Pred, seq: Seq[T]) -> (int, T):
+    """
+    Return the (position, value) of first element in which predicate is true.
+
+    Raise ValueError if sequence is exhausted without a match.
+
+    Examples:
+        >>> sk.find((X == 11), [2, 3, 5, 7, 11, 13, 17])
+        (4, 11)
+    """
+    pred = to_callable(pred)
+    for i, x in enumerate(seq):
+        if pred(x):
+            return i, x
+    raise ValueError("did not encounter any matching items.")
+
+
 #
 # Testing properties
 #
@@ -281,3 +300,26 @@ def _assure_given(x, error=None, not_given=NOT_GIVEN):
         error = error or ValueError("not enough elements in sequence")
         raise error
     return x
+
+
+@fn.curry(1)
+def consume(seq: Seq, *, default=None) -> Seq:
+    """
+    Consume iterator for its side-effects and return last value or None.
+
+    Args:
+        seq:
+            Any iterable
+        default:
+            Fallback value returned for empty sequences.
+
+    Examples:
+        >>> it = map(print, [1, 2, 3])
+        >>> sk.consume(it)
+        1
+        2
+        3
+    """
+    for default in seq:
+        pass
+    return default

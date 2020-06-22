@@ -16,7 +16,6 @@ from . import op
 from ._placeholder import _ as placeholder
 from .api import *
 from .functools import *
-from .itertools import *
 from .lazytools import *
 from .magics import *
 from .misc import misc

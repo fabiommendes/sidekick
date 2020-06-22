@@ -1,10 +1,10 @@
 from collections import Counter
+from itertools import zip_longest
 from math import sqrt
 
-from .. import _toolz as toolz
-
-from ..functions import fn, Seq, Func, Pred
 from sidekick import to_callable
+from .. import _toolz as toolz
+from ..functions import fn, Seq, Func, Pred
 
 __all__ = ["count_by", "is_distinct", "is_iterable", "has"]
 NOT_GIVEN = object()
@@ -58,21 +58,11 @@ def is_iterable(obj) -> bool:
 
 
 @fn.curry(2)
-def is_equal(seq1, seq2):
+def is_seq_equal(seq1, seq2):
     """
     Return True if the two sequences are equal.
     """
-    not_given = object
-    seq1, seq2 = iter(seq1), iter(seq2)
-
-    while True:
-        try:
-            a = next(seq1)
-        except StopIteration:
-            return next(seq2, not_given) is not_given
-        else:
-            if a != next(seq2, not_given):
-                return False
+    return all(x == y for x, y in zip_longest(seq1, seq2, fillvalue=object()))
 
 
 #

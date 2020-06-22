@@ -2,10 +2,10 @@ import itertools
 import typing
 from typing import Iterable
 
-from .. import _toolz as toolz
-
 from sidekick import to_callable
-from ..functions import fn, Seq, Func as Func
+from .. import _toolz as toolz
+from ..functions import fn
+from ..typing import Seq, Func
 
 __all__ = [
     "append",
