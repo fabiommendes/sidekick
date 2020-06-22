@@ -9,6 +9,18 @@ from .lib_creation import (
     singleton,
     unfold,
 )
+from .lib_reducers import (
+    fold,
+    reduce,
+    scan,
+    accumulate,
+    product,
+    products,
+    sums,
+    all_by,
+    any_by,
+    top_k,
+)
 from .lib_selecting import (
     filter,
     remove,
@@ -53,4 +65,15 @@ __all__ = [
     "rtake",
     "unique",
     "dedupe",
+    # Reducers
+    "fold",
+    "reduce",
+    "scan",
+    "accumulate",
+    "product",
+    "products",
+    "sums",
+    "all_by",
+    "any_by",
+    "top_k",
 ]

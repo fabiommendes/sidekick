@@ -60,6 +60,22 @@ Creating new sequences
    unfold
 
 
+Reducing sequences
+==================
+
+.. autosummary::
+   fold
+   reduce
+   scan
+   accumulate
+   product
+   products
+   sums
+   all_by
+   any_by
+   top_k
+
+
 API reference
 =============
 
