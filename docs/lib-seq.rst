@@ -24,11 +24,27 @@ Basic manipulation of sequences
    first
    second
    nth
+   only
    last
    rest
    init
    is_empty
    length
+
+
+Filtering sequences
+===================
+
+.. autosummary::
+   filter
+   remove
+   separate
+   drop
+   rdrop
+   take
+   rtake
+   unique
+   dedupe
 
 
 Creating new sequences

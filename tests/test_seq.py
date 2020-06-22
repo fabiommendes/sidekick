@@ -1,9 +1,10 @@
+import operator as op
+
 import pytest
 
 import sidekick.api as sk
+from sidekick import X
 from sidekick.seq.testing import VALUE, LL
-from sidekick import X, Y
-import operator as op
 
 
 class TestBasic:
@@ -23,8 +24,7 @@ class TestBasic:
             sk.last(default=VALUE): VALUE,
             sk.nth(0, default=VALUE): VALUE,
             sk.nth(5, default=VALUE): VALUE,
-            sk.init: LL(),
-            sk.rest: LL(),
+            sk.only(default=VALUE): VALUE,
             sk.last(n=2, default=None): (None, None),
             sk.is_empty: True,
             sk.length: 0,
@@ -42,8 +42,6 @@ class TestBasic:
             sk.nth(0): 1,
             sk.nth(2): 3,
             sk.nth(5, default=VALUE): VALUE,
-            sk.init: LL(1, 2, 3, 4),
-            sk.rest: LL(2, 3, 4, 5),
             sk.last(n=2): (4, 5),
             sk.is_empty: False,
             sk.length: 5,
@@ -59,6 +57,16 @@ class TestBasic:
             with pytest.raises(ValueError):
                 v = func(nums())
                 print("not failed:", func, v)
+
+    def test_only(self):
+        assert sk.only([42]) == 42
+        assert sk.only([], default=42) == 42
+
+        with pytest.raises(ValueError):
+            sk.only([])
+
+        with pytest.raises(ValueError):
+            sk.only([1, 2])
 
 
 class TestCreation:

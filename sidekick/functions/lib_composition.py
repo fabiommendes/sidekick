@@ -32,7 +32,7 @@ def compose(*funcs: Func) -> fn:
 @fn
 def pipeline(*funcs: Func) -> fn:
     """
-    Similar to compose, but order of application is reversed, i.e.:
+    Similar to compose, but order of application is reversed.
 
         pipeline(f, g, h, ...) ==> f >> g >> h >> ...
 

@@ -59,6 +59,34 @@ def uncons(seq: Seq[T], default=NOT_GIVEN) -> (T, Seq[T]):
 # Selecting elements
 #
 @fn.curry(1)
+def only(seq: Seq[T], default=NOT_GIVEN) -> T:
+    """
+    Return the single element of sequence or raise an error.
+
+    Args:
+        seq:
+            Input sequence.
+        default:
+            Optional default value, returned if sequence is empty.
+
+    Examples:
+        >>> sk.only([42])
+        42
+        >>> sk.only([], default=42)
+        42
+        >>> sk.only([42, 43])
+        Traceback (most recent call last):
+        ...
+        ValueError: sequence is too long
+    """
+    seq = iter(seq)
+    x = first(seq, default=default)
+    if is_empty(seq):
+        return x
+    raise ValueError("sequence is too long")
+
+
+@fn.curry(1)
 def first(seq: Seq[T], default=NOT_GIVEN) -> T:
     """
     Return the first element of sequence.
@@ -97,6 +125,12 @@ def second(seq: Seq[T], default=NOT_GIVEN) -> T:
         :func:`first`
         :func:`last`
         :func:`nth`
+
+    Notes:
+        There is no third, fourth, etc, because we can easily create those
+        functions using nth(n). Sidekick implements first/second to help
+        selecting items of a pair, which tends to appear frequently when working
+        with dictionaries.
     """
     try:
         it = iter(seq)
@@ -127,13 +161,10 @@ def last(seq: Seq[T], default=NOT_GIVEN, n=None) -> T:
         'd'
 
     Notes:
-        If you don't want to raise errors if sequence is not large enough, try
-        the following recipe:
+        If you don't want to raise errors if sequence is not large enough, use
+        :func:`rtake`:
 
-        >>> from collections import deque
-        >>> tuple(deque("abc", 2))
-        ('b', 'c')
-        >>> tuple(deque("abc", 5))  # No error!
+        >>> tuple(sk.rtake(5, "abc"))  # No error!
         ('a', 'b', 'c')
         >>> sk.last("abc", n=5, default="-")
         ('-', '-', 'a', 'b', 'c')
@@ -143,6 +174,7 @@ def last(seq: Seq[T], default=NOT_GIVEN, n=None) -> T:
         :func:`second`
         :func:`nth`
         :func:`init`
+        :func:`rtake`
     """
     if n is None:
         x = default
@@ -188,59 +220,6 @@ def nth(n: int, seq: Seq, default=NOT_GIVEN) -> T:
         return next(islice(seq, n, n + 1))
     except StopIteration:
         return _assure_given(default)
-
-
-#
-# Special slices
-#
-@generator
-def init(seq: Seq) -> Seq:
-    """
-    Returns an iterator with all elements of the sequence but last.
-
-    Return an empty iterator for empty sequences.
-
-    Examples:
-        >>> sk.init(range(6))
-        sk.iter([0, 1, 2, 3, 4])
-
-    See Also:
-        :func:`first`
-        :func:`rest`
-    """
-    seq = iter(seq)
-    try:
-        prev = next(seq)
-    except StopIteration:
-        pass
-    else:
-        for x in seq:
-            yield prev
-            prev = x
-
-
-@generator
-def rest(seq: Seq) -> Seq:
-    """
-    Skips first item in the sequence, returning iterator starting just after it.
-
-    A shortcut for drop(1, seq). Return an empty iterator for empty sequences.
-
-    Examples:
-        >>> sk.rest(range(6))
-        sk.iter([1, 2, 3, 4, 5])
-
-    See Also:
-        :func:`first`
-        :func:`init`
-    """
-    seq = iter(seq)
-    try:
-        next(seq)
-    except StopIteration:
-        pass
-    else:
-        yield from seq
 
 
 #
@@ -297,7 +276,8 @@ def length(seq: Seq, *, limit=None) -> int:
         return sum(1 for _, _ in zip(seq, range(limit)))
 
 
-def _assure_given(x, not_given=NOT_GIVEN):
+def _assure_given(x, error=None, not_given=NOT_GIVEN):
     if x is not_given:
-        raise ValueError("not enough elements in sequence")
+        error = error or ValueError("not enough elements in sequence")
+        raise error
     return x

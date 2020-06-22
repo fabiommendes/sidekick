@@ -1,9 +1,9 @@
 import builtins as _builtins
 from functools import wraps as _wraps
 
-from .typing import Pred, Seq, Func
 from .functions import fn, to_callable
 from .seq import iter as _iter
+from .typing import Seq, Func
 
 _execute_with = lambda **kwargs: lambda f: f(**kwargs) or f
 _flipped = lambda f: _wraps(f)(lambda x, y: f(y, x))
@@ -18,28 +18,6 @@ _dir = dir
 # frozenset, hash, help, hex, id, input, int, iter, len, list, memoryview
 # next, oct, ord, repr, reversed, round, set, sorted, staticmethod, str, sum
 # tuple, type, vars
-
-
-@fn.curry(2)
-def filter(pred: Pred, seq: Seq):
-    """
-    Return an iterator yielding those items of iterable for which function(item)
-    is true.
-
-    Behaves similarly to Python's builtin filter, but accepts anything
-    convertible to callable using :func:`sidekick.api.to_callable` as predicate
-    and return sidekick iterators instead of regular ones.
-
-
-    filter(pred, seq) ==> seq[a], seq[b], seq[c], ...
-
-    in which a, b, c, ... are the indexes in which pred(seq[i]) == True.
-
-    See Also:
-        remove -- remove only elements in which predicate is true.
-    """
-    pred = to_callable(pred)
-    return _iter(_filter(pred, seq))
 
 
 @fn.curry(2)

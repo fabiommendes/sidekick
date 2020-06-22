@@ -3,7 +3,7 @@ from sidekick.beta.misc import fill
 from sidekick.functions import fn, Func, Seq
 from sidekick import to_callable
 
-__all__ = ["order_by", "transform", "transform_map"]
+__all__ = ["order_by", "arg_transformer", "tee_with"]
 
 
 @fn.curry(2)

@@ -1,16 +1,5 @@
 from .iter import iter, generator
-from .lib_basic import (
-    cons,
-    uncons,
-    first,
-    second,
-    nth,
-    last,
-    rest,
-    init,
-    is_empty,
-    length,
-)
+from .lib_basic import cons, uncons, first, second, nth, last, only, is_empty, length
 from .lib_creation import (
     cycle,
     iterate,
@@ -19,6 +8,17 @@ from .lib_creation import (
     repeatedly,
     singleton,
     unfold,
+)
+from .lib_selecting import (
+    filter,
+    remove,
+    separate,
+    drop,
+    rdrop,
+    take,
+    rtake,
+    unique,
+    dedupe,
 )
 
 __all__ = [
@@ -31,9 +31,8 @@ __all__ = [
     "first",
     "second",
     "nth",
+    "only",
     "last",
-    "rest",
-    "init",
     "is_empty",
     "length",
     # Creation
@@ -44,4 +43,14 @@ __all__ = [
     "repeatedly",
     "singleton",
     "unfold",
+    # Selection
+    "filter",
+    "remove",
+    "separate",
+    "drop",
+    "rdrop",
+    "take",
+    "rtake",
+    "unique",
+    "dedupe",
 ]
