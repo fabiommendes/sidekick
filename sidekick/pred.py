@@ -1,7 +1,10 @@
+from itertools import zip_longest
+
 from .functions import fn, quick_fn, to_callable
 from .functions import always
 from .op import is_ as is_identical, eq as is_equal
-from .typing import Callable, overload, NOT_GIVEN, Any, TypeCheck
+from .typing import Callable, overload, NOT_GIVEN, Any, TypeCheck, Seq
+from ._toolz import isdistinct, isiterable
 
 __all__ = [
     "cond",
@@ -18,6 +21,9 @@ __all__ = [
     "is_strictly_positive",
     "is_zero",
     "is_nonzero",
+    "is_distinct",
+    "is_iterable",
+    "is_seq_equal",
     "is_equal",
     "is_identical",
     "is_divisible_by",
@@ -156,6 +162,31 @@ is_strictly_negative = fn(lambda x: x < 0)
 is_nonzero = fn(lambda x: x != 0)
 is_zero = fn(lambda x: x == 0)
 is_divisible_by = fn.curry(2, lambda n, x: x % n == 0)
+
+
+# Sequences
+@fn
+def is_distinct(seq: Seq) -> bool:
+    """
+    Test if all elements in sequence are distinct.
+    """
+    return isdistinct(seq)
+
+
+@fn
+def is_iterable(obj) -> bool:
+    """
+    Test if argument is iterable.
+    """
+    return isiterable(obj)
+
+
+@fn.curry(2)
+def is_seq_equal(seq1, seq2):
+    """
+    Return True if the two sequences are equal.
+    """
+    return all(x == y for x, y in zip_longest(seq1, seq2, fillvalue=object()))
 
 
 # Strings

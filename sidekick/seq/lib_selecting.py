@@ -169,6 +169,7 @@ def rdrop(key: Union[Pred, int], seq: Seq) -> Seq:
                 wait(x)
             else:
                 yield from pending
+                yield x
                 clear()
 
 
@@ -342,13 +343,17 @@ def converge(pred: Pred, seq: Seq) -> Seq:
 
         Run it until convergence
 
-        >>> sk.converge(conv, seq)
+        >>> it = sk.converge(conv, seq); it
         sk.iter([1.0, 0.5, 0.25, 0.125, 0.0625, 0.03125, ...])
-        >>> sum(sk.converge(conv, seq))
+        >>> sum(it)
         1.9921875
     """
     seq = iter(seq)
-    x = next(seq)
+    try:
+        x = next(seq)
+    except StopIteration:
+        return
+
     yield x
     for y in seq:
         yield y

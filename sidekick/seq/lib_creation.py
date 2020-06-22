@@ -1,7 +1,7 @@
 import itertools
 
-from ..functions import fn, to_callable
 from .iter import generator, iter as _iter
+from ..functions import fn, to_callable
 from ..typing import Seq, Func, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -49,14 +49,18 @@ def repeatedly(func, *args, **kwargs):
     """
     Make infinite calls to a function with the given arguments.
 
+    Stop iteration if func() raises StopIteration.
+
     Examples:
-        >>> lst = [1, 2, 3, 4]
-        >>> sk.repeatedly(lst.pop, 0)[:4]
-        sk.iter([1, 2, 3, 4])
+        >>> sk.repeatedly(list, (1, 2))
+        sk.iter([[1, 2], [1, 2], [1, 2], [1, 2], [1, 2], ...])
     """
     func = to_callable(func)
-    while True:
-        yield func(*args, **kwargs)
+    try:
+        while True:
+            yield func(*args, **kwargs)
+    except StopIteration:
+        pass
 
 
 @fn
@@ -85,7 +89,7 @@ def unfold(func, seed):
 
     Examples:
         >>> sk.unfold(lambda x: (x + 1, x), 0)
-        sk.iter([0, 1, 2, 3, 4, 5, 6, ...])
+        sk.iter([0, 1, 2, 3, 4, 5, ...])
 
     """
     try:
@@ -108,18 +112,20 @@ def iterate(func, x, *args):
     values. It requires at least one argument, if you need to iterate a zero
     argument function, call :func:`repeatedly`
 
+    Iteration stops if if func() raise StopIteration.
+
         iterate(f, x) ==> x, f(x), f(f(x)), ...
 
     Examples:
         Simple usage, with a single argument. Produces powers of two.
 
         >>> sk.iterate((X * 2), 1)
-        sk.iter([1, 2, 4, 8, 16, 32, 64, ...])
+        sk.iter([1, 2, 4, 8, 16, 32, ...])
 
         Now we call with two arguments to func to produce Fibonacci numbers
 
         >>> sk.iterate((X + Y), 1, 1)
-        sk.iter([1, 1, 2, 3, 5, 8, 13, ...])
+        sk.iter([1, 1, 2, 3, 5, 8, ...])
 
     See Also:
         :func:`repeatedly`
@@ -127,10 +133,13 @@ def iterate(func, x, *args):
     func = to_callable(func)
 
     if not args:
-        yield x
-        while True:
-            x = func(x)
+        try:
             yield x
+            while True:
+                x = func(x)
+                yield x
+        except StopIteration:
+            return
 
     # Optimize some special cases
 
@@ -138,26 +147,29 @@ def iterate(func, x, *args):
     n = len(init)
     yield from init
 
-    if n == 2:
-        x, y = init
-        while True:
-            x, y = y, func(x, y)
-            yield y
+    try:
+        if n == 2:
+            x, y = init
+            while True:
+                x, y = y, func(x, y)
+                yield y
 
-    elif n == 3:
-        # noinspection PyTupleAssignmentBalance
-        x, y, z = init
-        while True:
-            x, y, z = y, z, func(x, y, z)
-            yield z
+        elif n == 3:
+            # noinspection PyTupleAssignmentBalance
+            x, y, z = init
+            while True:
+                x, y, z = y, z, func(x, y, z)
+                yield z
 
-    else:
-        args = init
-        while True:
-            new = func(*args)
-            _, *args = args
-            args = (*args, new)
-            yield new
+        else:
+            args = init
+            while True:
+                new = func(*args)
+                _, *args = args
+                args = (*args, new)
+                yield new
+    except StopIteration:
+        return
 
 
 @fn.curry(2)
@@ -180,7 +192,7 @@ def iterate_indexed(func: Func, x, *args, idx: Seq = None, start=0) -> Seq:
 
     Examples:
         >>> sk.iterate_indexed(lambda i, x: i * x, 1, start=1)
-        sk.iter([1, 1, 2, 6, 24, 120, 720, 5040, 40320, ...])
+        sk.iter([1, 1, 2, 6, 24, 120, ...])
     """
     func = to_callable(func)
     yield x

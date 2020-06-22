@@ -2,12 +2,14 @@ import warnings
 from functools import reduce as _reduce
 
 from .iter import iter as sk_iter, generator
+from .lib_basic import uncons
 from .._toolz import accumulate as _accumulate, topk as _topk, reduceby
 from ..functions import fn, to_callable
-from ..typing import Func, Seq, Pred, TYPE_CHECKING, NOT_GIVEN
+from ..typing import Func, Seq, Pred, TYPE_CHECKING, NOT_GIVEN, Iterator
 
 if TYPE_CHECKING:
     from .. import api as sk
+    from ..api import X, Y
 
 
 #
@@ -54,7 +56,7 @@ def reduce(func: Func, seq: Seq, init=NOT_GIVEN):
 
 
 @fn.curry(2)
-def accumulate(func: Func, seq: Seq) -> Seq:
+def acc(func: Func, seq: Seq) -> Seq:
     """
     Like :func:`scan`, but uses first item of sequence as initial value.
 
@@ -122,6 +124,95 @@ def reduce_by(key: Func, op, seq: Seq) -> dict:
         :func:`reduce_by`
     """
     return reduceby(key, op, seq)
+
+
+@fn.curry(1)
+def fold_together(seq: Seq, **kwargs) -> dict:
+    """
+    Folds using multiple functions simultaneously.
+
+    Examples:
+        >>> seq = [1, 2, 3, 4, 5]
+        >>> sk.fold_together(seq, sum=((X + Y), 0), prod=((X * Y), 1))
+        {'sum': 15, 'prod': 120}
+    """
+
+    data = [[func, v] for (func, v) in kwargs.values()]
+    for x in seq:
+        for pair in data:
+            func, v = pair
+            pair[1] = func(v, x)
+    return {k: v for k, (_, v) in zip(kwargs, data)}
+
+
+@fn.curry(1)
+def reduce_together(seq: Seq, **kwargs):
+    """
+    Similar to fold_together, but only works on non-empty sequences.
+
+    Initial value is taken to be the first element in sequence.
+
+    Examples:
+        >>> seq = [1, 2, 3, 4, 5]
+        >>> sk.reduce_together(seq, sum=(X + Y), prod=(X * Y), max=max, min=min)
+        {'sum': 15, 'prod': 120, 'max': 5, 'min': 1}
+    """
+    x, seq = uncons(seq)
+    kwargs = {k: (fn, x) for k, fn in kwargs.items()}
+    return fold_together(seq, **kwargs)
+
+
+@fn.curry(1)
+@generator
+def scan_together(seq: Seq, **kwargs) -> Seq[dict]:
+    """
+    Folds using multiple functions simultaneously.
+
+    Initial value is passed as a tuple for each (operator, value) keyword
+    argument.
+
+    Examples:
+        >>> seq = [1, 2, 3, 4, 5]
+        >>> for acc in sk.scan_together(seq, sum=(X + Y, 0), prod=(X * Y, 1)):
+        ...     print(acc)
+        {'sum': 0, 'prod': 1}
+        {'sum': 1, 'prod': 1}
+        {'sum': 3, 'prod': 2}
+        {'sum': 6, 'prod': 6}
+        {'sum': 10, 'prod': 24}
+        {'sum': 15, 'prod': 120}
+    """
+    data = [(k, f, [x0]) for k, (f, x0) in kwargs.items()]
+    yield {k: x0[0] for k, f, x0 in data}
+
+    for x in seq:
+        item = {}
+        for k, f, box in data:
+            box[0] = v = f(box[0], x)
+            item[k] = v
+        yield item
+
+
+@fn.curry(1)
+def acc_together(seq: Seq, **kwargs) -> Seq[dict]:
+    """
+    Similar to fold_together, but only works on non-empty sequences.
+
+    Initial value is taken to be the first element in sequence.
+
+    Examples:
+        >>> seq = [1, 2, 3, 4, 5]
+        >>> for acc in sk.acc_together(seq, sum=(X + Y), prod=(X * Y)):
+        ...     print(acc)
+        {'sum': 1, 'prod': 1}
+        {'sum': 3, 'prod': 2}
+        {'sum': 6, 'prod': 6}
+        {'sum': 10, 'prod': 24}
+        {'sum': 15, 'prod': 120}
+    """
+    x, seq = uncons(seq)
+    kwargs = {k: (fn, x) for k, fn in kwargs.items()}
+    return scan_together(seq, **kwargs)
 
 
 #

@@ -1,12 +1,13 @@
 import itertools
 import operator
 import typing
-from functools import reduce
+from collections import deque
+from functools import reduce, partial
 from operator import itemgetter
 
 import toolz
 
-from sidekick import uncons
+from sidekick import uncons, iterate
 from ..functions import fn, to_callable
 from ..seq import is_empty
 from ..typing import Pred, Union, T, NOT_GIVEN
@@ -547,3 +548,30 @@ def peek(seq: Seq) -> typing.Tuple[object, Seq]:
         (1, [1, 4, 9, 16, 25])
     """
     return toolz.peek(seq)
+
+
+def scan_together_alt(seq, kwargs):
+    # Alternative implementation that yield a dict of iterators instead of an
+    # iterator of dicts
+    seq = iter(seq)
+
+    def yield_acc(func, pop, y):
+        try:
+            x = pop()
+        except IndexError:
+            push(next(seq))
+            x = pop()
+        return func(x, y)
+
+    res = {}
+    deques = []
+
+    def push(x):
+        for do in deques:
+            do(x)
+
+    for key, (func, x0) in kwargs.items():
+        Q = deque()
+        deques.append(Q.append)
+        res[key] = iterate(partial(yield_acc, func, Q.popleft), x0)
+    return res

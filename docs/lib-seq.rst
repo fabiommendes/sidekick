@@ -83,9 +83,13 @@ Reducing sequences
    fold
    reduce
    scan
-   accumulate
+   acc
    fold_by
    reduce_by
+   fold_together
+   reduce_together
+   scan_together
+   acc_together
    product
    products
    sums

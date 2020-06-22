@@ -1,5 +1,6 @@
 import itertools
 import operator
+from functools import wraps
 
 from ..functions import fn
 from ..typing import Iterator, Tuple, T, TYPE_CHECKING
@@ -255,7 +256,7 @@ def generator(func):
         sk.iter([1, 1, 2, 3, 5, 8, ...])
     """
 
-    @fn.wraps(func)
+    @wraps(func)
     def gen(*args, **kwargs):
         return iter(func(*args, **kwargs))
 
