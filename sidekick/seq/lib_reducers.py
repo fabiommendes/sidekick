@@ -53,9 +53,6 @@ def reduce(func: Func, seq: Seq, init=NOT_GIVEN):
     return _reduce(func, seq)
 
 
-#
-# Special reductions
-#
 @fn.curry(2)
 def accumulate(func: Func, seq: Seq) -> Seq:
     """

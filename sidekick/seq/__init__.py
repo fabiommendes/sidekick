@@ -9,6 +9,7 @@ from .lib_creation import (
     singleton,
     unfold,
 )
+from .lib_grouping import chunks, chunks_by, window, pairs, partition, distribute
 from .lib_reducers import (
     fold,
     reduce,
@@ -76,4 +77,11 @@ __all__ = [
     "all_by",
     "any_by",
     "top_k",
+    # Grouping
+    "chunks",
+    "chunks_by",
+    "window",
+    "pairs",
+    "partition",
+    "distribute",
 ]

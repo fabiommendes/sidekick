@@ -1,73 +1,10 @@
-import itertools
-
-from .. import _toolz as toolz
 from typing import Union
 
 from ..functions import fn, to_callable
-from ..typing import Seq, Func
 from ..seq import is_empty
+from ..typing import Seq, Func
 
-__all__ = ["window", "with_next", "with_prev", "zipper", "rzipper", "zip_with"]
-
-
-@fn.curry(2)
-def window(n: int, seq: Seq) -> Seq:
-    """
-    Return a sequence of overlapping sub-sequences of size n.
-
-    ``n == 2`` is equivalent to a pairwise iteration.
-
-    Examples:
-        Pairwise iteration:
-        >>> [''.join(p) for p in window(2, "hello!")]
-        ['he', 'el', 'll', 'lo', 'o!']
-
-    See Also:
-        with_prev
-        with_next
-    """
-    return toolz.sliding_window(n, seq)
-
-
-@fn
-def with_prev(seq: Seq, *, fill=None) -> Seq:
-    """
-    Returns an iterator of a pair of each item with the one preceding it.
-
-    Generate fill or None as preceding element for first item. This is similar
-    to window(2), but requires a fill value for the first element of the
-    first pair. The resulting sequence always has the same size as the input.
-
-    Examples:
-        >>> [''.join(p) for p in with_prev("hello!", fill="-")]
-        ['-h', 'he', 'el', 'll', 'lo', 'o!']
-
-    See Also:
-        window
-        with_next
-    """
-    prev = fill
-    for x in seq:
-        yield (prev, x)
-        prev = x
-
-
-@fn
-def with_next(seq: Seq, fill=None) -> Seq:
-    """
-    Returns an iterator of a pair of each item with one next to it.
-
-    Examples:
-        >>> [''.join(p) for p in with_next("hello!", fill="!")]
-        ['he', 'el', 'll', 'lo', 'o!', '!!']
-
-    See Also:
-        window
-        with_prev
-    """
-    a, b = itertools.tee(seq)
-    next(b, None)
-    return zip(a, itertools.chain(b, [fill]))
+__all__ = ["zipper", "rzipper", "zip_with"]
 
 
 def zipper(*seqs):

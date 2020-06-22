@@ -32,8 +32,21 @@ Basic manipulation of sequences
    length
 
 
-Filtering sequences
-===================
+Creating new sequences
+======================
+
+.. autosummary::
+   cycle
+   iterate
+   iterate_indexed
+   repeat
+   repeatedly
+   singleton
+   unfold
+
+
+Filtering and sub-sequencing
+============================
 
 .. autosummary::
    filter
@@ -47,17 +60,16 @@ Filtering sequences
    dedupe
 
 
-Creating new sequences
-======================
+Grouping items
+==============
 
 .. autosummary::
-   cycle
-   iterate
-   iterate_indexed
-   repeat
-   repeatedly
-   singleton
-   unfold
+   chunks
+   chunks_by
+   window
+   pairs
+   partition
+   distribute
 
 
 Reducing sequences
