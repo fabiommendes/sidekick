@@ -3,7 +3,7 @@ from operator import attrgetter
 
 from .base_magics import base_operator_magic
 from .._placeholder import call_node, Placeholder
-from ..functools.functions import fmap
+from sidekick.experimental.functions import fmap
 
 
 # ------------------------------------------------------------------------------

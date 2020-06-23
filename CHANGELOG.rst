@@ -1,6 +1,6 @@
--------
-Roadmap
--------
+-------------------
+Roadmap and backlog
+-------------------
 
 Sidekick is still a Beta-quality library in the sense that the API isn't stable and there
 are a few bugs lurking (but then, as with all code). Some parts of the library are stable
@@ -19,10 +19,26 @@ inform about your usage and contribute to this roadmap.
 * Small changes with deprecation warnings, when possible.
 * Define a deprecation path and implement helpers.
 
+0.8.x
+=====
+
+* Create sidekick.collections
+* Better integration of maybe and result types
+* Move Union/Record to sidekick.adt with other classical functional types
+* Document all modules
+* Build documentation cleanly and add it to the CI
+* Remove cruft and clean the experimental package
+
 
 ---------
 Changelog
 ---------
+
+0.8.2
+=====
+
+* Remove the legacy ``sidekick.functools`` module.
+
 
 0.8.1
 =====

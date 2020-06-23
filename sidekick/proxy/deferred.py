@@ -1,5 +1,5 @@
 from .zombie import UNARY_METHODS, BINARY_METHODS, RBINARY_METHODS, ARBITRARY_METHODS
-from ..functools import call
+from ..functions import call
 
 
 class Proxy:

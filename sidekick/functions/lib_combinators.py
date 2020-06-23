@@ -88,16 +88,12 @@ def rec(func: Callable[..., Any]) -> fn:
 @fn
 def trampoline(func: Callable[..., tuple]) -> Callable[..., Any]:
     """
-    Decorator that implements tail recursion via the trampoline technique.
-
-    Trampoline functions accept
+    Decorator that implements tail call elimination via the trampoline technique.
 
     Args:
         func:
-            A function that returns (ret, ``*args``) in which ret is True if function
-            should return and False if it should recurse. The function recurse
-            by passing the results args and keyword arguments to func.
-
+            A function that returns an args tuple to call it recursively or
+            raise StopIteration when done.
     Examples:
         >>> @sk.trampoline
         ... def fat(n, acc=1):
@@ -160,11 +156,62 @@ def value(fn_or_value, *args, **kwargs):
             the provided arguments and return. Otherwise, simply return.
 
     Examples:
-        >>> value(42)
+        >>> sk.value(42)
         42
-        >>> value(lambda: 42)
+        >>> sk.value(lambda: 42)
         42
     """
     if callable(fn_or_value):
         return fn_or_value(*args, **kwargs)
     return fn_or_value
+
+
+def call(*args, **kwargs) -> fn:
+    """
+    Return a function caller.
+
+    Creates a function that receives another function and apply the given
+    arguments.
+
+    Examples:
+        >>> caller = sk.call(1, 2)
+        >>> caller(op.add), caller(op.mul)
+        (3, 2)
+
+        This function can be used as a decorator to declare self calling
+        functions:
+
+        >>> @sk.call()
+        ... def patch_module():
+        ...     import builtins
+        ...
+        ...     builtins.evil = lambda: print('Evil patch')
+        ...     return True
+
+        The variable ``patch_module`` will be assigned to the return value of the
+        function and the function object itself will be garbage collected.
+    """
+    return quick_fn(lambda f: f(*args, **kwargs))
+
+
+@fn.curry(2)
+def do(func, x, *args, **kwargs):
+    """
+    Runs ``func`` on ``x``, returns ``x``.
+
+    Because the results of ``func`` are not returned, only the side
+    effects of ``func`` are relevant.
+
+    Logging functions can be made by composing ``do`` with a storage function
+    like ``list.append`` or ``file.write``
+
+    Examples:
+        >>> log = []
+        >>> inc = sk.do(log.append) >> (X + 1)
+        >>> [inc(1), inc(11)]
+        [2, 12]
+        >>> log
+        [1, 11]
+    """
+    func(x, *args, **kwargs)
+    return x

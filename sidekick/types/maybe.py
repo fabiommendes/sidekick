@@ -1,8 +1,8 @@
 from collections.abc import Iterator
 
-from ..functools import call
-from ..functions import fn
 from .union import Union
+from ..functions import call
+from ..functions import fn
 
 __all__ = [
     "Maybe",
@@ -110,6 +110,9 @@ class Nothing(Maybe):
     value = None
     is_failure = True
     __bool__ = lambda _: False
+
+
+Nothing: Maybe
 
 
 class Just(Maybe):

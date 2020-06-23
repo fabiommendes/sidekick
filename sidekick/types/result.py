@@ -4,7 +4,7 @@ from typing import Iterator
 
 from .union import Union
 from ..functions import fn, to_callable
-from ..functools import error
+from ..functions import error
 
 __all__ = [
     "Result",

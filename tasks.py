@@ -2,13 +2,17 @@ from invoke import task
 
 
 @task
-def test(ctx, all=False):
+def test(ctx, all=False, maxfail=None):
     """
     Run tests.
     """
+    flags = []
     if all:
         doctest(ctx)
-    ctx.run("pytest tests/", pty=True)
+    else:
+        flags.extend(["--lf", f"--maxfail={maxfail or 2}"])
+    flags = " ".join(flags)
+    ctx.run(f"python -c 'import sidekick.api' && pytest tests/ {flags}", pty=True)
 
 
 @task

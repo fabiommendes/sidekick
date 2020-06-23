@@ -69,6 +69,10 @@ Combinators
    ridentity
    always
    rec
+   trampoline
+   value
+   call
+   do
 
 
 Runtime control
@@ -81,6 +85,10 @@ Runtime control
    call_at_most
    throttle
    background
+   error
+   raising
+   retry
+   catch
 
 
 Transform arguments

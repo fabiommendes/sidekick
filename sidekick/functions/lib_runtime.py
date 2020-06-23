@@ -1,12 +1,22 @@
+import time
 from functools import wraps
 
 from .core_functions import quick_fn
 from .fn import fn
+from .lib_combinators import always
+from .._toolz import excepts
 from ..typing import Callable, NOT_GIVEN, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .. import api as sk
-    from ..api import X
+    from .. import api as sk, time
+    from ..api import X, Y
+    from ..types.maybe import Maybe
+
+    # Help with Pycharm's confusion with doctrings
+    host: None
+    port: None
+    name: None
+    data: None
 
 
 @fn
@@ -188,7 +198,6 @@ def throttle(dt, func):
         >>> [f(21), f(14), f(7), f(0)]
         [42, 42, 42, 42]
     """
-    from time import time
 
     last_time = -float("inf")
     last_result = None
@@ -196,7 +205,7 @@ def throttle(dt, func):
     @fn.wraps(func)
     def limited(*args, **kwargs):
         nonlocal last_time, last_result
-        now = time()
+        now = time.monotonic()
         if now - last_time >= dt:
             last_time = now
             last_result = func(*args, **kwargs)
@@ -220,7 +229,7 @@ def background(func, *, timeout: float = None, default=NOT_GIVEN):
         timeout (float):
             Timeout in seconds.
         default:
-            Default value to resturn if if function timeout when evaluation is
+            Default value to return if if function timeout when evaluation is
             requested, otherwise, raises a TimeoutError.
 
     Examples:
@@ -231,6 +240,7 @@ def background(func, *, timeout: float = None, default=NOT_GIVEN):
         >>> result()             # Call the result to get value (blocking operation)
         55
     """
+
     from threading import Thread
 
     @fn.wraps(func)
@@ -256,7 +266,7 @@ def background(func, *, timeout: float = None, default=NOT_GIVEN):
                 return default
             return output
 
-        def maybe(*, timeout=timeout):
+        def maybe(*, timeout=timeout) -> "Maybe":
             """
             Return result if available.
             """
@@ -271,3 +281,155 @@ def background(func, *, timeout: float = None, default=NOT_GIVEN):
         return out
 
     return background_fn
+
+
+@fn
+def error(exc):
+    """
+    Raises the given exception.
+
+    If argument is not an exception, raises ValueError(exc).
+
+    Examples:
+        >>> sk.error('some error')
+        Traceback (most recent call last):
+        ...
+        ValueError: some error
+
+    See Also:
+        * :func:`raising`: create a function that raises an error instead of
+        raising it immediately
+    """
+    raise to_raisable(exc)
+
+
+@fn.curry(1)
+def raising(exc, n_args=None):
+    """
+    Creates function that raises the given exception.
+
+    If argument is not an exception, raises ValueError(exc). The returning
+    function accepts any number of arguments.
+
+    Examples:
+        >>> func = sk.raising('some error')
+        >>> func()
+        Traceback (most recent call last):
+        ...
+        ValueError: some error
+
+    See Also:
+        * :func:`raising`: create a function that raises an error instead of
+        raising it immediately
+    """
+
+    if n_args:
+
+        @fn
+        def error_raiser(*args, **kwargs):
+            args = args[:n_args]
+            raise to_raisable(exc(*args))
+
+        return error_raiser
+    else:
+        return fn(lambda *args, **kwargs: error(exc))
+
+
+@fn.curry(2)
+def catch(exception, func, *, handler=None, raises=None):
+    """
+    Handle exception in function. If the exception occurs, it executes the given
+    handler.
+
+    Examples:
+        >>> nan = sk.always(float('nan'))
+        >>> div = sk.catch(ZeroDivisionError, (X / Y), handler=nan)
+        >>> div(1, 0)
+        nan
+
+        The function can be used to re-write exceptions by passing the optional
+        raises parameter.
+
+        >>> @sk.catch(KeyError, raises=ValueError("invalid name"))
+        ... def get_value(name):
+        ...     return data[name]
+    """
+
+    if isinstance(raises, Exception):
+        handler = error.partial(raises)
+    elif raises is not None:
+        handler = lambda e: error(raises(e))
+    elif handler is None:
+        handler = always(None)
+    return quick_fn(excepts(exception, func, handler))
+
+
+@fn.curry(2)
+def retry(n: int, func, *, error=Exception, sleep=None):
+    """
+    Retry to execute function at least n times before raising an error.
+
+    This is useful for functions that may fail due to interaction with external
+    resources (e.g., fetch data from the network).
+
+    Args:
+        n:
+            Maximum number of times to execute function
+        func:
+            Function that may raise errors.
+        error:
+            Exception or tuple with suppressed exceptions.
+        sleep:
+            Interval in which it sleeps between attempts.
+
+    Example:
+        >>> queue = [111, 7, None, None]
+        >>> process = sk.retry(5, lambda n: queue.pop() * n)
+        >>> process(6)
+        42
+    """
+
+    @fn.wraps(func)
+    def safe_func(*args, **kwargs):
+        for _ in range(n - 1):
+            try:
+                return func(*args, **kwargs)
+            except error as ex:
+                if sleep:
+                    time.sleep(sleep)
+        return func(*args, **kwargs)
+
+    return safe_func
+
+
+#
+# Auxiliary functions
+#
+def is_raisable(obj):
+    """
+    Test if object is valid in a "raise obj" statement.
+    """
+
+    return isinstance(obj, Exception) or (
+        isinstance(obj, type) and issubclass(obj, Exception)
+    )
+
+
+def is_catchable(obj):
+    """
+    Check if object is valid in a "except obj" statement.
+    """
+
+    if isinstance(obj, tuple):
+        return all(isinstance(x, type) and issubclass(x, Exception) for x in obj)
+    return isinstance(obj, type) and issubclass(obj, Exception)
+
+
+def to_raisable(obj, exception=ValueError):
+    """
+    Wrap object in exception if object is not valid in a "raise obj" statement.
+    """
+
+    if not is_raisable(obj):
+        return exception(obj)
+    return obj

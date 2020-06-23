@@ -5,7 +5,7 @@ from .builtins import map
 from . import op
 
 # noinspection PyUnresolvedReferences
-from ._placeholder import _
+from ._placeholder import _, placeholder
 
 # noinspection PyUnresolvedReferences
 from .functions import *

@@ -1,9 +1,26 @@
 from . import core_functions as _core
 from .core_functions import to_fn, to_function, to_callable, quick_fn
 from .fn import fn
-from .._modules import set_module_class, LazyPackage
-
-from .lib_partial_application import partial, rpartial, curry
+from .lib_arguments import (
+    flip,
+    select_args,
+    keep_args,
+    reverse_args,
+    skip_args,
+    splice_args,
+    variadic_args,
+)
+from .lib_combinators import (
+    identity,
+    ridentity,
+    always,
+    rec,
+    power,
+    trampoline,
+    value,
+    call,
+    do,
+)
 from .lib_composition import (
     compose,
     pipe,
@@ -14,17 +31,20 @@ from .lib_composition import (
     rthread_if,
     juxt,
 )
-from .lib_combinators import identity, ridentity, always, rec, power, trampoline, value
-from .lib_runtime import once, thunk, call_after, call_at_most, throttle, background
-from .lib_arguments import (
-    flip,
-    select_args,
-    keep_args,
-    reverse_args,
-    skip_args,
-    splice_args,
-    variadic_args,
+from .lib_partial_application import partial, rpartial, curry
+from .lib_runtime import (
+    once,
+    thunk,
+    call_after,
+    call_at_most,
+    throttle,
+    background,
+    error,
+    raising,
+    retry,
+    catch,
 )
+from .._modules import set_module_class, LazyPackage
 
 set_module_class(__name__, LazyPackage)
 
@@ -61,6 +81,8 @@ __all__ = [
     "rec",
     "power",
     "trampoline",
+    "call",
+    "do",
     # Runtime control
     "once",
     "thunk",
@@ -68,6 +90,10 @@ __all__ = [
     "call_at_most",
     "throttle",
     "background",
+    "error",
+    "raising",
+    "retry",
+    "catch",
     # Arguments
     "flip",
     "select_args",

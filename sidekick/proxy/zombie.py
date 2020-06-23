@@ -1,7 +1,7 @@
 from types import MemberDescriptorType
 
 from .._operators import NAMES, UNARY, BINARY, COMPARISON
-from ..functools import call
+from ..functions import call
 
 ZOMBIE_CLASSES = {}
 UNARY_METHODS = [NAMES[op] for op in UNARY]
