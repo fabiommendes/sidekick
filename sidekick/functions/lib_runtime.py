@@ -1,11 +1,12 @@
 import time
 from functools import wraps
+from types import FunctionType
 
 from .core_functions import quick_fn
-from .fn import fn
+from .fn import fn, to_callable
 from .lib_combinators import always
 from .._toolz import excepts
-from ..typing import Callable, NOT_GIVEN, TYPE_CHECKING
+from ..typing import NOT_GIVEN, TYPE_CHECKING, Func, Catchable, Raisable, Union, Any
 
 if TYPE_CHECKING:
     from .. import api as sk, time
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
 
 
 @fn
-def once(func: Callable) -> fn:
+def once(func: Func) -> fn:
     """
     Limit function to a single invocation.
 
@@ -41,6 +42,8 @@ def once(func: Callable) -> fn:
         :func:`call_after`
         :func:`call_at_most`
     """
+
+    func = to_callable(func)
 
     # We create the local binding without initializing the variable. We chose
     # this approach instead of initializing with a "not_given" value, since the
@@ -63,7 +66,7 @@ def once(func: Callable) -> fn:
 
 
 @fn
-def thunk(*args, **kwargs):
+def thunk(*args, **kwargs) -> FunctionType:
     """
     A thunk that represents a lazy computation.
 
@@ -87,7 +90,9 @@ def thunk(*args, **kwargs):
         :func:`once`
     """
 
-    def decorator(func, has_result=False):
+    def decorator(func: Func, has_result=False) -> FunctionType:
+        func = to_callable(func)
+
         # We create the local binding without initializing the variable. We chose
         # this approach instead of initializing with a "not_given" value, since the
         # common path of returning the pre-computed result of func() can be
@@ -110,9 +115,10 @@ def thunk(*args, **kwargs):
 
 
 @fn.curry(2)
-def call_after(n, func, *, default=None):
+def call_after(n: int, func: Func, *, default=None) -> fn:
     """
     Creates a function that invokes func once it's called more than n times.
+
 
     Args:
         n:
@@ -141,11 +147,12 @@ def call_after(n, func, *, default=None):
             n -= 1
             return default
 
+    func = to_callable(func)
     return after
 
 
 @fn.curry(2)
-def call_at_most(n, func):
+def call_at_most(n: int, func: Func) -> fn:
     """
     Creates a function that invokes func while it's called less than n times.
     Subsequent calls to the created function return the result of the last
@@ -183,11 +190,12 @@ def call_at_most(n, func):
             result = func(*args, **kwargs)
             return result
 
+    func = to_callable(func)
     return at_most
 
 
 @fn.curry(2)
-def throttle(dt, func):
+def throttle(dt: float, func: Func) -> fn:
     """
     Limit the rate of execution of func to once at each ``dt`` seconds.
 
@@ -211,11 +219,12 @@ def throttle(dt, func):
             last_result = func(*args, **kwargs)
         return last_result
 
+    func = to_callable(func)
     return limited
 
 
 @fn.curry(1)
-def background(func, *, timeout: float = None, default=NOT_GIVEN):
+def background(func: Func, *, timeout: float = None, default=NOT_GIVEN) -> fn:
     """
     Return a function that executes in the background.
 
@@ -226,7 +235,7 @@ def background(func, *, timeout: float = None, default=NOT_GIVEN):
         func:
             Function or callable wrapped to support being called in the
             background.
-        timeout (float):
+        timeout:
             Timeout in seconds.
         default:
             Default value to return if if function timeout when evaluation is
@@ -280,6 +289,7 @@ def background(func, *, timeout: float = None, default=NOT_GIVEN):
         out.maybe = maybe
         return out
 
+    func = to_callable(func)
     return background_fn
 
 
@@ -297,14 +307,16 @@ def error(exc):
         ValueError: some error
 
     See Also:
+
         * :func:`raising`: create a function that raises an error instead of
-        raising it immediately
+          raising it immediately
+
     """
     raise to_raisable(exc)
 
 
 @fn.curry(1)
-def raising(exc, n_args=None):
+def raising(exc: Union[str, int, Raisable], n_args=None) -> fn:
     """
     Creates function that raises the given exception.
 
@@ -320,7 +332,8 @@ def raising(exc, n_args=None):
 
     See Also:
         * :func:`raising`: create a function that raises an error instead of
-        raising it immediately
+          raising it immediately
+
     """
 
     if n_args:
@@ -336,7 +349,9 @@ def raising(exc, n_args=None):
 
 
 @fn.curry(2)
-def catch(exception, func, *, handler=None, raises=None):
+def catch(
+    exception: Catchable, func: Func, *, handler: Func = None, raises: Raisable = None
+):
     """
     Handle exception in function. If the exception occurs, it executes the given
     handler.
@@ -355,17 +370,20 @@ def catch(exception, func, *, handler=None, raises=None):
         ...     return data[name]
     """
 
+    func = to_callable(func)
     if isinstance(raises, Exception):
-        handler = error.partial(raises)
-    elif raises is not None:
+        handler = raising(raises)
+    elif callable(raises):
         handler = lambda e: error(raises(e))
     elif handler is None:
         handler = always(None)
+    else:
+        handler = to_callable(handler)
     return quick_fn(excepts(exception, func, handler))
 
 
 @fn.curry(2)
-def retry(n: int, func, *, error=Exception, sleep=None):
+def retry(n: int, func: Func, *, error: Catchable = Exception, sleep=None) -> fn:
     """
     Retry to execute function at least n times before raising an error.
 
@@ -399,13 +417,14 @@ def retry(n: int, func, *, error=Exception, sleep=None):
                     time.sleep(sleep)
         return func(*args, **kwargs)
 
+    func = to_callable(func)
     return safe_func
 
 
 #
 # Auxiliary functions
 #
-def is_raisable(obj):
+def is_raisable(obj) -> bool:
     """
     Test if object is valid in a "raise obj" statement.
     """
@@ -415,7 +434,7 @@ def is_raisable(obj):
     )
 
 
-def is_catchable(obj):
+def is_catchable(obj) -> bool:
     """
     Check if object is valid in a "except obj" statement.
     """
@@ -425,7 +444,7 @@ def is_catchable(obj):
     return isinstance(obj, type) and issubclass(obj, Exception)
 
 
-def to_raisable(obj, exception=ValueError):
+def to_raisable(obj: Any, exception=ValueError) -> Raisable:
     """
     Wrap object in exception if object is not valid in a "raise obj" statement.
     """

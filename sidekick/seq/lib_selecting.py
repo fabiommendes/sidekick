@@ -21,7 +21,7 @@ def filter(pred: Pred, seq: Seq):
     is true.
 
     Behaves similarly to Python's builtin filter, but accepts anything
-    convertible to callable using :func:`sidekick.seq.to_callable` as predicate
+    convertible to callable using :func:`sidekick.functions.to_callable` as predicate
     and return sidekick iterators instead of regular ones.
 
 

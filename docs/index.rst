@@ -49,10 +49,12 @@ Contents
 
    intro-functions.rst
    api-guide.rst
+   lib-evil.rst
    lib-functions.rst
-   lib-seq.rst
-   lib-proxy.rst
+   lib-pred.rst
    lib-properties.rst
+   lib-proxy.rst
+   lib-seq.rst
    references.rst
    faq.rst
    license.rst

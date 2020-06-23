@@ -249,7 +249,8 @@ def is_empty(seq: Seq) -> bool:
     Warning:
         This function consume first element of iterator. Use this only to assert
         that some iterator was consumed without using it later or create a copy
-        with :func:`tee` that will preserve the consumed element.
+        with `itertools.tee <https://docs.python.org/3/library/itertools.html#itertools.tee>`_
+        that will preserve the consumed element.
 
     Examples:
          >>> nums = iter(range(5))

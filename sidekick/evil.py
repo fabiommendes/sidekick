@@ -1,13 +1,19 @@
 import ctypes
+
+# noinspection PyUnresolvedReferences
 import sys
+
+# noinspection PyUnresolvedReferences
 import types
+
+# noinspection PyUnresolvedReferences
 import warnings
 
 from ._modules import GetAttrModule, set_module_class
 
-sys = sys
-types = types
-warnings = warnings
+__all__ = ["no_evil"]
+__all__.append("forbidden_powers")
+
 set_module_class(__name__, GetAttrModule)
 cpython = ctypes.pythonapi
 NOT_GIVEN = object()

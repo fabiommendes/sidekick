@@ -17,3 +17,9 @@ NOT_GIVEN = type("NOT_GIVEN", (), {"__repr__": lambda self: "NOT_GIVEN"})()
 
 #: Anything that can go into an isinstance check.
 TypeCheck = Union[type, Tuple[type, ...]]
+
+#: Anything that can be raised
+Raisable = Union[Exception, Type[Exception]]
+
+#: Anything that can be in an except obj statement
+Catchable = Union[Type[Exception], Tuple[Type[Exception], ...]]
