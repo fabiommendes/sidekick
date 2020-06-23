@@ -1,18 +1,25 @@
 from itertools import zip_longest
 
-from .functions import fn, quick_fn, to_callable
-from .functions import always
-from .op import is_ as is_identical, eq as is_equal
-from .typing import Callable, overload, NOT_GIVEN, Any, TypeCheck, Seq
 from ._toolz import isdistinct, isiterable
+from .functions import always
+from .functions import fn, quick_fn, to_callable
+from .typing import Callable, overload, NOT_GIVEN, Any, TypeCheck, Seq
 
 __all__ = [
+    # Compositions
     "cond",
     "any_pred",
     "all_pred",
+    # Value testing
+    "is_a",
+    "is_equal",
+    "is_identical",
     "is_false",
     "is_true",
     "is_none",
+    "is_truthy",
+    "is_falsy",
+    # Numeric tests
     "is_even",
     "is_odd",
     "is_negative",
@@ -21,15 +28,13 @@ __all__ = [
     "is_strictly_positive",
     "is_zero",
     "is_nonzero",
+    "is_divisible_by",
+    # String tests
+    "has_pattern",
+    # Sequences
     "is_distinct",
     "is_iterable",
     "is_seq_equal",
-    "is_equal",
-    "is_identical",
-    "is_divisible_by",
-    "is_truthy",
-    "is_falsy",
-    "is_a",
 ]
 
 
@@ -39,10 +44,10 @@ def cond(test, then, else_):
     Conditional evaluation.
 
     Return a function that tests the argument with the cond function, and then
-    executes either the "then" or "else_" branches.
+    executes either the ``then`` or ``else_`` branches.
 
     Examples:
-        >>> collatz = cond(is_even, _ // 2, (3 * _) + 1)
+        >>> collatz = sk.cond(is_even, _ // 2, (3 * _) + 1)
         >>> [collatz(1), collatz(2), collatz(3), collatz(4)]
         [4, 1, 10, 2]
     """
@@ -113,11 +118,86 @@ def all_pred(*predicates):
 #
 # Predicate functions
 #
-is_none = is_identical(None)
-is_true = is_identical(True)
-is_false = is_identical(False)
-is_truthy = fn(bool)
-is_falsy = ~is_truthy
+@fn.curry(2)
+def is_identical(x, y):
+    """
+    Check if ``x is y``.
+    """
+    return x is y
+
+
+@fn.curry(2)
+def is_equal(x, y):
+    """
+    Check if ``x == y``.
+    """
+    return x == y
+
+
+def _is_identical(
+    value,
+    name=None,
+    render=None,
+    doc=None,
+    func=None,
+    by="by identity",
+    ok=None,
+    bad=None,
+):
+    render = render or repr(value)
+    name = name or f"is_{render.lower()}"
+    ok = ok or f"not_{render.lower()}"
+    bad = bad or f"{value!r}"
+    doc = (
+        doc
+        or f"""
+    Check if argument is {render.replace('_', ' ')}{by}.
+
+    Examples:
+        >>> sk.{name}({ok})
+        False
+        >>> sk.{name}({bad})
+        True
+    """
+    )
+
+    if func is None:
+
+        @fn
+        def id_check(x):
+            return x is value
+
+    else:
+        id_check = fn(func)
+
+    id_check.__name__ = id_check.__qualname__ = name
+    id_check.__doc__ = doc
+    return id_check
+
+
+is_none = _is_identical(None)
+is_true = _is_identical(True)
+is_false = _is_identical(False)
+
+
+@fn
+def is_truthy(x):
+    """
+    Check if argument is truthy.
+
+    This is the same as calling ``bool(x)``
+    """
+    return bool(x)
+
+
+@fn
+def is_falsy(x):
+    """
+    Check if argument is falsy.
+
+    This is the same as calling ``not bool(x)``
+    """
+    return not bool(x)
 
 
 @overload
@@ -153,15 +233,32 @@ def is_a(cls, x):
 
 
 # Numeric
-is_odd = fn(lambda x: x % 2 == 1)
-is_even = fn(lambda x: x % 2 == 0)
-is_positive = fn(lambda x: x >= 0)
-is_negative = fn(lambda x: x <= 0)
-is_strictly_positive = fn(lambda x: x > 0)
-is_strictly_negative = fn(lambda x: x < 0)
-is_nonzero = fn(lambda x: x != 0)
-is_zero = fn(lambda x: x == 0)
-is_divisible_by = fn.curry(2, lambda n, x: x % n == 0)
+_is_numeric = lambda name, func, ok, bad: _is_identical(
+    None, render=name, by="", ok=ok, bad=bad, func=func
+)
+is_odd = _is_numeric("odd", lambda x: x % 2 == 1, 1, 42)
+is_even = _is_numeric("even", lambda x: x % 2 == 0, 42, 1)
+is_positive = _is_numeric("positive", lambda x: x >= 0, 42, -10)
+is_negative = _is_numeric("negative", lambda x: x <= 0, -10, 42)
+is_strictly_positive = _is_numeric("strictly_positive", lambda x: x > 0, 42, 0)
+is_strictly_negative = _is_numeric("strictly_negative", lambda x: x < 0, 0, -10)
+is_nonzero = _is_numeric("nonzero", lambda x: x != 0, 42, 0)
+is_zero = _is_numeric("zero", lambda x: x == 0, 0, 42)
+
+
+@fn
+def is_divisible_by(n, x):
+    """
+    Check if x is divisible by n.
+
+    Examples:
+        >>> sk.is_divisible_by(2, 42)  # 42 is divisible by 2
+        True
+        >>> even = sk.is_divisible_by(2)
+        >>> even(4), even(3)
+        (True, False)
+    """
+    return x % n == 0
 
 
 # Sequences
@@ -209,14 +306,14 @@ def has_pattern(pattern, st=NOT_GIVEN):
     end.
 
     Examples:
-        >>> has_pattern("\d{2}", "year, 1942")
+        >>> sk.has_pattern("\d{2}", "year, 1942")
         True
-        >>> has_pattern("^\d{2}$", "year, 1942")
+        >>> sk.has_pattern("^\d{2}$", "year, 1942")
         False
 
         This function is also very useful to filter or process string data.
 
-        >>> is_date = has_pattern("^\d{4}-\d{2}-\d{2}$")
+        >>> is_date = sk.has_pattern("^\d{4}-\d{2}-\d{2}$")
         >>> is_date("1917-03-08")
         True
         >>> is_date("08/03/1917")
