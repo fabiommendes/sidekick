@@ -94,7 +94,7 @@ def trampoline(func: Callable[..., tuple]) -> Callable[..., Any]:
 
     Args:
         func:
-            A function that returns (ret, *args) in which ret is True if function
+            A function that returns (ret, ``*args``) in which ret is True if function
             should return and False if it should recurse. The function recurse
             by passing the results args and keyword arguments to func.
 

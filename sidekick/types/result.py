@@ -3,8 +3,7 @@ from contextlib import AbstractContextManager
 from typing import Iterator
 
 from .union import Union
-from ..functions import fn
-from sidekick import to_callable
+from ..functions import fn, to_callable
 from ..functools import error
 
 __all__ = [

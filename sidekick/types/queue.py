@@ -1,7 +1,7 @@
 import collections.abc
 import functools
 
-from sidekick import lazy
+from ..properties import lazy
 from .linkedlist import List, Nil
 
 

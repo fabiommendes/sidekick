@@ -1,7 +1,8 @@
-from .deferred import *
-from .lazy import *
+from .deferred import Proxy, deferred
 from .zombie import zombie, ZombieTypes as _ZombieTypes
 from .imports import import_later
+
+__all__ = ["Proxy", "deferred", "zombie", "touch", "import_later"]
 
 
 def touch(obj):

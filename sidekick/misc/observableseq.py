@@ -1,6 +1,6 @@
 from collections.abc import MutableSequence
 
-from sidekick import to_callable
+from ..functions import to_callable
 
 SIGNALS = {
     "pre-setitem",

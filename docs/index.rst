@@ -51,6 +51,8 @@ Contents
    api-guide.rst
    lib-functions.rst
    lib-seq.rst
+   lib-proxy.rst
+   lib-properties.rst
    references.rst
    faq.rst
    license.rst

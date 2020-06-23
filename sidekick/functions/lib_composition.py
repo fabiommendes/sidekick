@@ -129,7 +129,7 @@ def rthread(data, *forms):
 @fn
 def thread_if(data, *forms):
     """
-    Similar to thread, but each form must be a tuple with (test, fn, *args)
+    Similar to thread, but each form must be a tuple with (test, fn, ...args)
     and only pass the argument to fn if the boolean test is True.
 
     If test is callable, the current value to the callable to decide if fn must
@@ -162,7 +162,7 @@ def thread_if(data, *forms):
 @fn
 def rthread_if(data, *forms):
     """
-    Similar to rthread, but each form must be a tuple with (test, fn, *args)
+    Similar to rthread, but each form must be a tuple with (test, fn, ...args)
     and only pass the argument to fn if the boolean test is True.
 
     If test is callable, the current value to the callable to decide if fn must

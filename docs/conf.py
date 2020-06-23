@@ -303,4 +303,8 @@ doctest_global_cleanup = """"""
 doctest_global_setup = """
 import sidekick.api as sk
 from sidekick.api import X, Y, fn, op, _
+import sidekick
+import sidekick.functions
+import sidekick.pred
+import sidekick.seq
 """

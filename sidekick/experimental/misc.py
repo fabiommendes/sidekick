@@ -2,7 +2,7 @@ import itertools
 import typing
 from typing import Iterable
 
-from sidekick import to_callable
+from ..functions import to_callable
 from .. import _toolz as toolz
 from ..functions import fn
 from ..typing import Seq, Func
@@ -84,9 +84,8 @@ def interleave(seqs):
     """
     Interleave sequence of sequences.
 
-    >>> from sidekick import L
-    >>> interleave([[1, 2, 3], 'abc']) | L
-    [1, 'a', 2, 'b', 3, 'c']
+    >>> interleave([[1, 2, 3], 'abc'])
+    sk.iter([1, 'a', 2, 'b', 3, 'c'])
     """
     return toolz.interleave(seqs)
 

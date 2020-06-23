@@ -90,6 +90,7 @@ Reducing sequences
    acc_together
    product
    products
+   sum
    sums
    all_by
    any_by

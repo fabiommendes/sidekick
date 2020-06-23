@@ -1,7 +1,10 @@
-from ..functions import always, to_callable
+from .functions import always, to_callable
+from .typing import Union, Type, Func
 
-__all__ = ["lazy", "property", "delegate_to", "alias"]
 _property = property
+
+__all__ = ["lazy", "delegate_to", "alias", "property"]
+
 ATTR_ERROR_MSG = """An AttributeError was raised when evaluating a lazy property.
 
 This is often an error and the default behavior is to prevent such errors to
@@ -11,23 +14,29 @@ want to signal that the attribute is missing, consider using the option
 """
 
 
-def lazy(func=None, *, shared=False, name=None, attr_error=False):
+def lazy(
+    func=None,
+    *,
+    shared: bool = False,
+    name: str = None,
+    attr_error: Union[Type[Exception], bool] = False,
+):
     """
-    Decorator that defines an attribute that is initialized with first usage
-    rather than during instance creation.
+    Mark attribute that is initialized at first access rather than during
+    instance creation.
 
     Usage is similar to ``@property``, although lazy attributes do not override
     *setter* and *deleter* methods, allowing instances to write to the
     attribute.
 
     Optional Args:
-        shared (bool):
+        shared:
             A shared attribute behaves as a lazy class variable that is shared
             among all classes and instances. It differs from a simple class
             attribute in that it is initialized lazily from a function. This
-            can help to break import cycles and delay expensive computations
-            to when they are required.
-        name (str):
+            can help to break import cycles and delay expensive global
+            initializations to when they are required.
+        name:
             By default, a lazy attribute can infer the name of the attribute
             it refers to. In some exceptional cases (when creating classes
             dynamically), the inference algorithm might fail and the name
@@ -36,6 +45,50 @@ def lazy(func=None, *, shared=False, name=None, attr_error=False):
             If False or an exception class, re-raise attribute errors as the
             given error. This prevent erroneous code that raises AttributeError
             being mistakenly interpreted as if the attribute does not exist.
+
+    Examples:
+        .. testcode::
+
+            import math
+
+            class Vec:
+                @sk.lazy
+                def magnitude(self):
+                    print('computing...')
+                    return math.sqrt(self.x**2 + self.y**2)
+
+                def __init__(self, x, y):
+                    self.x, self.y = x, y
+
+
+        Now the ``magnitude`` attribute is initialized and cached upon first use:
+
+        >>> v = Vec(3, 4)
+        >>> v.magnitude
+        computing...
+        5.0
+
+        The attribute is writable and apart from the deferred initialization, it behaves
+        just like any regular Python attribute.
+
+        >>> v.magnitude = 42
+        >>> v.magnitude
+        42
+
+        Lazy attributes can be useful either to simplify the implementation of
+        ``__init__`` or as an optimization technique that delays potentially
+        expensive computations that are not always necessary in the object's
+        lifecycle. Lazy attributes can be used together with quick lambdas
+        for very compact definitions:
+
+        .. testcode::
+
+            import math
+            from sidekick import placeholder as _
+
+            class Square:
+                area = sk.lazy(_.width * _.height)
+                perimeter = sk.lazy(2 * (_.width + _.height))
     """
     if func is None:
         return lambda f: lazy(f, shared=shared, name=name, attr_error=attr_error)
@@ -51,58 +104,104 @@ def lazy(func=None, *, shared=False, name=None, attr_error=False):
 
 def property(fget=None, fset=None, fdel=None, doc=None):
     """
-    A Sidekick-enabled property descriptor. It behaves just as standard Python
-    properties, but it also accepts placeholder expressions as a getter input.
+    A Sidekick-enabled property descriptor.
+
+    It is a drop-in replacement for Python's builtin properties. It behaves
+    similarly to Python's builtin, but also accepts quick lambdas as input
+    functions. This allows very terse declarations:
+
+    .. testcode::
+
+        from sidekick.api import placeholder as _
+
+        class Vector:
+            sqr_radius = sk.property(_.x**2 + _.y**2)
+
+
+    :func:`lazy` is very similar to property. The main difference between
+    both is that properties are not cached and hence the function is re-executed
+    at each attribute access. The desired behavior will depend a lot on what you
+    want to do.
     """
     return _Property(fget, fset, fdel, doc)
 
 
-def delegate_to(attr, *, name=None, read_only=False):
+def delegate_to(attr: str, mutable: bool = False):
     """
     Delegate access to an inner variable.
 
     A delegate is an alias for an attribute of the same name that lives in an
-    inner object of a class.
-
-    Example:
-        Consider the very simple example::
-
-            class Foo(object):
-                data = "foo-bar"
-                upper = delegate_to('data')
-
-            x = Foo()
-
-        ``x.upper()`` is now an alias for ``x.data.upper()``.
+    inner object of an instance. This is useful when the inner object contains the
+    implementation (remember the "composition over inheritance mantra"), but we
+    want to expose specific interfaces of the inner object.
 
     Args:
         attr:
-            Name of the inner variable that receives delegation.
-        name:
-            The name of the attribute/method of the delegate variable. Can be
-            omitted if the name is the same of the attribute.
-        read_only:
-            If True, makes the the delegation read-only.
+            Name of the inner variable that receives delegation. It can be a
+            dotted name with one level of nesting. In that case, it associates
+            the property with the sub-attribute of the delegate object.
+        mutable:
+            If True, makes the the delegation read-write. It writes new values
+            to attributes of the delegated object.
+
+
+    Examples:
+        .. testcode::
+
+            class Queue:
+                pop = sk.delegate_to('_data')
+                push = sk.delegate_to('_data.append')
+
+                def __init__(self, data=()):
+                    self._data = list(data)
+
+                def __repr__(self):
+                    return f'Queue({self._data})'
+
+        Now ``Queue.pop`` simply redirects to the pop method of the ``._data``
+        attribute, and ``Queue.push`` searches for ``._data.append``
+
+        >>> q = Queue([1, 2, 3])
+        >>> q.pop()
+        3
+        >>> q.push(4); q
+        Queue([1, 2, 4])
     """
-    if read_only:
-        return _ReadOnlyDelegate(attr, name)
+    attr, _, name = attr.partition(".")
+    if mutable:
+        return _MutableDelegate(attr, name or None)
     else:
-        return _Delegate(attr, name)
+        return _ReadOnlyDelegate(attr, name or None)
 
 
-def alias(attr, *, mutable=False, transform=None, prepare=None):
+def alias(
+    attr: str, *, mutable: bool = False, transform: Func = None, prepare: Func = None
+):
     """
-    An alias to an attribute.
+    An alias to another attribute.
+
+    Aliasing is another simple form of self-delegation. Aliases are views over
+    other attributes in the instance itself:
 
     Args:
-        attr (str):
+        attr:
             Name of aliased attribute.
-        mutable (bool):
+        mutable:
             If True, makes the alias mutable.
-        transform (callable):
-            If given, transform output.
+        transform:
+            If given, transform output by this function before returning.
         prepare:
-            If given, prepare value before saving.
+            If given, prepare input value before saving.
+
+    Examples:
+        .. testcode::
+
+            class Queue(list):
+                push = sk.alias('pop')
+
+        This exposes two additional properties: "abs_value" and "origin". The first is
+        just a read-only view on the "magnitude" property. The second exposes read and
+        write access to the "start" attribute.
     """
     if transform is not None or prepare is not None:
         return _TransformingAlias(attr, transform, prepare)
@@ -115,7 +214,25 @@ def alias(attr, *, mutable=False, transform=None, prepare=None):
 #
 # Helper classes
 #
-class _Property(_property):
+class DescriptorMixin:
+    """
+    Functionality and interfaces shared between all descriptor classes.
+    """
+
+    is_property = True
+    is_mutable = False
+    is_lazy = False
+    is_alias = False
+    is_delegate = False
+    fget = fset = fdel = None
+    name = None
+
+    def __set_name__(self, owner, name):
+        if self.name is None:
+            self.name = name
+
+
+class _Property(DescriptorMixin, _property):
     """
     Sidekick property descriptor.
     """
@@ -133,15 +250,18 @@ class _Property(_property):
         return super().setter(fset if fset is None else to_callable(fset))
 
 
-class _Lazy:
+class _Lazy(DescriptorMixin):
     """
     Lazy attribute of an object
     """
 
-    __slots__ = ("function", "name", "attr_error")
+    __slots__ = ("fget", "name", "attr_error")
+
+    is_lazy = True
+    is_mutable = True
 
     def __init__(self, func, name=None, attr_error=True):
-        self.function = to_callable(func)
+        self.fget = to_callable(func)
         self.name = name
         self.attr_error = attr_error or Exception
 
@@ -151,7 +271,7 @@ class _Lazy:
 
         name = self.name or self._init_name(cls)
         try:
-            value = self.function(obj)
+            value = self.fget(obj)
         except AttributeError as ex:
             if self.attr_error is True:
                 raise
@@ -160,12 +280,8 @@ class _Lazy:
         setattr(obj, name, value)
         return value
 
-    def __set_name__(self, owner, name):
-        if self.name is None:
-            self.name = name
-
     def _init_name(self, cls):
-        function_name = self.function.__name__
+        function_name = self.fget.__name__
         name = find_descriptor_name(self, cls, hint=function_name)
         self.name = name
         return name
@@ -186,7 +302,7 @@ class _SharedLazy(_Lazy):
 
     def _init_value(self, cls):
         try:
-            self.value = self.function(cls)
+            self.value = self.fget(cls)
         except AttributeError as ex:
             if self.attr_error is True:
                 raise
@@ -194,13 +310,13 @@ class _SharedLazy(_Lazy):
         return self.value
 
 
-class _Delegate:
+class _ReadOnlyDelegate(DescriptorMixin):
     """
     Delegate attribute to another attribute.
     """
 
     __slots__ = ("attr", "name")
-    __set_name__ = _Lazy.__set_name__
+    is_delegate = True
 
     def __init__(self, attr, name=None):
         self.attr = attr
@@ -210,36 +326,38 @@ class _Delegate:
         if obj is None:
             return self
 
-        name = self.name or self._init_name(cls)
+        name = self.name or find_descriptor_name(self, cls)
         owner = getattr(obj, self.attr)
         return getattr(owner, name)
 
     def __set__(self, obj, value):
-        owner = getattr(obj, self.attr)
-        name = self.name or self._init_name(type(obj))
-        setattr(owner, name, value)
+        raise AttributeError(self.name or find_descriptor_name(self, type(obj)))
 
-    def _init_name(self, cls):
-        return find_descriptor_name(self, cls)
+    def fget(self, instance):
+        return self.__get__(instance)
 
 
-class _ReadOnlyDelegate(_Delegate):
+class _MutableDelegate(_ReadOnlyDelegate):
     """
-    Read only version of Delegate.
+    Mutable version of Delegate.
     """
 
     __slots__ = ()
+    is_mutable = True
 
     def __set__(self, obj, value):
-        raise AttributeError(self.name or self._init_name(type(obj)))
+        owner = getattr(obj, self.attr)
+        name = self.name or find_descriptor_name(self, type(obj))
+        setattr(owner, name, value)
 
 
-class _MutableAlias:
+class _ReadOnlyAlias(DescriptorMixin):
     """
-    Alias to another attribute/method in class.
+    Like alias, but read-only.
     """
 
     __slots__ = ("attr",)
+    is_alias = True
 
     def __init__(self, attr):
         self.attr = attr
@@ -249,19 +367,26 @@ class _MutableAlias:
             return getattr(obj, self.attr)
         return self
 
-    def __set__(self, obj, value):
-        setattr(obj, self.attr, value)
+    def __set__(self, key, value):
+        raise AttributeError(self.attr)
+
+    def fget(self, obj):
+        return self.__get__(obj)
 
 
-class _ReadOnlyAlias(_MutableAlias):
+class _MutableAlias(_ReadOnlyAlias):
     """
-    Like alias, but read-only.
+    Alias to another attribute/method in class.
     """
 
     __slots__ = ()
+    is_mutable = True
 
-    def __set__(self, key, value):
-        raise AttributeError(self.attr)
+    def __set__(self, obj, value):
+        setattr(obj, self.attr, value)
+
+    def fset(self, obj, value):
+        return self.__set__(obj, value)
 
 
 class _TransformingAlias(_MutableAlias):
@@ -270,6 +395,7 @@ class _TransformingAlias(_MutableAlias):
     """
 
     __slots__ = ("transform", "prepare")
+    is_mutable = property(lambda self: self.prepare is not None)
 
     def __init__(self, attr, transform=lambda x: x, prepare=None):
         super().__init__(attr)
@@ -288,6 +414,14 @@ class _TransformingAlias(_MutableAlias):
         else:
             value = self.prepare(value)
         setattr(obj, self.attr, value)
+
+    def fget(self, obj):
+        return self.transform(super().fget(obj))
+
+    def fset(self, obj, value):
+        if self.prepare is None:
+            raise AttributeError("cannot change attribute")
+        super().fset(obj, self.prepare(value))
 
 
 #

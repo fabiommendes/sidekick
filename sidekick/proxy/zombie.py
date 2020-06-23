@@ -10,13 +10,6 @@ BINARY_METHODS = [NAMES[op].rstrip("_") for op in COMPARISON + BINARY]
 RBINARY_METHODS = ["r" + op for op in BINARY_METHODS]
 BINARY_METHODS.extend(["getitem", "getattr"])
 ARBITRARY_METHODS = ["setitem", "call"]
-__all__ = [
-    "ZombieTypes",
-    "zombie",
-    "UNARY_METHODS",
-    "BINARY_METHODS",
-    "RBINARY_METHODS",
-]
 
 
 class Zombie:
@@ -27,16 +20,16 @@ class Zombie:
     interaction. This only works with pure Python objects with no slots since
     the Delayed object must have the same C level interface as the real object.
 
-    For a safer version of :class:`sidekick.Delayed`, try the
-    :class:`sidekick.Proxy` class. One advantage of deferred objects is that,
-    when alive, they transform to objects of the correct class.
+    For a safer version of :class:`Deferred`, try the :class:`Proxy` class.
+    One advantage of deferred objects is that, when alive, they transform to
+    objects of the correct class.
+
+    Optional positional and keyword arguments used to call the first
+    argument.
 
     Args:
-        func (callable):
+*        func:
             Any callable used to create the final object.
-        *args, **kwargs:
-            Optional positional and keyword arguments used to call the first
-            argument.
 
     Examples:
         Imagine we have some arbitrary Python class
@@ -46,6 +39,7 @@ class Zombie:
         ...         return 42
 
         Now create a delayed object
+
         >>> x = zombie(SomeClass)
         >>> type(x)                                         # doctest: +ELLIPSIS
         <class '...Zombie'>
@@ -53,6 +47,7 @@ class Zombie:
         If we touch any method (even magic methods triggered by operators),
         the zombie awakens and is converted to the result produced by the
         factory function:
+
         >>> x.method()
         42
         >>> type(x)                                         # doctest: +ELLIPSIS
@@ -88,13 +83,13 @@ class Zombie:
         return self
 
 
-class ZombieFactory:
-    """
-    Base class that implements the zombie[class] syntax.
-    """
+class ZombieFactoryMeta(type):
+    def __instancecheck__(self, obj):
+        cls = type(obj)
+        return issubclass(cls, ZombieTypes) or super().__instancecheck__(obj)
 
-    def __call__(self, func, *args, **kwargs):
-        return Zombie(func, *args, **kwargs)
+    def __subclasscheck__(self, subclass):
+        return issubclass(subclass, ZombieTypes)
 
     def __getitem__(self, cls):
         try:
@@ -153,6 +148,27 @@ class ZombieFactory:
         SpecializedZombie.__name__ = f"Zombie[{cls.__name__}]"
         ZOMBIE_CLASSES[cls] = SpecializedZombie
         return SpecializedZombie
+
+    def __call__(self, func, *args, **kwargs):
+        return Zombie(func, *args, **kwargs)
+
+
+class zombie(metaclass=ZombieFactoryMeta):
+    """
+    Provides zombie[class] syntax.
+
+    Implementation is in the metaclass.
+    """
+
+    #
+    # Extensive use of proxies and duck typing is a sure way to break static
+    # analysis. Those methods are here to make static analysis happy.
+    #
+    def __init__(self, *args, **kwargs):
+        ...
+
+    def __getattr__(self, item):
+        ...
 
 
 #
@@ -230,7 +246,6 @@ def update_dict_attributes(obj, source):
 #
 SlottedZombie = type("SlottedZombie", (), {"__slots__": ()})
 ZombieTypes = (Zombie, SlottedZombie)
-zombie = ZombieFactory()
 
 
 #

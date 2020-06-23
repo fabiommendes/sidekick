@@ -1,27 +1,35 @@
 from importlib import import_module
 
-from .deferred import Deferred
+from .deferred import deferred
 
 
 def import_later(path, package=None):
     """
-    Lazily import module or object inside a module. Can refer to a module or
-    a symbol exported by that module.
+    Lazily import module or object.
+
+    Lazy imports can dramatically decrease the initialization time of your python
+    modules, specially when heavy weights such as numpy, and pandas are used.
+    Beware that import errors that normally are triggered during import time
+    now can be triggered at first use, which may introduce confusing and hard
+    to spot bugs.
 
     Args:
         path:
-            Python path to module or object. Specific objects inside a module
-            are refered as "<module path>:<object name>".
+            Python path to module or object. Modules are specified by their
+            Python names (e.g., 'os.path') and objects are identified by their
+            module path + ":" + object name (e.g., "os.path.splitext").
         package:
             Package name if path is a relative module path.
 
-    Usage:
-        import_later('numpy.random'):
-            Proxy to the numpy.random module.
-        import_later('numpy.random:uniform'):
-            Proxy to the "uniform" object of the numpy module.
-        import_later('.models', package=__package__):
-            Relative import
+    Examples:
+        >>> np = sk.import_later('numpy')  # Numpy is not yet imported
+        >>> np.array([1, 2, 3])  # It imports as soon as required
+        array([1, 2, 3])
+
+        It also accepts relative imports if the package keyword is given. This
+        is great to break circular imports.
+
+        >>> mod = sk.import_later('.sub_module', package=__package__)
     """
     if ":" in path:
         path, _, obj = path.partition(":")
@@ -30,7 +38,7 @@ def import_later(path, package=None):
         return _LazyModule(path, package=package)
 
 
-class _LazyModule(Deferred):
+class _LazyModule(deferred):
     """
     A module that has not been imported yet.
     """
@@ -44,7 +52,7 @@ class _LazyModule(Deferred):
         return value
 
 
-class _DeferredImport(Deferred):
+class _DeferredImport(deferred):
     """
     An object of a module that has not been imported yet.
     """

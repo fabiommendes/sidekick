@@ -56,7 +56,7 @@ sets an implicit scope for global variables. For top level functions of your
 public API, in which you probably want to declare all those properties, this is a
 very efficient syntax.
 
-Put the same function in a different context and ``def`s` start to feel verbose [#map]:
+Put the same function in a different context and ``def's`` start to feel verbose [#map]:
 
 .. code-block:: python
 
@@ -115,7 +115,7 @@ Currying
 A simple function receives one single parameter and return a single value.
 In Python and most programming languages, the "function interface" can be
 considerably more complicated: the function might receive several parameters,
-keyword arguments, splicing (the *args and **kwargs expansions), and it might
+keyword arguments, splicing (the ``*args`` and ``**kwargs`` expansions), and it might
 even produce side effects outside of what is visible from the inputs and
 outputs of the function.
 
@@ -187,7 +187,7 @@ standard implementation would be applied, but it now also accepts receiving an
 incomplete set of arguments transforming add in a convenient factory.
 
 Even for only two arguments, implementing auto-currying this way already
-seems like a lot of trouble. Fortunately, the :func:`sk.curry` decorator
+seems like a lot of trouble. Fortunately, the :func:`sidekick.functions.curry` decorator
 automates this whole process and we can implement auto-curried functions
 with very little extra work:
 
@@ -301,17 +301,17 @@ limitations of Python syntax and runtime and will *never* be fixed in Sidekick.
   reproduce short circuit evaluation with functions, hence sidekick does
   not provide any real alternative.
 * **Identity checks:** ``(X is value)`` or ``(X is not value)``. Use
-  :func:`sk.is_identical` or its negative ``~sk.is_identical(value)`` instead.
+  :func:`sidekick.pred.is_identical` or its negative ``~sk.is_identical(value)`` instead.
 * **Assignment operators:** ``(X += value)``. Assignment operators are statements and
   cannot be assigned to values. This includes item deletion and item assignment for the
   same reason.
-* **Containment check**: ``(X in seq)`` or ``(seq in X)``. Use :func:`sk.contains`
+* **Containment check**: ``(X in seq)`` or ``(seq in X)``. Use :func:`sidekick.functions.contains`
   instead.
 * **Method calling**: ``X.attr`` immediately returns a function that retrieves the
   ``.attr`` attribute of its argument. We cannot specify a method to obtain a
-  behavior similar to :func:`operator.methodcaller`. :func:`sk.method` function has
-  can produce method callers. Similarly, :func:`sk.attr` expose some functionality
-  of :func:`operator.attrgetter` that cannot be expressed with those magic objects.
+  behavior similar to :func:`operator.methodcaller`. :func:`sidekick.functions.method` function has
+  can produce method callers. Similarly, :func:`sidekick.functions.attr` expose some functionality
+  of `operator.attrgetter` that cannot be expressed with those magic objects.
 
 ``sidekick.op`` module
 ----------------------
@@ -339,11 +339,13 @@ application
 Composing functions
 ===================
 
+.. currentmodule:: sidekick.functions
+
 We mentioned before that good functional code behave like LEGO bricks: they
 can easily fit each other and we can organize them in countless and creative ways.
 The most common form of composition has the shape of a pipeline: we start with
 some piece of data and pass it through a series of functions to obtain the final
-result. Sidekick captures that idea in the :func:`sidekick.api.pipe` function.
+result. Sidekick captures that idea in the :func:`pipe` function.
 
 >>> sk.pipe(10, op.mul(4), op.add(2))
 42
@@ -381,8 +383,7 @@ Composition syntax
 Many functional languages have special operators dedicated to function composition.
 Python don't, but that does not prevent us from being creative. Most sidekick
 functions are not actually real functions, but rather instances of an special
-class :class:`sidekick.functions.fn`. fn-functions extend regular functions in a
-number of interesting ways.
+class :class:`fn`. fn-functions extend regular functions in a number of interesting ways.
 
 The first and perhaps more fundamental change is that fn-functions accept bitwise shift
 operators (``>>`` and ``<<``) to represent function composition. The argument flows
@@ -420,7 +421,7 @@ as exclusive or.
 >>> sk.filter(sk.is_divisible_by(3) ^ sk.is_divisible_by(2), range(10))
 sk.iter([2, 3, 4, 8, 9])
 
-:class:`sidekick.functions.fn` also extend regular functions with additional
+:class:`fn` also extend regular functions with additional
 methods and properties, but we refer to the class documentation for more details.
 
 

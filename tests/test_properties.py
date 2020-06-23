@@ -1,22 +1,15 @@
 import pytest
 
 import sidekick as sk
-from sidekick import deferred, zombie, lazy, Deferred
-from sidekick import placeholder as _, record
-from sidekick.lazy.zombie import ZombieTypes
-from sidekick.lazy.lazy import (
-    find_descriptor_name,
-    find_descriptor_owner,
-    Delegate,
-    Lazy,
-)
+from sidekick import placeholder as _
+from sidekick import properties as prop
 
 
 class TestLazyDecorator:
     @pytest.fixture(scope="class")
     def cls(self):
         class Cls(object):
-            @lazy
+            @sk.lazy
             def c(self):
                 return self.a + self.b
 
@@ -45,19 +38,22 @@ class TestLazyDecorator:
         assert x.d == 6
 
     def test_lazy_class_accessor(self, cls):
-        assert isinstance(cls.c, Lazy)
+        assert cls.c.is_lazy
+        assert cls.c.is_property
+        assert cls.c.is_mutable
+        assert isinstance(cls.c, prop._Lazy)
 
     def test_descriptor_can_find_name_its_name(self, cls):
         assert cls.c._init_name(cls) == "c"
-        assert find_descriptor_name(cls.c, cls) == "c"
-        assert find_descriptor_owner(cls.c, cls) is cls
+        assert prop.find_descriptor_name(cls.c, cls) == "c"
+        assert prop.find_descriptor_owner(cls.c, cls) is cls
 
     def test_cannot_find_descriptor_name_of_wrong_class(self, cls):
         with pytest.raises(RuntimeError):
-            find_descriptor_name(cls.c, object)
+            prop.find_descriptor_name(cls.c, object)
 
         with pytest.raises(RuntimeError):
-            find_descriptor_owner(cls.c, object)
+            prop.find_descriptor_owner(cls.c, object)
 
 
 class TestLazyShared:
@@ -84,9 +80,9 @@ class TestDelegateToDecorator:
     @pytest.fixture(scope="class")
     def cls(self):
         class cls(object):
-            x = sk.delegate_to("data")
-            y = sk.delegate_to("data", name="w")
-            z = sk.delegate_to("data", read_only=True)
+            x = sk.delegate_to("data", mutable=True)
+            y = sk.delegate_to("data.w", mutable=True)
+            z = sk.delegate_to("data")
 
             def __init__(self, data):
                 self.data = data
@@ -118,7 +114,7 @@ class TestDelegateToDecorator:
         assert obj.z == 3
 
     def test_delegate_class_accessor(self, cls):
-        assert isinstance(cls.x, Delegate)
+        assert isinstance(cls.x, prop._MutableDelegate)
 
 
 class TestAliasDecorator:
@@ -163,49 +159,3 @@ class TestAliasDecorator:
 
         with pytest.raises(AttributeError):
             obj.k = 42
-
-
-class TestLazyImport:
-    def test_lazy_import(self):
-        assert sk.import_later("math").sqrt(4) == 2.0
-        assert sk.import_later("math:sqrt")(4) == 2.0
-        assert sk.import_later("sidekick.pred").is_zero(0)
-        assert sk.import_later("sidekick.pred:is_zero")(0)
-
-
-class TestDelayed:
-    @pytest.fixture(scope="class")
-    def cls(self):
-        class Cls:
-            def __init__(self):
-                self.attr = 42
-
-        return Cls
-
-    def test_delayed_object_is_created_on_touch(self, cls):
-        obj = zombie(cls)
-        assert obj.attr == 42
-        assert isinstance(obj, cls)
-
-    def test_delayed_starts_as_a_different_class(self, cls):
-        obj = zombie(cls)
-        assert isinstance(obj, ZombieTypes)
-        str(obj)
-        assert isinstance(obj, cls)
-
-    def test_deferred_object_is_created_on_touch(self, cls):
-        obj = deferred(cls)
-        assert obj.attr == 42
-
-    def test_deferred_preserves_class(self, cls):
-        obj = deferred(cls)
-        assert isinstance(obj, Deferred)
-        str(obj)
-        assert isinstance(obj, Deferred)
-
-    def test_delayed_with_result_class(self):
-        obj = zombie[record](record, x=1, y=2)
-        assert type(obj) == zombie[record]
-        assert isinstance(obj, zombie[record])
-        assert str(obj) == "record(x=1, y=2)"
-        assert type(obj) == record

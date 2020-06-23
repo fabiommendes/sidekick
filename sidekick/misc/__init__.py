@@ -1,4 +1,4 @@
-from ..lazy import import_later as _import_later
+from ..proxy import import_later as _import_later
 
 frozendict = _import_later(".frozendict", package=__package__)
 idmap = _import_later(".idmap", package=__package__)

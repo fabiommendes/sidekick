@@ -8,17 +8,17 @@ if TYPE_CHECKING:
     from .. import api as sk
 
 
-def partial(func: Func, *args, **kwargs) -> fn:
+def partial(*args, **kwargs) -> fn:
     """
     Return a new function that partially apply the given arguments and
     keywords.
 
+    Additional positional and keyword arguments after partially applied to
+    function
+
     Args:
         func:
             Function or func-like object.
-        *args, **kwargs:
-            Arbitrary positional and keyword arguments partially applied to the
-            function.
 
     Examples:
         >>> from operator import add
@@ -29,6 +29,7 @@ def partial(func: Func, *args, **kwargs) -> fn:
     See Also:
         :func:`rpartial`
     """
+    func, *args = args
     return quick_fn(_partial(to_callable(func), *args, **kwargs).__call__)
 
 

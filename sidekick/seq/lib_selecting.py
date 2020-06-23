@@ -21,7 +21,7 @@ def filter(pred: Pred, seq: Seq):
     is true.
 
     Behaves similarly to Python's builtin filter, but accepts anything
-    convertible to callable using :func:`sidekick.api.to_callable` as predicate
+    convertible to callable using :func:`sidekick.seq.to_callable` as predicate
     and return sidekick iterators instead of regular ones.
 
 
@@ -72,7 +72,7 @@ def separate(pred: Func, seq: Seq, consume: bool = False) -> (Seq, Seq):
             Predicate function
         seq:
             Iterable of items that should be separated.
-        consume (bool):
+        consume:
             If given, fully consume the iterator and return two lists. This is
             faster than separating and then converting each element to a list.
 

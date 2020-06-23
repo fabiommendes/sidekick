@@ -7,7 +7,7 @@ from operator import itemgetter
 
 import toolz
 
-from sidekick import uncons, iterate
+from .. import uncons, iterate
 from ..functions import fn, to_callable
 from ..seq import is_empty
 from ..typing import Pred, Union, T, NOT_GIVEN

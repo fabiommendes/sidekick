@@ -44,7 +44,7 @@ def group_by(key: Func, seq: Seq) -> dict:
 
 @fn.curry(2)
 def chunks(
-    n: Union[int, Iterable[int]], seq: Seq[T], *, pad=NOT_GIVEN, drop=False
+    n: Union[int, Iterable[int]], seq: Seq[T], *, pad=NOT_GIVEN, drop: bool = False
 ) -> Seq[Tuple[T, ...]]:
     """
     Partition sequence into non-overlapping tuples of length n.
@@ -58,7 +58,7 @@ def chunks(
         pad:
             If given, pad a trailing incomplete partition with this value until
             it has n elements.
-        drop (bool):
+        drop:
             If True, drop the last partition if it has less than n elements.
 
     Examples:
@@ -137,7 +137,7 @@ def _chunks_sizes_ex(ns, seq, drop, pad):
 
 
 @fn.curry(2)
-def chunks_by(func: Func, seq: Seq, how="values") -> Seq:
+def chunks_by(func: Func, seq: Seq, how: str = "values") -> Seq:
     """
     Partition sequence into chunks according to a function.
 
@@ -148,7 +148,7 @@ def chunks_by(func: Func, seq: Seq, how="values") -> Seq:
             Function used to control partition creation
         seq:
             Input sequence.
-        how (str):
+        how:
             Control how func is used to create new chunks from iterator.
 
             * 'values' (default): create a new chunk when func(x) changes value

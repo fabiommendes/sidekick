@@ -1,7 +1,7 @@
 from collections import namedtuple
 from collections.abc import MutableSequence
 
-from sidekick import to_callable
+from ..functions import to_callable
 
 tagged = namedtuple("tagged", ["value", "tag"])
 NOT_GIVEN = object()

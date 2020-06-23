@@ -30,7 +30,7 @@ class FunctionMeta(type):
     _curry = None
 
     def __new__(mcs, name, bases, ns):
-        new = type.__new__(mcs, name, bases, ns)
+        new = super().__new__(mcs, name, bases, ns)
         new.__doc__ = lazy_string(lambda x: x.__getattr__("__doc__"), new.__doc__ or "")
         new.__module__ = lazy_string(
             lambda x: x.__getattr__("__module__"), new.__module__ or ""
@@ -235,7 +235,7 @@ class fn(metaclass=FunctionMeta):
         evaluations.
 
         See Also:
-            :func:`sidekick.api.thunk`
+            :func:`thunk`
         """
         return thunk(*args, **kwargs)(self)
 

@@ -26,7 +26,8 @@ from math import sqrt
 from threading import Thread
 from time import sleep
 
-from sidekick import record, to_callable
+from ..types import record
+from ..functions import to_callable
 
 
 def feed(coro, seq):

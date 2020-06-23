@@ -1,8 +1,6 @@
 from .zombie import UNARY_METHODS, BINARY_METHODS, RBINARY_METHODS, ARBITRARY_METHODS
 from ..functools import call
 
-__all__ = ["Deferred", "Proxy", "deferred"]
-
 
 class Proxy:
     """
@@ -29,12 +27,23 @@ class Proxy:
 
 
 # noinspection PyMissingConstructor
-class Deferred(Proxy):
+class deferred(Proxy):
     """
     Wraps uninitialized object into a proxy shell.
 
     Object is declared as a thunk and is initialized the first time some
     attribute or method is requested.
+
+    The proxy delegates all methods to the lazy object. Proxies work nicely with
+    duck typing, but are a poor fit to code that relies in explicit instance
+    checks since the deferred object is a :class:`Proxy` instance.
+
+    Usage:
+        >>> from operator import add
+        >>> x = sk.deferred(add, 40, 2)  # add function not called yet
+        >>> print(x)                     # any interaction triggers object construction!
+        42
+
     """
 
     __slots__ = ("_deferred_constructor_",)
@@ -44,7 +53,8 @@ class Deferred(Proxy):
         self._deferred_constructor_ = init
 
     def __repr__(self):
-        return f"{type(self).__name__}({repr(self._Proxy__get_object())})"
+        # return f"{type(self).__name__}({repr(self._Proxy__get_object())})"
+        return f"Proxy({repr(self._Proxy__get_object())})"
 
     # noinspection PyPep8Naming
     def _Proxy__get_object(self):
@@ -64,24 +74,6 @@ class Deferred(Proxy):
         except KeyError:
             obj = self._Proxy__get_object()
         return getattr(obj, attr)
-
-
-def deferred(func, *args, **kwargs):
-    """
-    Similar to delayed, but safer since it creates a Deferred object.
-
-    The proxy delegates all methods to the lazy object. It can break a few
-    interfaces since it is never converted to the same value as the proxied
-    element.
-
-    Usage:
-
-        >>> from operator import add
-        >>> x = Deferred(add, 40, 2)  # add function not called yet
-        >>> print(x)                  # trigger object construction!
-        42
-    """
-    return Deferred(func, *args, **kwargs)
 
 
 @call()

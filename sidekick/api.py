@@ -18,3 +18,12 @@ from .seq import *
 
 # noinspection PyUnresolvedReferences
 from .pred import *
+
+# noinspection PyUnresolvedReferences
+from .proxy import *
+
+# noinspection PyUnresolvedReferences
+from .properties import *
+
+# noinspection PyUnresolvedReferences
+from .types.record import *

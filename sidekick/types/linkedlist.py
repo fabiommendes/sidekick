@@ -2,7 +2,7 @@ import collections.abc
 import itertools
 import operator as op
 
-from sidekick import pipeline
+from ..functions import pipeline
 from .union import Union
 
 Seq = collections.abc.Sequence

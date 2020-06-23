@@ -11,6 +11,8 @@ if TYPE_CHECKING:
     from .. import api as sk
     from ..api import X, Y
 
+_sum = sum
+
 
 #
 # Basic reductions and folds
@@ -219,7 +221,7 @@ def acc_together(seq: Seq, **kwargs) -> Seq[dict]:
 # Special reductions
 #
 @fn
-def product(seq: Seq, *, init=1):
+def product(seq: Seq, init=1):
     """
     Multiply all elements of sequence.
 
@@ -228,12 +230,31 @@ def product(seq: Seq, *, init=1):
         120
 
     See Also:
-        :func:`sum`
         :func:`products`
+        :func:`sum`
     """
     for x in seq:
         init = x * init
     return init
+
+
+@fn
+def sum(seq: Seq, init=0):
+    """
+    Sum all arguments of sequence.
+
+    It exists only in symmetry with :func:`product`, since Python already
+    has a builtin sum function that behaves identically.
+
+    Examples:
+        >>> sk.sum([1, 2, 3, 4, 5])
+        15
+
+    See Also:
+        :func:`sums`
+        :func:`product`
+    """
+    return _sum(seq, init)
 
 
 @fn.curry(1)

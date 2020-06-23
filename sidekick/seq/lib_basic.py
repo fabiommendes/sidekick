@@ -30,7 +30,7 @@ def cons(x: T, seq: Seq[T]) -> Seq[T]:
 @fn.curry(1)
 def uncons(seq: Seq[T], default=NOT_GIVEN) -> (T, Seq[T]):
     """
-    De-construct sequence. Return a pair of (first(seq), rest(seq)) of sequence.
+    De-construct sequence. Return a pair of (``first``, ``*rest``) of sequence.
 
     If default is given and if seq is an empty sequence return
     (default, empty_sequence), otherwise raise a ValueError.
@@ -45,7 +45,6 @@ def uncons(seq: Seq[T], default=NOT_GIVEN) -> (T, Seq[T]):
     See Also:
         :func:`cons`
         :func:`first`
-        :func:`rest`
     """
     seq = iter(seq)
     try:
@@ -102,7 +101,6 @@ def first(seq: Seq[T], default=NOT_GIVEN) -> T:
         :func:`second`
         :func:`last`
         :func:`nth`
-        :func:`rest`
     """
     try:
         return next(iter(seq))
@@ -174,7 +172,6 @@ def last(seq: Seq[T], default=NOT_GIVEN, n=None) -> T:
         :func:`first`
         :func:`second`
         :func:`nth`
-        :func:`init`
         :func:`rtake`
     """
     if n is None:

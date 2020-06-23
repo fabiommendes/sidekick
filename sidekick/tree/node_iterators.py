@@ -32,7 +32,13 @@ class NodeOrLeafIteratorMixin:
 
     # noinspection PyMethodParameters
     def iter_children(
-        node, how=None, *, self=None, leaves=None, nodes=None, **kwargs
+        node,
+        how=None,
+        *,
+        self: bool = None,
+        leaves: bool = None,
+        nodes: bool = None,
+        **kwargs,
     ) -> NodesIter:
         """
         Iterate over child nodes.
@@ -54,11 +60,11 @@ class NodeOrLeafIteratorMixin:
                 'out-order':
                     Depth-first strategy. Yield right descendants, node, then
                     left descendants. Usually relevant only to binary trees.
-            self (bool):
+            self:
                 Control if current node is returned in the output or not.
-            leaves (bool):
+            leaves:
                 If True, return only leaves.
-            nodes (bool):
+            nodes:
                 If True, return only nodes.
             keep (callable):
                 Optional callable that select which nodes should be selected for

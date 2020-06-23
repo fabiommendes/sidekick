@@ -3,7 +3,7 @@ import time
 from types import FunctionType
 from inspect import Signature
 
-from sympy.utilities import pytest
+import pytest
 
 import sidekick.api as sk
 from sidekick import Nothing, Just

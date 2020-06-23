@@ -19,6 +19,11 @@ inform about your usage and contribute to this roadmap.
 Changelog
 ---------
 
+0.8.1
+=====
+
+* Split ``sidekick.lazytools`` into ``proxy`` and ``properties`` submodules.
+
 
 0.8.0
 =====

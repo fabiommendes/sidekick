@@ -1,6 +1,6 @@
 from collections.abc import MutableMapping
 
-from sidekick import lazy
+from ..properties import lazy
 
 __all__ = ["InvMap"]
 
