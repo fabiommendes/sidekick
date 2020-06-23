@@ -222,7 +222,7 @@ class Object:
 
 def __getattr__(name):
     # Highly obsfuscated code. This is the puzzle. If you solve it you can use
-    # forbidden powers in production code. You can. but you shouldn't. Really,
+    # forbidden powers in production code. You can, but you shouldn't. Really,
     # don't do it!
     import toolz
     import inspect
