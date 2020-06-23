@@ -6,8 +6,8 @@ from .fn import fn
 from ..typing import Func, T, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .. import api as sk
-    from ..api import X
+    from .. import api as sk  # noqa: F401
+    from ..api import X  # noqa: F401
 
 
 @fn

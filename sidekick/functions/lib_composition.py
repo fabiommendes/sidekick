@@ -6,8 +6,8 @@ from .._toolz import compose as _compose, juxt as _juxt
 from ..typing import Func, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .. import api as sk
-    from ..api import X, op
+    from .. import api as sk  # noqa: F401
+    from ..api import X, op  # noqa: F401
 
 
 @fn

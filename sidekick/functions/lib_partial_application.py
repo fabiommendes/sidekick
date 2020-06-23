@@ -6,7 +6,7 @@ from .fn import fn, Curried
 from ..typing import Func, Callable, overload, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .. import api as sk
+    from .. import api as sk  # noqa: F401
 
 
 def partial(*args, **kwargs) -> fn:
@@ -57,11 +57,11 @@ def curry(n: int, func: Callable) -> Curried:
 
 
 @overload
-def curry(n: int) -> Callable[[Callable], Curried]:
+def curry(n: int) -> Callable[[Callable], Curried]:  # noqa: F811
     ...
 
 
-def curry(n, func=None):
+def curry(n, func=None):  # noqa: F811
     """
     Return the curried version of a function of n arguments.
 

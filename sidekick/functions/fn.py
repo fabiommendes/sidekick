@@ -197,7 +197,7 @@ class fn(metaclass=FunctionMeta):
         return self(other)
 
     def __matmul__(self, other):
-        return apply(self, other)
+        return apply(self, other)  # noqa: F821
 
     #
     # Descriptor interface
@@ -237,7 +237,7 @@ class fn(metaclass=FunctionMeta):
         See Also:
             :func:`thunk`
         """
-        return thunk(*args, **kwargs)(self)
+        return thunk(*args, **kwargs)(self)  # noqa: F821
 
     def partial(self, *args, **kwargs):
         """

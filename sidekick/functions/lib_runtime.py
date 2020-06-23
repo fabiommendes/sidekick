@@ -9,9 +9,9 @@ from .._toolz import excepts
 from ..typing import NOT_GIVEN, TYPE_CHECKING, Func, Catchable, Raisable, Union, Any
 
 if TYPE_CHECKING:
-    from .. import api as sk, time
-    from ..api import X, Y
-    from ..types.maybe import Maybe
+    from .. import api as sk  # noqa: F401
+    from ..api import X, Y  # noqa: F401
+    from ..types.maybe import Maybe  # noqa: F401
 
     # Help with Pycharm's confusion with doctrings
     host: None
@@ -412,7 +412,7 @@ def retry(n: int, func: Func, *, error: Catchable = Exception, sleep=None) -> fn
         for _ in range(n - 1):
             try:
                 return func(*args, **kwargs)
-            except error as ex:
+            except error:
                 if sleep:
                     time.sleep(sleep)
         return func(*args, **kwargs)

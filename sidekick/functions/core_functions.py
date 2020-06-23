@@ -5,8 +5,8 @@ from ..typing import Any, Callable, FunctionType, Mapping, FunctionTypes
 from ..typing import NamedTuple, Iterable, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .fn import fn
-    from .. import api as sk
+    from .fn import fn  # noqa: F401
+    from .. import api as sk  # noqa: F401
 
 _new = object.__new__
 
@@ -225,4 +225,4 @@ def make_xor(f, g):
     return xor
 
 
-from .fn import fn
+from .fn import fn  # noqa: E402, F811

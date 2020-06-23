@@ -3,7 +3,7 @@ from .core_functions import quick_fn, to_callable
 from ..typing import Fn2, Func, TYPE_CHECKING, Sequence, Any
 
 if TYPE_CHECKING:
-    from .. import api as sk
+    from .. import api as sk  # noqa: F401
 
 
 @fn

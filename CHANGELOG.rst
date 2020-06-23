@@ -26,7 +26,6 @@ inform about your usage and contribute to this roadmap.
 * Better integration of maybe and result types
 * Move Union/Record to sidekick.adt with other classical functional types
 * Document all modules
-* Build documentation cleanly and add it to the CI
 * Remove cruft and clean the experimental package
 * Remove all flake8 errors
 * Continuous integration with strict tests
@@ -40,6 +39,7 @@ Changelog
 =====
 
 * Document ``sidekick.evil``,  ``sidekick.op`,  ``sidekick.pred``.
+* Build documentation cleanly and add it to the CI
 
 
 0.8.2
