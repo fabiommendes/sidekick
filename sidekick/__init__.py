@@ -10,7 +10,7 @@ exposed either by wrapping in a sidekick fn() or generator() functions or
 are re-exported from a proper location.
 """
 __author__ = "Fábio Macêdo Mendes"
-__version__ = "0.8.0"
+__version__ = "0.8.1"
 
 from . import op
 from ._placeholder import _ as placeholder
