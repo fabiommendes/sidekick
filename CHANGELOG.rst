@@ -28,11 +28,19 @@ inform about your usage and contribute to this roadmap.
 * Document all modules
 * Build documentation cleanly and add it to the CI
 * Remove cruft and clean the experimental package
+* Remove all flake8 errors
+* Continuous integration with strict tests
 
 
 ---------
 Changelog
 ---------
+
+0.8.3
+=====
+
+* Document ``sidekick.evil``,  ``sidekick.op`,  ``sidekick.pred``.
+
 
 0.8.2
 =====

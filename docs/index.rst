@@ -51,6 +51,7 @@ Contents
    api-guide.rst
    lib-evil.rst
    lib-functions.rst
+   lib-op.rst
    lib-pred.rst
    lib-properties.rst
    lib-proxy.rst

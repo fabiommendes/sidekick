@@ -82,6 +82,7 @@ __all__ = [
     "power",
     "trampoline",
     "call",
+    "value",
     "do",
     # Runtime control
     "once",

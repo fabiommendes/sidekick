@@ -305,7 +305,7 @@ limitations of Python syntax and runtime and will *never* be fixed in Sidekick.
 * **Assignment operators:** ``(X += value)``. Assignment operators are statements and
   cannot be assigned to values. This includes item deletion and item assignment for the
   same reason.
-* **Containment check**: ``(X in seq)`` or ``(seq in X)``. Use :func:`sidekick.functions.contains`
+* **Containment check**: ``(X in seq)`` or ``(seq in X)``. Use :func:`sidekick.op.contains`
   instead.
 * **Method calling**: ``X.attr`` immediately returns a function that retrieves the
   ``.attr`` attribute of its argument. We cannot specify a method to obtain a

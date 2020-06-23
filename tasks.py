@@ -45,3 +45,13 @@ def check_style(ctx):
     """
     ctx.run("black . --check")
     ctx.run("flake8 sidekick")
+
+
+@task
+def ci(ctx):
+    """
+    Run code that should be executed in continuous integration.
+    """
+    test(ctx, all=True)
+    docs(ctx, strict=True, clear=True)
+    # check_style(ctx)
