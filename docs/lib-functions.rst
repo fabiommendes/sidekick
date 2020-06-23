@@ -45,6 +45,7 @@ Partial application
    curry
    partial
    rpartial
+   method
 
 
 Composition

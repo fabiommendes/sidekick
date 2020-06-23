@@ -1,4 +1,5 @@
 from functools import partial as _partial
+from operator import methodcaller
 
 from .core_functions import arity, to_callable, quick_fn
 from .fn import fn, Curried
@@ -127,3 +128,39 @@ def curry(n, func=None):
     else:
         n = arity(func) if n in (..., None, "auto") else n
         return fn.curry(n, func)
+
+
+class _fn_method(fn):
+    __slots__ = ()
+
+    def __init__(self, func):
+        super().__init__(func)
+        self.__doc__ = func.__doc__
+        self.__module__ = func.__module__
+
+    def __getattr__(self, item):
+        return _partial(methodcaller, item)
+
+
+@_fn_method
+def method(*args, **kwargs):
+    """
+    Return a function that calls a method of its argument with the given values.
+
+    A method caller object. It can be used as a function
+
+    >>> pop_first = sk.method("pop", 0)
+    >>> pop_first([1, 2, 3])
+    1
+
+    or as a function factory.
+
+    >>> pop_first = sk.method.pop(0)
+    >>> pop_first([1, 2, 3])
+    1
+
+    The second usage is syntactically cleaner and prevents the usage of
+    invalid Python names. All method calls performed in the ``sk.method`` object
+    returns the corresponding methodcaller function.
+    """
+    return methodcaller(*args, **kwargs)

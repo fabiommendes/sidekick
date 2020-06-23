@@ -8,7 +8,7 @@ This module contains a collection of predicate functions that implement common t
 Since all functions are fn-enabled, it accepts bitwise logic to compound predicates
 into more interesting expressions, like in the example bellow.
 
->>> sk.filter(is_odd | is_positive, range(-5, 10))
+>>> sk.filter(sk.is_odd & sk.is_positive, range(-5, 10))
 sk.iter([1, 3, 5, 7, 9])
 
 

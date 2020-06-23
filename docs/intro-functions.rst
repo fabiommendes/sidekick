@@ -309,9 +309,8 @@ limitations of Python syntax and runtime and will *never* be fixed in Sidekick.
   instead.
 * **Method calling**: ``X.attr`` immediately returns a function that retrieves the
   ``.attr`` attribute of its argument. We cannot specify a method to obtain a
-  behavior similar to `operator.methodcaller`_. :func:`sidekick.functions.method` function has
-  can produce method callers. Similarly, :func:`sidekick.functions.attr` expose some functionality
-  of `operator.attrgetter` that cannot be expressed with those magic objects.
+  behavior similar to `operator.methodcaller`_. :func:`sidekick.functions.method`
+  can produce method callers with an specialized syntax.
 
 .. _operator.methodcaller: https://docs.python.org/3/library/operator.html#operator.methodcaller
 

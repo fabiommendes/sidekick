@@ -31,7 +31,7 @@ from .lib_composition import (
     rthread_if,
     juxt,
 )
-from .lib_partial_application import partial, rpartial, curry
+from .lib_partial_application import partial, rpartial, curry, method
 from .lib_runtime import (
     once,
     thunk,
@@ -65,6 +65,7 @@ __all__ = [
     "curry",
     "partial",
     "rpartial",
+    "method",
     # Composition
     "compose",
     "pipe",

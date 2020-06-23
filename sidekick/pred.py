@@ -47,7 +47,7 @@ def cond(test, then, else_):
     executes either the ``then`` or ``else_`` branches.
 
     Examples:
-        >>> collatz = sk.cond(is_even, _ // 2, (3 * _) + 1)
+        >>> collatz = sk.cond(sk.is_even, _ // 2, (3 * _) + 1)
         >>> [collatz(1), collatz(2), collatz(3), collatz(4)]
         [4, 1, 10, 2]
     """
@@ -146,17 +146,17 @@ def _is_identical(
 ):
     render = render or repr(value)
     name = name or f"is_{render.lower()}"
-    ok = ok or f"not_{render.lower()}"
-    bad = bad or f"{value!r}"
+    ok = ok if ok is not None else f"{value!r}"
+    bad = bad if bad is not None else f'"not_{render.lower()}"'
     doc = (
         doc
         or f"""
     Check if argument is {render.replace('_', ' ')}{by}.
 
     Examples:
-        >>> sk.{name}({ok})
-        False
         >>> sk.{name}({bad})
+        False
+        >>> sk.{name}({ok})
         True
     """
     )
@@ -225,7 +225,7 @@ def is_a(cls, x):
             Instance.
 
     Examples:
-        >>> is_int = is_a(int)
+        >>> is_int = sk.is_a(int)
         >>> is_int(42), is_int(42.0)
         (True, False)
     """
@@ -241,12 +241,12 @@ is_even = _is_numeric("even", lambda x: x % 2 == 0, 42, 1)
 is_positive = _is_numeric("positive", lambda x: x >= 0, 42, -10)
 is_negative = _is_numeric("negative", lambda x: x <= 0, -10, 42)
 is_strictly_positive = _is_numeric("strictly_positive", lambda x: x > 0, 42, 0)
-is_strictly_negative = _is_numeric("strictly_negative", lambda x: x < 0, 0, -10)
+is_strictly_negative = _is_numeric("strictly_negative", lambda x: x < 0, -10, 0)
 is_nonzero = _is_numeric("nonzero", lambda x: x != 0, 42, 0)
 is_zero = _is_numeric("zero", lambda x: x == 0, 0, 42)
 
 
-@fn
+@fn.curry(2)
 def is_divisible_by(n, x):
     """
     Check if x is divisible by n.

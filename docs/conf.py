@@ -307,4 +307,6 @@ import sidekick
 import sidekick.functions
 import sidekick.pred
 import sidekick.seq
+from sidekick.utils import building_docs
+building_docs()
 """

@@ -2,13 +2,28 @@
 fn-aware functions from the builtin operator module.
 """
 import operator as _op
+import re
 from functools import wraps as _wraps
 
 from .functions import fn as _fn
 
-_fn3 = lambda f: _wraps(f)(_fn.curry(3)(f))
-_fn2 = lambda f: _wraps(f)(_fn.curry(2)(f))
-_fn1 = lambda f: _wraps(f)(_fn(f))
+re = re.compile(r"Same as (?P<op>.+?(?=(,|\.$| \()))(?P<tail>[.,]?.*)")
+
+
+def _fix(f, what):
+    out = _wraps(f)(what)
+    if out.__doc__:
+        doc = out.__doc__.strip().rstrip(".") + "."
+        m = re.match(doc)
+        if m:
+            op, tail = m.group("op", "tail")
+            out.__doc__ = f"Same as ``{op}``{tail}"
+    return out
+
+
+_fn3 = lambda f: _fix(f, _fn.curry(3)(f))
+_fn2 = lambda f: _fix(f, _fn.curry(2)(f))
+_fn1 = lambda f: _fix(f, _fn(f))
 _flip = lambda f: lambda x, y: f(y, x)
 
 #
@@ -35,12 +50,12 @@ ifloordiv = _fn2(_op.ifloordiv)
 ilshift = _fn2(_op.ilshift)
 imod = _fn2(_op.imod)
 imul = _fn2(_op.imul)
-imul.__doc__ = "Same as ``a *= b``"
 index_of = _indexOf = _fn2(_op.indexOf)
 ior = _fn2(_op.ior)
-ior.__doc__ = "Same as ``a |= b``"
 ipow = _fn2(_op.ipow)
-ipow.__doc__ = "Same as ``a **= b``"
+# imul.__doc__ = "Same as ``a *= b``"
+# ior.__doc__ = "Same as ``a |= b``"
+# ipow.__doc__ = "Same as ``a **= b``"
 irshift = _fn2(_op.irshift)
 is_ = _fn2(_op.is_)
 is_not = _fn2(_op.is_not)
@@ -117,6 +132,6 @@ attrgetter = _fn1(_op.attrgetter)
 itemgetter = _fn1(_op.itemgetter)
 methodcaller = _fn1(_op.methodcaller)
 
-del _fn, _fn1, _fn2, _fn3
+del _fn, _fn1, _fn2, _fn3, re
 
 __all__ = [name for name in globals() if not name.startswith("_")]
