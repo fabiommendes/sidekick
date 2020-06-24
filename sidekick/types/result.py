@@ -47,6 +47,9 @@ class Result(Union):
         """
         Similar to map_error, but only apply func (which is usually an Exception
         subclass, if the error is not an Exception.
+
+        This is useful, for instance, if error is a string and you want to
+        convert it to an explicit ValueError(string) or any other exception.
         """
         if self:
             return self
@@ -66,11 +69,10 @@ class Result(Union):
         supplied default or None.
 
         Examples:
-
-        >>> Ok(42).get_value()
-        42
-        >>> Err("NaN").get_value("default")
-        'default'
+            >>> Ok(42).get_value()
+            42
+            >>> Err("NaN").get_value("default")
+            'default'
         """
         return self.value if self else default
 
@@ -108,11 +110,11 @@ class Result(Union):
 
     def attr(self, attr):
         """
-        Retrieves attribute as a Maybe.
+        Retrieve attribute of the Ok state, and propagate error.
 
         Examples:
-            >>> Just(1 + 2j).attr('real')
-            Just(1.0)
+            >>> Ok(1 + 2j).attr('real')
+            Ok(1.0)
         """
         return self and result(getattr(self.value, attr))
 
@@ -120,7 +122,7 @@ class Result(Union):
         """
         Iterates over content.
 
-        It returns an empty iterator in the Nothing case.
+        It returns an empty iterator in the Err case.
         """
         if self:
             it: Iterator = self.value

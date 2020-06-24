@@ -1,7 +1,7 @@
 import pytest
 
-from sidekick import List, Nil, X
-from sidekick.builtins import getattr
+from sidekick.experimental.linkedlist import List, Nil
+from sidekick.api import X
 
 
 class TestLinkedLists:
@@ -69,7 +69,7 @@ class TestLinkedLists:
         empty = List()
 
         tests = {
-            getattr("uncons"): ValueError,
+            X.uncons: ValueError,
             X[0]: IndexError,
             X[-1]: IndexError,
             X * (-1): ValueError,

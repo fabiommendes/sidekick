@@ -7,10 +7,9 @@ from operator import itemgetter
 
 import toolz
 
-from .. import uncons, iterate
 from ..functions import fn, to_callable
 from ..seq import is_empty
-from ..typing import Pred, Union, T, NOT_GIVEN
+from ..typing import Pred, T, NOT_GIVEN
 from ..typing import Seq, Func
 
 identity = lambda x: x
@@ -155,22 +154,6 @@ _map = map
 _enumerate = enumerate
 
 
-@fn.curry(2)
-def indexed_map(func: Func, *seqs: Seq, start=0) -> Seq:
-    """
-    Like map, but pass the index of each element as the first argument to
-    func.
-
-    Examples:
-        >>> ''.join(indexed_map((X * Y), 'hello', start=1))
-        'heelllllllooooo'
-
-    See Also:
-        map
-    """
-    return _map(func, itertools.count(start), *seqs)
-
-
 @fn.curry(3)
 def select_indexes(selector, pred: Pred, seq: Seq, *, start=0, enter=False) -> Seq:
     """
@@ -269,37 +252,6 @@ def zip_aligned(*args):
     yield from zip(*args)
     if not all(map(is_empty, args)):
         raise ValueError("non-aligned iterators")
-
-
-# noinspection PyIncorrectDocstring
-@fn.curry(2)
-def zip_with(func: Union[Func, Seq], *seqs: Seq) -> Seq:
-    """
-    Apply each tuple of element obtained from zipping seqs as arguments to the
-    function.
-
-    If func is a sequence of functions, each tuple of arguments is applied to
-    their corresponding function.
-
-    Args:
-        func (iterable):
-            A function or an iterable of functions
-        seqs (iterable arguments):
-            Values that will be passed as arguments to functions. If seq is larger than
-            funcs, the remaining values are passed as is.
-
-    Examples:
-        >>> zip_with([(X ** 1), (X ** 2), (X ** 3)], [1, 2, 3]) | L
-        [1, 4, 27]
-    """
-    arg_items = zip(*seqs)
-    try:
-        func = to_callable(func)
-    except TypeError:
-        to_func = to_callable
-        yield from (to_func(f)(*args) for f, args in zip(func, arg_items))
-    else:
-        yield from (func(*args) for args in arg_items)
 
 
 @fn.curry(2)

@@ -1,15 +1,16 @@
 from collections.abc import MutableMapping
 
+from .frozendict import FrozenDict
 from ..properties import lazy
 
-__all__ = ["InvMap"]
+__all__ = ["InvMap", "FrozenInvMap"]
 
 
 class InvMap(MutableMapping):
     """
     A dictionary-like object with both a direct and inverse mapping.
 
-    ``InvMap`` implements a invertible dictionary that can access `values`
+    :class:`InvMap` implements a invertible dictionary that can access `values`
     from `keys` as a regular dictionary, but it can also map `keys` to `values`.
     The inverse relation, which is also an ``InvMap`` instance, can be
     accessed from the ``inv`` attribute of the dictionary.
@@ -41,7 +42,7 @@ class InvMap(MutableMapping):
 
     @lazy
     def inv(self):
-        inv = object.__new__(InvMap)
+        inv = object.__new__(type(self))
         inv._direct, inv._inverse = self._inverse, self._direct
         inv.inv = self
         return inv
@@ -83,11 +84,25 @@ class InvMap(MutableMapping):
         return new
 
 
-def invert_map(map):
+class FrozenInvMap(FrozenDict):
+    """
+    An immutable version of a InvDict.
+    """
+
+    __slots__ = ("inv",)
+
+    def __init__(self, data=()):
+        super().__init__(data)
+        self.inv = dict.__new__(FrozenInvMap, ((v, k) for k, v in self.items()))
+        if len(self.inv) != len(self):
+            raise ValueError("map not invertible!")
+
+
+def invert_map(dic):
     """
     Inverts map. Raises ValueError if map is not invertible.
     """
-    inv = {v: k for k, v in map.items()}
-    if len(inv) != len(map):
+    inv = {v: k for k, v in dic.items()}
+    if len(inv) != len(dic):
         raise ValueError("map not invertible!")
     return inv

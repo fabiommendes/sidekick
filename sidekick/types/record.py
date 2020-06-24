@@ -1,17 +1,12 @@
 import collections.abc
 import keyword
 from types import MappingProxyType
-from typing import Mapping, Dict
 
 from .anonymous_record import MutableMapView, MapView, record, namespace, MetaMixin
+from ..typing import Mapping
 
 NOT_GIVEN = object()
 Field = collections.namedtuple("Field", ["name", "type", "default"])
-
-
-# ------------------------------------------------------------------------------
-# Record meta type
-# ------------------------------------------------------------------------------
 
 
 class RecordMeta(type):
@@ -345,7 +340,7 @@ class RecordMixin:
 
         types = dict(zip(self._meta.fields, self._meta.types))
         for k, v in kwargs.items():
-            tt: type = types[k]
+            tt = types[k]
             if isinstance(tt, type) and not isinstance(v, tt):
                 vt = type(v).__name__
                 tt = tt.__name__

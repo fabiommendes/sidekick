@@ -1,14 +1,13 @@
 import collections.abc
 import itertools
-import operator as op
 
-from ..functions import pipeline
-from .union import Union
+from ..types import Union
 
 Seq = collections.abc.Sequence
 _chain = itertools.chain
 _repeat = itertools.repeat
 _islice = itertools.islice
+
 
 # noinspection PyMethodParameters,PyMethodFirstArgAssignment
 class List(Union):

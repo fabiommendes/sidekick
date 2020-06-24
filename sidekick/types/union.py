@@ -2,14 +2,9 @@ import random
 from functools import lru_cache
 
 from .record import Record, clean_field, normalize_field_mapping, RecordMeta
-from ..utils import snake_case
+from .._utils import snake_case
 
 __all__ = ["union", "Case", "Union"]
-
-
-# ------------------------------------------------------------------------------
-# UNION TYPE METACLASSES
-# ------------------------------------------------------------------------------
 
 
 class union(type):
@@ -18,7 +13,7 @@ class union(type):
     classes.
 
     Args:
-        name (str):
+        name:
             Name of the Union.
         bases:
             Optional tuple of bases. Passed as second positional argument
@@ -26,8 +21,6 @@ class union(type):
             Optional namespace dictionary with methods and class attributes.
         cases (sequence):
             List of case classes that composes the union.
-        namespace (mapping):
-            An optional namespace to inject into the base class.
     """
 
     def __new__(mcs, *args, **kwargs):
@@ -232,7 +225,7 @@ def query_name(name):
 
 
 # We have to declare union a generic value since the meta-type constructor
-# explicity checks for the presence of a Union base class.
+# explicitly checks for the presence of a Union base class.
 Union = NotImplemented
 Union = union("Union")
 SingletonCase = Case()

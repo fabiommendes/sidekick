@@ -1,8 +1,8 @@
 from typing import NamedTuple
 
 from .node_base import NodeOrLeaf
-from ..seq import uncons
-from ..render import PrintContext, PrettyPrinter
+from ...seq import uncons
+from ...contrib.render import PrintContext, PrettyPrinter
 
 
 class Row(NamedTuple):

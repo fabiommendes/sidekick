@@ -2,62 +2,126 @@ import operator
 from collections import namedtuple
 from functools import singledispatch
 
-from ._operators import UNARY, BINARY, COMPARISON, METHODS, SYMBOLS, NAMES
+from .._operators import SYMBOLS, op_wrapper_class
 
 flip = lambda f: lambda x, y: f(y, x)
-named = lambda name, obj: setattr(obj, "__name__", name) or obj
-__all__ = ["placeholder", "Placeholder"]
 
 
-#
-# Operator factories and registration
-#
-def register_operators(rfunc, operators):
-    """
-    Register a list of operators.
-    """
-
-    def decorator(cls):
-        registered = set(cls.__dict__)
-        registered.update(("__index__",))
-
-        for op in operators:
-            op = rfunc(op, cls)
-            if op.__name__ not in registered:
-                setattr(cls, op.__name__, op)
-        return cls
-
-    return decorator
-
-
-def unary(op, cls):
-    name = NAMES[op]
-    return named("__%s__" % name, lambda self: cls(UnaryOp(op, self._ast)))
-
-
-def binary(op, cls):
-    name = NAMES[op]
-    return named(
-        "__%s__" % name, lambda self, other: cls(BinOp(op, self._ast, to_ast(other)))
-    )
-
-
-def rbinary(op, cls):
-    name = NAMES[op]
-    return named(
-        "__r%s__" % name, lambda self, other: cls(BinOp(op, to_ast(other), self._ast))
-    )
-
-
-@register_operators(unary, UNARY)
-@register_operators(binary, BINARY + COMPARISON + METHODS)
-@register_operators(rbinary, BINARY)
 class Placeholder:
+    """
+    Base class for placeholder objects.
+    """
+
+
+#
+# Magic X and Y objects. Implementation of operator factories for (E)xpr nodes
+# (X) and (Y) magics.
+#
+Eop = lambda op: lambda self, other: Expr(BinOp(op, self._ast, to_ast(other)))
+
+
+def Xop(op):
+    def operator(_self, other):
+        if other is X:
+            return lambda x: op(x, x)
+        elif other is Y:
+            return lambda x, y: op(x, y)
+        else:
+            return lambda x: op(x, other)
+
+    return operator
+
+
+def Yop(op):
+    def operator(_self, other):
+        if other is X:
+            return lambda x, y: op(y, x)
+        elif other is Y:
+            return lambda x, y: op(y, y)
+        else:
+            return lambda x, y: op(y, other)
+
+    return operator
+
+
+Erop = lambda op: lambda self, value: Expr(BinOp(op, to_ast(value), self._ast))
+Xrop = lambda op: lambda self, value: lambda x: op(value, x)
+Yrop = lambda op: lambda self, value: lambda x, y: op(value, y)
+
+Eunary = lambda op: lambda self: Expr(UnaryOp(op, self._ast))
+Xunary = lambda op: lambda self: op
+Yunary = lambda op: lambda self: lambda x, y: op(y)
+
+
+class _X(op_wrapper_class(Xop, Xrop, Xunary), Placeholder):
+    @property
+    def __sk_callable__(self):
+        return lambda x: x
+
+    def __repr__(self):
+        return "X"
+
+    def __call__(self, x):
+        return x
+
+    def __getattr__(self, attr):
+        return operator.attrgetter(attr)
+
+
+class _Y(op_wrapper_class(Yop, Yrop, Yunary), Placeholder):
+    @property
+    def __sk_callable__(self):
+        return lambda x, y: y
+
+    def __repr__(self):
+        return "Y"
+
+    def __call__(self, x, y):
+        return y
+
+    def __getattr__(self, attr):
+        return lambda x, y: y
+
+
+Fop = lambda op: lambda self, x: lambda *args, **kwargs: op(
+    self._fn(*args, **kwargs), x
+)
+Frop = lambda op: lambda self, x: lambda *args, **kwargs: op(
+    x, self._fn(*args, **kwargs)
+)
+Funary = lambda op: lambda self: lambda *args, **kwargs: op(self._fn(*args, **kwargs))
+
+
+class FMeta(type):
+    def __getitem__(cls, func):
+        new = object.__new__(cls)
+        new._fn = func
+        return func
+
+    def __call__(*args, **kwargs):
+        cls, func, *args = args
+        args = tuple(map(to_ast, args))
+        kwargs = {k: to_ast(arg) for k, arg in kwargs.items()}
+        return Expr(Call(Cte(func), args, kwargs))
+
+
+class F(op_wrapper_class(Fop, Frop), metaclass=FMeta):
+    __slots__ = ("_fn",)
+
+    @property
+    def __sk_callable__(self):
+        return self._fn
+
+    def __repr__(self):
+        return "F"
+
+
+class Expr(op_wrapper_class(Eop, Erop, Eunary), Placeholder):
     """
     Placeholder objects represents a variable or expression on quick lambda.
     """
 
-    __slots__ = "_ast", "_cache"
+    __slots__ = "_ast", "_callable"
 
     _name = property(lambda self: self.__repr__())
 
@@ -67,13 +131,13 @@ class Placeholder:
 
     @property
     def __sk_callable__(self):
-        if self._cache is None:
-            self._cache = compile_ast(simplify_ast(self._ast))
-        return self._cache
+        if self._callable is None:
+            self._callable = compile_ast(simplify_ast(self._ast))
+        return self._callable
 
-    def __init__(self, ast, cache=None):
+    def __init__(self, ast):
         self._ast = ast
-        self._cache = cache
+        self._callable = None
 
     def __repr__(self):
         return f"{type(self).__name__}({self})"
@@ -82,44 +146,48 @@ class Placeholder:
         return source(self._ast)
 
     def __getattr__(self, attr):
-        return Placeholder(GetAttr(attr, self._ast))
+        return Expr(GetAttr(attr, self._ast))
 
     def __call__(self, *args, **kwargs):
         args = tuple(map(to_ast, args))
         kwargs = {k: to_ast(v) for k, v in kwargs.items()}
-        return Placeholder(Call(self._ast, args, kwargs))
+        return Expr(Call(self._ast, args, kwargs))
 
 
-# ------------------------------------------------------------------------------
+#
 # AST node types and representation
-# ------------------------------------------------------------------------------
-
-VarType = type("Var", (), {"__repr__": lambda x: "Var"})
+#
 BinOp = namedtuple("BinOp", ["op", "lhs", "rhs"])
 Call = namedtuple("Call", ["caller", "arguments", "kwargs"])
 Cte = namedtuple("Cte", ["value"])
 GetAttr = namedtuple("GetAttr", ["attr", "value"])
 UnaryOp = namedtuple("SingleOp", ["op", "value"])
-Var = VarType()
+Var = type("Var", (), {"__repr__": lambda x: "Var"})()
 
 
-def to_ast(obj):
+# noinspection PyProtectedMember
+def to_ast(obj: Expr):
     """
     Convert object to AST node.
     """
-    if isinstance(obj, Placeholder):
-        # noinspection PyProtectedMember
+    if isinstance(obj, Expr):
         return obj._ast
+    elif obj is X:
+        return Var
+    elif obj is Y:
+        msg = "placeholder expressions do not accept a second argument"
+        raise NotImplementedError(msg)
     else:
         return Cte(obj)
 
 
-def call_node(func, *args, **kwargs):
+def call_node(*args, **kwargs):
     """
     Create a call node for ast.
     """
-    func = to_ast(func)
-    args = tuple(map(to_ast, args))
+    it = iter(args)
+    func = to_ast(next(it))
+    args = tuple(map(to_ast, it))
     kwargs = {k: to_ast(v) for k, v in kwargs.items()}
     return Call(func, args, kwargs)
 
@@ -129,6 +197,10 @@ def call_node(func, *args, **kwargs):
 #
 OP_SYMBOLS = dict(SYMBOLS)
 OP_SYMBOLS[operator.attrgetter] = "."
+
+
+def op_symbol(op):
+    return OP_SYMBOLS[op]
 
 
 @singledispatch
@@ -180,13 +252,9 @@ def _(node):
     return repr(node.value)
 
 
-def op_symbol(op):
-    return OP_SYMBOLS[op]
-
-
-# ------------------------------------------------------------------------------
+#
 # Compiling AST nodes
-# ------------------------------------------------------------------------------
+#
 SIMPLE_TYPES = (int, float, complex, str, bytes, bool, type(None))
 
 
@@ -197,7 +265,7 @@ def compile_ast(ast):
     function.
     """
     if ast is Var:
-        return var_identity
+        return lambda x: x
     else:
         raise TypeError(f"invalid AST type: {type(ast).__name__}")
 
@@ -295,14 +363,9 @@ def _(ast):
         return lambda x: expr(x)
 
 
-var_identity = lambda x: x
-
-
-# ------------------------------------------------------------------------------
+#
 # Simplifying AST nodes
-# ------------------------------------------------------------------------------
-
-
+#
 def simplify_ast(ast):
     """Deep AST simplification"""
 
@@ -339,6 +402,8 @@ def simplify_ast(ast):
 
 
 #
-# The placeholder symbol
+# The placeholder singletons
 #
-placeholder = _placeholder = _ = Placeholder(Var, var_identity)
+placeholder = _ = Expr(Var)
+X = _X()
+Y = _Y()

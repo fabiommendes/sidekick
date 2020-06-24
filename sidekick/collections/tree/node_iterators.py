@@ -1,7 +1,7 @@
 from itertools import chain, cycle, islice
 from typing import Sequence, Iterator, Callable
 
-from ..builtins import filter as _filter
+from ...seq import filter as _filter
 
 ID = lambda x: x
 TRUE = lambda x: True
@@ -203,7 +203,7 @@ class NodeOrLeafIteratorMixin:
     # Query nodes
     #
     # noinspection PyIncorrectDocstring
-    def find_all(*self_and_filter, min_count=0, max_count=INF, **kwargs):
+    def find_all(*self_and_filter, min_count: int = 0, max_count: int = INF, **kwargs):
         """
         Search nodes matching `filter`.
 
@@ -213,9 +213,9 @@ class NodeOrLeafIteratorMixin:
             filter:
                 Discard nodes that filter(node) = False, but iterate over its
                 children.
-            min_count (int):
+            min_count:
                 Minimum number of nodes.
-            max_count (int):
+            max_count:
                 Maximum number of nodes.
         Keyword Args:
             Accepts all arguments of :meth:`iter_children`

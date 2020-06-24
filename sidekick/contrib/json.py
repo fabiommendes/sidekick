@@ -1,6 +1,6 @@
 import json as _json
 
-from .record import record
+from ..types import record
 
 __all__ = ["JSONEncoder", "dump", "dumps", "load", "loads"]
 

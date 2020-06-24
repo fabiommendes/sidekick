@@ -2,9 +2,9 @@ from functools import partial
 from types import MappingProxyType as mappingproxy
 
 from .core_functions import arity, signature, stub, to_callable, make_xor
+from .fn_placeholders import compile_ast, call_node
 from .utils import mixed_accessor, lazy_string
 from .._modules import GetAttrModule, set_module_class
-from .._placeholder import compile_ast, call_node
 from ..typing import Union
 
 set_module_class(__name__, GetAttrModule)

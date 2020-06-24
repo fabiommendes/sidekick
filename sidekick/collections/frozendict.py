@@ -1,45 +1,48 @@
 __all__ = ["FrozenDict", "FrozenKeyDict"]
 
 
+def _forbidden(self, *args, **kwargs):
+    name = type(self).__name__
+    raise KeyError("cannot add or remove keys of %s." % name)
+
+
 class FrozenKeyDict(dict):
     """
     Dictionary with a immutable set of keys.
 
-    The values associated to each key can be change, but new keys cannot be
+    The values associated to each key can change, but new keys cannot be
     added or deleted.
     """
 
     __slots__ = ()
-
-    # noinspection PyUnusedLocal
-    def _forbidden_method_error(self, *args, **kwds):
-        tname = type(self).__name__
-        raise KeyError("cannot add or remove keys of %s." % tname)
-
-    __delitem__ = clear = pop = popitem = _forbidden_method_error
+    __delitem__ = clear = pop = popitem = _forbidden
 
     def __setitem__(self, k, v):
         if k in self:
             dict.__setitem__(self, k, v)
         else:
-            self._forbidden_method_error()
+            _forbidden(self)
 
     def setdefault(self, k, default=None):
         try:
             return self[k]
         except KeyError:
-            self._forbidden_method_error()
+            _forbidden(self)
 
     def update(self, *args, **kwargs):
-        data = dict(*args, **kwargs)
+        if args:
+            data = dict(*args, **kwargs)
+        else:
+            data = kwargs
+
         changed = set(data) - self.keys()
         if changed:
             raise KeyError(f"cannot add keys: {changed}")
         super().update(data)
 
     def __repr__(self):
-        tname = type(self).__name__
-        return f"{tname}({super().__repr__()})"
+        name = type(self).__name__
+        return f"{name}({super().__repr__()})"
 
 
 class FrozenDict(FrozenKeyDict):
@@ -48,9 +51,7 @@ class FrozenDict(FrozenKeyDict):
     """
 
     __slots__ = ("_cached_hash",)
-    __delitem__ = (
-        __setitem__
-    ) = setdefault = update = FrozenKeyDict._forbidden_method_error
+    __delitem__ = __setitem__ = setdefault = update = _forbidden
 
     def __hash__(self):
         try:

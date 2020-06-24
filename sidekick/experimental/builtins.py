@@ -1,14 +1,10 @@
 import builtins as _builtins
 from functools import wraps as _wraps
 
-from .functions import fn, to_callable
-from .seq import iter as _iter
-from .typing import Seq, Func
+from ..functions import fn
 
 _execute_with = lambda **kwargs: lambda f: f(**kwargs) or f
 _flipped = lambda f: _wraps(f)(lambda x, y: f(y, x))
-_filter = filter
-_map = map
 _getattr = getattr
 _dir = dir
 
@@ -18,20 +14,6 @@ _dir = dir
 # frozenset, hash, help, hex, id, input, int, iter, len, list, memoryview
 # next, oct, ord, repr, reversed, round, set, sorted, staticmethod, str, sum
 # tuple, type, vars
-
-
-@fn.curry(2)
-def map(func: Func, *seqs: Seq) -> Seq:
-    """
-    Make an iterator that computes the function using arguments from
-    each of the iterables.  Stops when the shortest iterable is exhausted.
-
-        map(func, *seqs) ==> f(X[0], Y[0], ...), f(X[1], Y[1], ...), ...
-
-    in which X, Y, Z, ... are the sequences in seqs.
-    """
-    func = to_callable(func)
-    return _iter(_map(func, *seqs))
 
 
 @fn.curry(2)

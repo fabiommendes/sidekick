@@ -1,17 +1,7 @@
-import operator
-
 import pytest
 
-from sidekick import placeholder as _, fn, F, record, lazy
-from sidekick._placeholder import (
-    simplify_ast,
-    Placeholder,
-    Call,
-    Cte,
-    GetAttr,
-    Call,
-    compile_ast,
-)
+from sidekick.api import placeholder as _, fn, record, lazy, F
+from sidekick.functions.fn_placeholders import simplify_ast, Cte, Expr
 
 func = lambda x: x.__inner_function__
 
@@ -94,7 +84,7 @@ class TestPlaceholder:
 
 class TestPlaceholderCompiler:
     def test_compiler_simplifications(self):
-        assert simplify_ast(Placeholder(Cte(42)).imag._ast) == Cte(0)
+        assert simplify_ast(Expr(Cte(42)).imag._ast) == Cte(0)
 
 
 class TestThisPlaceholder:

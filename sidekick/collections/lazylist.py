@@ -7,9 +7,10 @@ __all__ = ["LazyList"]
 INF = float("inf")
 
 
+# noinspection PyCallByClass
 class LazyList(MutableSequence, list):
     """
-    A list whose members are calculated by consuming a (possibly infinite) iterator 
+    A list whose members are calculated by consuming a (possibly infinite) iterator
     on-the-fly.
 
     Args:
@@ -86,15 +87,15 @@ class LazyList(MutableSequence, list):
             yield from tail
 
     def __repr__(self):
-        tname = type(self).__name__
+        name = type(self).__name__
         if self._iter is None:
-            return f"{tname}({super().__repr__()})"
+            return f"{name}({super().__repr__()})"
         else:
             pre_data = list.__repr__(self)[1:-1]
             pos_data = repr(self._tail)[1:-1]
             data = "..." if not pre_data else pre_data + ", ..."
             data = data if not pos_data else "%s, %s" % (data, pos_data)
-            return "%s([%s])" % (tname, data)
+            return "%s([%s])" % (name, data)
 
     def __eq__(self, other):
         if not isinstance(other, list):

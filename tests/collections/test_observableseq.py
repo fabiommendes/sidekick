@@ -1,15 +1,15 @@
-from sidekick import misc
+from sidekick.experimental.observableseq import ObservableSeq
 
 
 class TestObservableSeq:
-    dic_type = misc.ObservableSeq
+    dic_type = ObservableSeq
 
     def test_observable_seq_observers(self):
         pre_events = []
         post_events = []
         clear = lambda: pre_events.clear() or post_events.clear()
 
-        seq = misc.ObservableSeq([1, 2, 3])
+        seq = ObservableSeq([1, 2, 3])
 
         # Register events
         seq.register(

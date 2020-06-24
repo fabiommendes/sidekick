@@ -3,9 +3,9 @@ import json
 import pytest
 from hypothesis import given
 
-from sidekick import Node, SExpr
-from sidekick.hypothesis import trees, leaves, AtomT
-from sidekick.tree import (
+from sidekick.collections import (
+    Node,
+    SExpr,
     Leaf,
     common_ancestor,
     common_ancestors,
@@ -14,6 +14,7 @@ from sidekick.tree import (
     export_tree,
     NodeOrLeaf,
 )
+from sidekick.hypothesis import trees, leaves, AtomT
 
 
 class TestNode:
@@ -177,7 +178,7 @@ class TestClasses:
     """
 
     def test_tree_classes_have_slots(self):
-        import sidekick.tree as tree
+        import sidekick.collections.tree as tree
 
         for k, v in vars(tree).items():
             if isinstance(v, type) and issubclass(v, NodeOrLeaf):

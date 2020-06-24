@@ -24,7 +24,7 @@ inform about your usage and contribute to this roadmap.
 
 * Create sidekick.collections
 * Better integration of maybe and result types
-* Move Union/Record to sidekick.adt with other classical functional types
+* Move Union/Record to sidekick.types with other classical functional types
 * Document all modules
 * Remove cruft and clean the experimental package
 * Remove all flake8 errors
@@ -34,6 +34,12 @@ inform about your usage and contribute to this roadmap.
 ---------
 Changelog
 ---------
+
+0.8.4
+=====
+
+* Create sidekick.types with algebraic data types
+* Move collection types to sidekick.collections and document
 
 0.8.3
 =====

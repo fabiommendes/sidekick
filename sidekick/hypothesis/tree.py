@@ -4,7 +4,7 @@ from functools import partial
 from hypothesis import strategies as st
 
 from .base import identifiers, atoms, kwargs, fcall
-from ..tree import Leaf, Node
+from ..collections import Leaf, Node
 
 
 def leaves(data=atoms(), allow_attrs=True, attrs=None):

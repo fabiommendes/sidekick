@@ -1,6 +1,7 @@
 from . import core_functions as _core
 from .core_functions import to_fn, to_function, to_callable, quick_fn
 from .fn import fn
+from .fn_placeholders import X, Y, F, placeholder, _, Placeholder
 from .lib_arguments import (
     flip,
     select_args,
@@ -50,8 +51,14 @@ set_module_class(__name__, LazyPackage)
 
 __all__ = [
     # Base
+    "_",
     "fn",
     "quick_fn",
+    "X",
+    "Y",
+    "F",
+    "placeholder",
+    "Placeholder",
     # Introspection
     "Stub",
     "arity",

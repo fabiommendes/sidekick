@@ -296,6 +296,7 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 # texinfo_no_detailmenu = False
 
+autodoc_mock_imports = ["numpy", "joblib", "cachetools"]
 
 # Doctest
 doctest_test_doctest_blocks = "default"
@@ -304,9 +305,6 @@ doctest_global_setup = """
 import sidekick.api as sk
 from sidekick.api import X, Y, fn, op, _
 import sidekick
-import sidekick.functions
-import sidekick.pred
-import sidekick.seq
-from sidekick.utils import building_docs
-building_docs()
+from sidekick.utils import building_docs as _conf
+_conf()
 """

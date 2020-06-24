@@ -1,6 +1,4 @@
-from typing import MutableSequence, List, TypeVar
-
-T = TypeVar("T")
+from ...typing import MutableSequence, List, T
 
 
 class Children(MutableSequence):

@@ -1,6 +1,6 @@
 import pytest
 
-from sidekick import SExpr, Node
+from sidekick.collections import SExpr, Node
 from sidekick.hypothesis import trees
 
 tree_gen = trees()

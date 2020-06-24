@@ -1,18 +1,18 @@
-from sidekick import misc
+from sidekick.collections import LazyList
 
 
 class TestLazyList:
-    dic_type = misc.LazyList
+    dic_type = LazyList
 
     def test_create_lazy_list(self):
-        lst = misc.LazyList(range(4))
+        lst = LazyList(range(4))
 
         assert lst.is_lazy
         assert lst.can_be_infinite
         assert lst == [0, 1, 2, 3]
 
     def test_lazy_list_manipulate_end(self):
-        lst = misc.LazyList(range(4))
+        lst = LazyList(range(4))
         lst.append(4)
         lst.extend((5, 6))
 

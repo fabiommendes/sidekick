@@ -1,17 +1,8 @@
 # noinspection PyUnresolvedReferences
-from .builtins import map
-
-# noinspection PyUnresolvedReferences
 from . import op
 
 # noinspection PyUnresolvedReferences
-from ._placeholder import _, placeholder
-
-# noinspection PyUnresolvedReferences
 from .functions import *
-
-# noinspection PyUnresolvedReferences
-from .magics import X, Y, m
 
 # noinspection PyUnresolvedReferences
 from .seq import *
@@ -26,4 +17,4 @@ from .proxy import *
 from .properties import *
 
 # noinspection PyUnresolvedReferences
-from .types.record import *
+from .types import *
