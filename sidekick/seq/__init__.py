@@ -1,4 +1,5 @@
 from .iter import iter, generator
+from .lib_augmenting import interpose, pad, pad_with, append, insert
 from .lib_basic import (
     cons,
     uncons,
@@ -12,15 +13,7 @@ from .lib_basic import (
     length,
     consume,
 )
-from .lib_creation import (
-    cycle,
-    iterate,
-    iterate_indexed,
-    repeat,
-    repeatedly,
-    singleton,
-    unfold,
-)
+from .lib_creation import cycle, iterate, repeat, repeatedly, singleton, unfold, nums
 from .lib_grouping import (
     group_by,
     chunks,
@@ -61,6 +54,8 @@ from .lib_selecting import (
     dedupe,
     converge,
 )
+from .lib_transforming import map, zip_map
+from .lib_combining import concat, interleave, zip_aligned, merge_sorted, join, diff
 
 __all__ = [
     # Core
@@ -81,11 +76,11 @@ __all__ = [
     # Creation
     "cycle",
     "iterate",
-    "iterate_indexed",
     "repeat",
     "repeatedly",
     "singleton",
     "unfold",
+    "nums",
     # Selection
     "filter",
     "remove",
@@ -123,4 +118,20 @@ __all__ = [
     "pairs",
     "partition",
     "distribute",
+    # Transforming
+    "map",
+    "zip_map",
+    # Augmenting
+    "interpose",
+    "pad",
+    "pad_with",
+    "append",
+    "insert",
+    # Combining
+    "concat",
+    "interleave",
+    "zip_aligned",
+    "merge_sorted",
+    "join",
+    "diff",
 ]

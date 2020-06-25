@@ -1,6 +1,6 @@
 import typing as _typ
-from typing import *
 from types import FunctionType, MethodType, BuiltinFunctionType, BuiltinMethodType
+from typing import *
 
 FunctionTypes = FunctionType, MethodType, BuiltinFunctionType, BuiltinMethodType
 
@@ -23,3 +23,6 @@ Raisable = Union[Exception, Type[Exception]]
 
 #: Anything that can be in an except obj statement
 Catchable = Union[Type[Exception], Tuple[Type[Exception], ...]]
+
+#: Something that can be passed as the index option for sidekick functions.
+Index = Union[int, bool, Seq]

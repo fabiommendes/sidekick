@@ -1,8 +1,6 @@
-from sidekick.experimental.functions import fmap
+from ..functions import fmap
 from ..._operators import op_wrapper_class
 
-# ------------------------------------------------------------------------------
-# Functor application: X_i object
 # ------------------------------------------------------------------------------
 make_op = lambda op: lambda _, cte: lambda v: fmap(lambda x: op(x, cte), v)
 make_rop = lambda op: lambda _, cte: lambda v: fmap(lambda x: op(cte, x), v)

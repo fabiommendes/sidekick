@@ -73,13 +73,22 @@ class TestCreation:
     def test_unfold(self):
         assert sk.unfold(lambda x: None if x > 10 else (2 * x, x), 1) == LL(1, 2, 4, 8)
 
-    def test_iterate_many(self):
+    def test_nums(self):
+        assert sk.nums() == LL(0, 1, 2, 3, 4, ...)
+        assert sk.nums(1) == LL(1, 2, 3, 4, 5, ...)
+        assert sk.nums(1, ...) == LL(1, 2, 3, 4, 5, ...)
+        assert sk.nums(1, 2, ...) == LL(1, 2, 3, 4, 5, ...)
+        assert sk.nums(1, 3, ...) == LL(1, 3, 5, 7, 9, ...)
+        assert sk.nums(1, 2, 3, 5, ...) == LL(1, 2, 3, 5, 7, 9, ...)
+
+    def test_iterate(self):
         # Test special cases for 0, 1, 2, 3, and more past values
         fn = lambda *args: sum(args)
         assert sk.iterate((X + 1), 1) == LL(1, 2, 3, ...)
-        assert sk.iterate(fn, 1, 3) == LL(1, 3, 4, 7, ...)
+        assert sk.iterate(fn, 1, 1) == LL(1, 1, 2, 3, 5, 8, ...)
+        assert sk.iterate(fn, 1, 3) == LL(1, 3, 4, 7, 11, ...)
         assert sk.iterate(fn, 1, 1, 1) == LL(1, 1, 1, 3, 5, 9, 17, ...)
         assert sk.iterate(fn, 1, 1, 1, 1) == LL(1, 1, 1, 1, 4, 7, 13, 25, ...)
 
-    def test_iterate_indexed(self, nums):
-        assert sk.iterate_indexed(op.add, 1, idx=nums()) == LL(1, 2, 4, 7, 11, 16)
+        assert sk.iterate(op.mul, 1, index=1) == LL(1, 1, 2, 6, 24, 120, ...)
+        assert sk.iterate(fn, 1, index=sk.nums()) == LL(1, 1, 2, 4, 7, 11, 16, ...)

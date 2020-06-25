@@ -230,66 +230,6 @@ def rzipper(*seqs):
     return fn(lambda seq: zip(*seqs, seq))
 
 
-def zip_aligned(*args):
-    """
-    Similar to the zip built-in, but raises an ValueError if one sequence
-    terminates before the others.
-
-    Examples:
-        If sizes match, it is just like zip.
-
-        >>> zip_aligned((1, 2, 3), (4, 5, 6)) | L
-        [(1, 4), (2, 5), (3, 6)]
-
-        But gives an error otherwise.
-
-        >>> zip_aligned((1, 2, 3), (4, 5, 6, 7)) | L
-        Traceback (most recent call last):
-        ...
-        ValueError: non-aligned iterators
-    """
-    args = tuple(map(iter, args[0] if len(args) == 1 else args))
-    yield from zip(*args)
-    if not all(map(is_empty, args)):
-        raise ValueError("non-aligned iterators")
-
-
-@fn.curry(2)
-def split_prefix(pred: Pred, seq: Seq[T]) -> (Seq[T], Seq[T]):
-    """
-    Returns tuple (a, b) in which ``a`` is the longest prefix (possibly empty) of
-    elements that satisfy predicate and ``b`` is the remainder of sequence.
-
-    Examples:
-        >>> a, b = split_prefix((X <= 5), range(1, 11))
-        >>> list(a), list(b)
-        ([1, 2, 3, 4, 5], [6, 7, 8, 9, 10])
-    """
-    seq = iter(seq)
-    pred = to_callable(pred)
-    pending_left = []
-    pending_right = []
-
-    def head():
-        for x in seq:
-            if pred(x):
-                yield x
-            else:
-                pending_right.append(x)
-                break
-        yield from pending_left
-        pending_left.clear()
-
-    def tail():
-        if not pending_right:
-            pending_left.extend(head_iter)
-        yield from pending_right
-        yield from seq
-
-    head_iter, tail_iter = head(), tail()
-    return head_iter, tail_iter
-
-
 @fn.curry(2)
 def strip(prefix, seq):
     """

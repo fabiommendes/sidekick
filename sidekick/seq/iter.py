@@ -51,7 +51,7 @@ class iter(Iterator):
             try:
                 head.append(next(it))
             except StopIteration:
-                display = map(str, head)
+                display = map(repr, head)
                 self._iterator = _iter(head)
                 self._size_hint = len(head)
                 break
@@ -261,6 +261,13 @@ def generator(func):
         return iter(func(*args, **kwargs))
 
     return gen
+
+
+def stop(x=None):
+    """
+    Raise StopIteration with the given argument.
+    """
+    raise StopIteration(x)
 
 
 fn.generator = staticmethod(generator)

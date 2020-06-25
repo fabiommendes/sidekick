@@ -305,6 +305,6 @@ doctest_global_setup = """
 import sidekick.api as sk
 from sidekick.api import X, Y, fn, op, _
 import sidekick
-from sidekick.utils import building_docs as _conf
+from sidekick._utils import building_docs as _conf
 _conf()
 """

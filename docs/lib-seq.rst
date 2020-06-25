@@ -38,7 +38,7 @@ Creating new sequences
 .. autosummary::
    cycle
    iterate
-   iterate_indexed
+   nums
    repeat
    repeatedly
    singleton
@@ -56,8 +56,8 @@ Filtering and select sub-sequences
    rdrop
    take
    rtake
-   unique
    dedupe
+   unique
    converge
 
 
@@ -95,6 +95,37 @@ Reducing sequences
    all_by
    any_by
    top_k
+
+
+Transforming
+=============
+
+.. autosummary::
+   map
+   zip_map
+
+
+Augmenting
+=============
+
+.. autosummary::
+   interpose
+   pad
+   pad_with
+   append
+   insert
+
+
+Combining
+=============
+
+.. autosummary::
+   concat
+   interleave
+   zip_aligned
+   merge_sorted
+   join
+   diff
 
 
 API reference

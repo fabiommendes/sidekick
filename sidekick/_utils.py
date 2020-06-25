@@ -52,3 +52,9 @@ def building_docs():
     """
     global BUILDING_DOCS
     BUILDING_DOCS = True
+
+
+def coalesce(*args):
+    for arg in args:
+        if arg is not None:
+            return arg

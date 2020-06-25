@@ -1,46 +1,62 @@
 import itertools
+from collections import deque
+from numbers import Real
 
-from .iter import generator, iter as _iter
+from .util import to_index_seq, INDEX_DOC
+from .iter import generator, iter as sk_iter
 from ..functions import fn, to_callable
-from ..typing import Seq, Func, TYPE_CHECKING
+from ..typing import Seq, TYPE_CHECKING, T, Callable, Index
 
 if TYPE_CHECKING:
     from .. import api as sk
     from ..api import X, Y
 
-_enumerate = enumerate
-_cycle = itertools.cycle
-_repeat = itertools.repeat
-_count = itertools.count
 
-
-@fn
-def cycle(seq):
+@fn.curry(1)
+def cycle(seq, n=None):
     """
     Return elements from the iterable until it is exhausted.
     Then repeat the sequence indefinitely.
 
         cycle(seq) ==> seq[0], seq[1], ..., seq[n - 1], seq[0], seq[1], ...
 
+    Args:
+        seq:
+            Input sequence.
+        n:
+            Optional maximum number of cycles.
+
     Examples:
         >>> sk.cycle([1, 2, 3])
         sk.iter([1, 2, 3, 1, 2, 3, ...])
     """
-    return _iter(_cycle(seq))
+    if n is not None:
+        return sk_iter(_ncycle(n, seq))
+    return sk_iter(itertools.cycle(seq))
+
+
+# This implementation accepts infinite sequences
+def _ncycle(n, seq):
+    buf = []
+    add = buf.append
+    for x in seq:
+        yield x
+        add(x)
+    yield from itertools.chain.from_iterable(repeat(buf, n - 1))
 
 
 @fn.curry(1)
-def repeat(obj, *, times=None):
+def repeat(obj, times=None):
     """
-    repeat(obj [,times]) -> create an iterator which returns the object
-    for the specified number of times.  If not specified, returns the object
-    endlessly.
+    Returns the object for the specified number of times.
+
+    If not specified, returns the object endlessly.
 
     Examples:
         >>> sk.repeat(42, times=5)
         sk.iter([42, 42, 42, 42, 42])
     """
-    return _iter(_repeat(obj, times))
+    return sk_iter(itertools.repeat(obj, times))
 
 
 @fn
@@ -49,7 +65,7 @@ def repeatedly(func, *args, **kwargs):
     """
     Make infinite calls to a function with the given arguments.
 
-    Stop iteration if func() raises StopIteration.
+    End sequence if func() raises StopIteration.
 
     Examples:
         >>> sk.repeatedly(list, (1, 2))
@@ -59,8 +75,8 @@ def repeatedly(func, *args, **kwargs):
     try:
         while True:
             yield func(*args, **kwargs)
-    except StopIteration:
-        pass
+    except StopIteration as e:
+        yield from stop_seq(e)
 
 
 @fn
@@ -90,7 +106,6 @@ def unfold(func, seed):
     Examples:
         >>> sk.unfold(lambda x: (x + 1, x), 0)
         sk.iter([0, 1, 2, 3, 4, 5, ...])
-
     """
     try:
         elem = func(seed)
@@ -98,14 +113,13 @@ def unfold(func, seed):
             seed, x = elem
             yield x
             elem = func(seed)
-    except StopIteration:
-        pass
+    except StopIteration as e:
+        yield from stop_seq(e)
 
 
 @fn.curry(2)
-@generator
-def iterate(func, x, *args):
-    """
+def iterate(func: Callable[..., T], x: T, *args, index: Index = None):
+    f"""
     Repeatedly apply a function func to input.
 
     If more than one argument to func is passed, it iterate over the past n
@@ -116,97 +130,234 @@ def iterate(func, x, *args):
 
         iterate(f, x) ==> x, f(x), f(f(x)), ...
 
+    Args:
+        func:
+            Iterating function. Compute the next element by calling func(prev).
+        x:
+            Seed of iteration. If more arguments are given, pass them to func
+            to compute the next element.
+        {INDEX_DOC}
+
     Examples:
         Simple usage, with a single argument. Produces powers of two.
 
         >>> sk.iterate((X * 2), 1)
         sk.iter([1, 2, 4, 8, 16, 32, ...])
 
-        Now we call with two arguments to func to produce Fibonacci numbers
+        Fibonacci numbers
 
         >>> sk.iterate((X + Y), 1, 1)
         sk.iter([1, 1, 2, 3, 5, 8, ...])
 
+        Factorials
+
+        >>> sk.iterate(op.mul, 1, index=1)
+        sk.iter([1, 1, 2, 6, 24, 120, ...])
+
+        Collatz sequence
+
+        >>> @sk.iterate
+        ... def collatz(n):
+        ...     if n == 1:
+        ...         raise StopIteration(1)
+        ...     elif n % 2:
+        ...         return 3 * n + 1
+        ...     else:
+        ...         return n // 2
+        >>> collatz(10)
+        sk.iter([10, 5, 16, 8, 4, 2, ...])
+
     See Also:
-        :func:`repeatedly`
+        :func:`repeatedly` - call function with the same arguments.
     """
     func = to_callable(func)
+    index = to_index_seq(index)
 
-    if not args:
-        try:
-            yield x
-            while True:
-                x = func(x)
-                yield x
-        except StopIteration:
-            return
+    if index is None and not args:
+        out = _iterate(func, x)
+    elif index is None:
+        out = _iterate_n(func, (x, *args))
+    else:
+        if not args:
+            out = _iterate_indexed(func, index, x)
+        else:
+            out = _iterate_indexed_n(func, index, (x, *args))
 
-    # Optimize some special cases
+    return sk_iter(out)
 
-    init = (x, *args)
-    n = len(init)
-    yield from init
 
+def _iterate(func, x):
     try:
+        yield x
+        while True:
+            x = func(x)
+            yield x
+    except StopIteration as e:
+        yield from stop_seq(e)
+
+
+def _iterate_n(func, args):
+    n = len(args)
+    try:
+        yield from args
         if n == 2:
-            x, y = init
+            x, y = args
             while True:
                 x, y = y, func(x, y)
                 yield y
-
-        elif n == 3:
-            # noinspection PyTupleAssignmentBalance
-            x, y, z = init
-            while True:
-                x, y, z = y, z, func(x, y, z)
-                yield z
-
         else:
-            args = init
+            args = deque(args, n)
             while True:
                 new = func(*args)
-                _, *args = args
-                args = (*args, new)
+                args.append(new)
                 yield new
-    except StopIteration:
-        return
+    except StopIteration as e:
+        yield from stop_seq(e)
 
 
-@fn.curry(2)
-@generator
-def iterate_indexed(func: Func, x, *args, idx: Seq = None, start=0) -> Seq:
-    """
-    Similar to :func:`iterate`, but also pass the index of element to func.
-
-        iterate_indexed(f, x) ==> x, f(0, x), f(1, <previous>), ...
-
-    Args:
-        func:
-            Iteration function (index, value) -> next_value.
-        x:
-            Initial value of iteration.
-        idx:
-            Sequence of indexes. If not given, uses start, start + 1, ...
-        start:
-            Starting value for sequence of indexes.
-
-    Examples:
-        >>> sk.iterate_indexed(lambda i, x: i * x, 1, start=1)
-        sk.iter([1, 1, 2, 6, 24, 120, ...])
-    """
-    func = to_callable(func)
-    yield x
-    idx = _count(start) if idx is None else idx
-
-    if not args:
-        for i in idx:
+def _iterate_indexed(func, index, x):
+    try:
+        yield x
+        for i in index:
             x = func(i, x)
             yield x
-    else:
-        yield from args
-        args = (x, *args)
+    except StopIteration as e:
+        yield from stop_seq(e)
 
-        for i in idx:
-            new = func(i, *args)
-            yield new
-            args = args[1:] + (new,)
+
+def _iterate_indexed_n(func, index, args):
+    n = len(args)
+    try:
+        yield from args
+        if n == 2:
+            x, y = args
+            for i in index:
+                x, y = y, func(i, x, y)
+                yield y
+        else:
+            args = deque(args, n)
+            for i in index:
+                new = func(i, *args)
+                args.append(new)
+                yield new
+    except StopIteration as e:
+        yield from stop_seq(e)
+
+
+class _nums(fn):
+    """
+    Enrich the nums() function.
+    """
+
+    def __getitem__(self, item):
+        if isinstance(item, tuple):
+            return self.from_sequence(item)
+        elif isinstance(item, slice):
+            return self.from_slice(item)
+        else:
+            raise TypeError
+
+    def __iter__(self):
+        return sk_iter(itertools.count())
+
+    def from_sequence(self, seq):
+        """
+        Create iterator from sequence of numbers.
+        """
+        return sk_iter(self._from_sequence(seq))
+
+    def _from_sequence(self, seq):
+        if len(seq) < 2:
+            raise ValueError("sequence must have at least 2 elements")
+
+        idx = seq.index(...)
+        if idx == 0:
+            raise ValueError("range cannot start with an ellipsis")
+
+        idx_ = idx - len(seq)
+
+        if idx_ == -1:
+            n_args = len(seq)
+            if n_args == 2:
+                yield from itertools.count(seq[0])
+            else:
+                *start, a, b, _ = seq
+                yield from start
+                yield from itertools.count(a, b - a)
+
+        elif idx_ == -2:
+            n_args = len(seq)
+            if n_args == 3:
+                a, _, stop = seq
+                step = 1
+            else:
+                *start, a, b, _, stop = seq
+                step = b - a
+                yield from start
+            while a <= stop:
+                yield a
+                a += step
+
+        else:
+            prefix = seq[: idx + 1]
+            suffix = seq[idx + 1 :]
+            yield from self._from_sequence(prefix)
+            if ... in suffix:
+                raise NotImplementedError("contains multiple ranges")
+            yield from suffix
+
+    def from_slice(self, slice):
+        """
+        Create iterator from slice object.
+        """
+
+        start = 0 if slice.start is None else slice.start
+        step = 1 if slice.step is None else slice.step
+        return self.count(start, step, stop=slice.step)
+
+    def count(self, start=0, step=1, stop=None):
+        """
+        Return values starting from start advancing by the given step.
+        """
+        out = itertools.count(start, step)
+        if stop is not None:
+            out = itertools.takewhile(lambda x: x < stop, out)
+        return sk_iter(out)
+
+    def evenly_spaced(self, a: Real, b: Real, n: int) -> Seq:
+        """
+        Return a sequence of n evenly spaced numbers from a to b.
+        """
+        return sk_iter(_evenly_spaced(a, b, n))
+
+
+def _evenly_spaced(a, b, n):
+    a = float(a)
+    delta = b - a
+    dt = delta / (n - 1)
+    for _ in range(n):
+        yield a
+        a += dt
+
+
+@_nums
+def nums(*args: int) -> Seq[int]:
+    """
+    Create numeric sequences.
+
+    Examples:
+        >>> sk.nums(0, 1, 2, ...)
+        sk.iter([0, 1, 2, 3, 4, 5, ...])
+    """
+    n = len(args)
+    if n == 0:
+        return sk_iter(itertools.count(0))
+    elif n == 1:
+        return sk_iter(itertools.count(args[0]))
+    return sk_iter(nums.from_sequence(args))
+
+
+def stop_seq(e):
+    if isinstance(e, StopIteration):
+        if e.args:
+            yield e.args[0]

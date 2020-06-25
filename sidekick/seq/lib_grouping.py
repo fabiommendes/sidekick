@@ -329,7 +329,9 @@ def _pairs_prev(seq, prev):
 
 
 @fn.curry(2)
-def partition(key: Union[int, Pred], seq: Seq) -> Tuple[Seq, Seq]:
+def partition(
+    key: Union[int, Pred], seq: Seq, sep: bool = False
+) -> Union[Tuple[Seq, Seq], Tuple[list, list, Seq]]:
     """
     Partition sequence in two.
 
@@ -340,6 +342,10 @@ def partition(key: Union[int, Pred], seq: Seq) -> Tuple[Seq, Seq]:
             An integer index or predicate used to partition sequence.
         seq:
             Input sequence.
+        sep:
+            If True, split into 3 parts: head, sep, tail, analogously to the
+            builtin str.partition function. The first two elements are lists
+            and can be easily tested for emptiness.
 
     Examples:
         >>> a, b = sk.partition(2, [5, 4, 3, 2, 1])
@@ -353,7 +359,29 @@ def partition(key: Union[int, Pred], seq: Seq) -> Tuple[Seq, Seq]:
         sk.iter([1, 2])
         >>> b
         sk.iter([3, 4, 5])
+
+        >>> sk.partition((X == 3), [1, 2, 3, 4, 5], sep=True)
+        ([1, 2], [3], sk.iter([4, 5]))
     """
+    if sep:
+        seq = iter(seq)
+        first = []
+        sep: list = []
+
+        if isinstance(key, int):
+            for i, x in zip(range(key + 1), seq):
+                first.append(x)
+            if len(first) == key + 1:
+                sep = [first.pop()]
+        else:
+            for x in seq:
+                if key(x):
+                    sep.append(x)
+                    break
+                else:
+                    first.append(x)
+        return first, sep, sk_iter(seq)
+
     if isinstance(key, int):
         a, b = tee(seq)
         return sk_iter(islice(a, key)), sk_iter(islice(b, key, None))

@@ -1,5 +1,5 @@
-from .fn import fn
 from .core_functions import quick_fn, to_callable
+from .fn import fn
 from ..typing import Fn2, Func, TYPE_CHECKING, Sequence, Any
 
 if TYPE_CHECKING:
@@ -7,11 +7,11 @@ if TYPE_CHECKING:
 
 
 @fn
-def flip(func: Fn2) -> Fn2:
+def flip(func: Fn2, curry=True) -> Fn2:
     """
     Flip the order of arguments in a binary operator.
 
-    The resulting function is always curried.
+    The resulting function is always curried, unless the argument curry=False.
 
     Examples:
         >>> from operator import sub
@@ -20,7 +20,10 @@ def flip(func: Fn2) -> Fn2:
         8
     """
     func = to_callable(func)
-    return fn.curry(2, lambda x, y: func(y, x))
+    if curry:
+        return fn.curry(2, lambda x, y: func(y, x))
+    else:
+        return fn(lambda x, y: func(y, x))
 
 
 @fn
