@@ -45,6 +45,8 @@ from .lib_runtime import (
     retry,
     catch,
 )
+from .signature import Signature
+from .stub import Stub
 from .._modules import set_module_class, LazyPackage
 
 set_module_class(__name__, LazyPackage)
@@ -59,6 +61,8 @@ __all__ = [
     "F",
     "placeholder",
     "Placeholder",
+    "Signature",
+    "Stub",
     # Introspection
     "Stub",
     "arity",
@@ -113,7 +117,6 @@ __all__ = [
     "variadic_args",
 ]
 
-Stub = _core.Stub
 arity = fn(_core.arity)
 signature = fn(_core.signature)
-stub = fn(_core.stub)
+stub = fn(_core.declaration)

@@ -127,6 +127,8 @@ def curry(n, func=None):  # noqa: F811
         return quick_fn(lambda f: curry(n, f))
     else:
         n = arity(func) if n in (..., None, "auto") else n
+        if n == 0:
+            raise TypeError("cannot curry function that receives no arguments")
         return fn.curry(n, func)
 
 

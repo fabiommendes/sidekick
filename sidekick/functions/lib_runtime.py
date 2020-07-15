@@ -2,16 +2,19 @@ import time
 from functools import wraps
 from types import FunctionType
 
+from sidekick._utils import to_raisable, catches
 from .core_functions import quick_fn
 from .fn import fn, to_callable
 from .lib_combinators import always
-from .._toolz import excepts
-from ..typing import NOT_GIVEN, TYPE_CHECKING, Func, Catchable, Raisable, Union, Any
+from ..typing import NOT_GIVEN, TYPE_CHECKING, Func, Catchable, Raisable, Union
+
+Err = Ok = Result = None
 
 if TYPE_CHECKING:
     from .. import api as sk  # noqa: F401
     from ..api import X, Y  # noqa: F401
     from ..types.maybe import Maybe  # noqa: F401
+    from ..types.result import Result  # noqa: F401
 
     # Help with Pycharm's confusion with doctrings
     host: None
@@ -264,9 +267,11 @@ def background(func: Func, *, timeout: float = None, default=NOT_GIVEN) -> fn:
         thread.start()
 
         @once
-        def out():
+        def out(default=default, *, timeout=timeout):
             """
             Return result of computation.
+
+            Can set optional timeout and default arguments.
             """
             thread.join(timeout)
             if thread.is_alive():
@@ -379,7 +384,36 @@ def catch(
         handler = always(None)
     else:
         handler = to_callable(handler)
-    return quick_fn(excepts(exception, func, handler))
+    return quick_fn(catches(exception, func, handler))
+
+
+@fn
+def result(*args, **kwargs) -> "Result":
+    """
+    Execute function and wrap result in a Result type.
+
+    If execution is successful, return Ok(result), if it raises an exception,
+    return Err(exception).
+
+    >>> with result() as res:
+    ...    very_complex_computation()
+    ...    res.push(42)
+    >>> res.pop()
+    Ok(42)
+    >>> res.pop()
+    Err(...)
+    """
+    func, *args = args
+    func = to_callable(func)
+
+    try:
+        res = func(*args, **kwargs)
+    except Exception as ex:
+        return Err(ex)
+    else:
+        if isinstance(res, Result):
+            return res
+        return Ok(res)
 
 
 @fn.curry(2)
@@ -419,36 +453,3 @@ def retry(n: int, func: Func, *, error: Catchable = Exception, sleep=None) -> fn
 
     func = to_callable(func)
     return safe_func
-
-
-#
-# Auxiliary functions
-#
-def is_raisable(obj) -> bool:
-    """
-    Test if object is valid in a "raise obj" statement.
-    """
-
-    return isinstance(obj, Exception) or (
-        isinstance(obj, type) and issubclass(obj, Exception)
-    )
-
-
-def is_catchable(obj) -> bool:
-    """
-    Check if object is valid in a "except obj" statement.
-    """
-
-    if isinstance(obj, tuple):
-        return all(isinstance(x, type) and issubclass(x, Exception) for x in obj)
-    return isinstance(obj, type) and issubclass(obj, Exception)
-
-
-def to_raisable(obj: Any, exception=ValueError) -> Raisable:
-    """
-    Wrap object in exception if object is not valid in a "raise obj" statement.
-    """
-
-    if not is_raisable(obj):
-        return exception(obj)
-    return obj
