@@ -4,17 +4,6 @@ from .union import Union
 from ..functions import call
 from ..functions import fn
 
-__all__ = [
-    "Maybe",
-    "Just",
-    "Nothing",
-    "maybe",
-    "mapply",
-    "mpipe",
-    "mpipeline",
-    "mfilter",
-]
-
 flip = lambda f: lambda x, y: f(y, x)
 this = None
 
@@ -34,7 +23,7 @@ class Maybe(Union):
             if funcs:
                 return mpipe(self.value, func, *funcs)
             else:
-                return maybe(func(self.value))
+                return to_maybe(func(self.value))
         else:
             return self
 
@@ -62,7 +51,7 @@ class Maybe(Union):
         """
         if self:
             method = getattr(self.value, method)
-            return maybe(method(*args, **kwargs))
+            return to_maybe(method(*args, **kwargs))
         else:
             return self
 
@@ -74,7 +63,7 @@ class Maybe(Union):
             >>> Just(1 + 2j).attr('real')
             Just(1.0)
         """
-        return self and maybe(getattr(self.value, attr))
+        return self and to_maybe(getattr(self.value, attr))
 
     def iter(self):
         """
@@ -129,7 +118,7 @@ class Just(Maybe):
 # Module functions.
 #
 @call(Maybe.Just, Maybe.Nothing, type)
-def maybe(just, nothing, type_):
+def to_maybe(just, nothing, type_):
     # Define maybe() inside a closure for a small performance gain.
     # noinspection PyShadowingNames
     def maybe(obj):
@@ -174,7 +163,7 @@ def mapply(func, *args, **kwargs):
             append(arg.value)
         else:
             append(arg)
-    return maybe(func(*arg_values, **kwargs))
+    return to_maybe(func(*arg_values, **kwargs))
 
 
 def mpipeline(*funcs):
@@ -226,7 +215,7 @@ def mpipe(obj, *funcs):
             obj = func(obj.value)
         else:
             obj = func(obj)
-    return maybe(obj)
+    return to_maybe(obj)
 
 
 def _mpipe_strict(obj, *funcs):

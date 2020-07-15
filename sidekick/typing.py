@@ -2,12 +2,23 @@ import typing as _typ
 from types import FunctionType, MethodType, BuiltinFunctionType, BuiltinMethodType
 from typing import *
 
-FunctionTypes = FunctionType, MethodType, BuiltinFunctionType, BuiltinMethodType
+if TYPE_CHECKING:
+    pass
+
+#
+# Sidekick types
+#
+
+#: Func is anything that can be converted to a callable using the sk.to_callable()
+#: function. This includes regular functions, None, Dict, etc
+Func = _typ.Union[_typ.Callable, Dict, Set, None]
+
+#: Pred is similar to Func, but it returns a callable that returns booleans.
+Pred = _typ.Union[_typ.Callable, Dict, Set, None]
 
 # Types
+FunctionTypes = FunctionType, MethodType, BuiltinFunctionType, BuiltinMethodType
 Fn2 = Callable[[Any, Any], Any]
-Func = _typ.Union[_typ.Callable, type(None)]
-Pred = _typ.Union[_typ.Callable, type(None)]
 Seq = _typ.Iterable
 T = _typ.TypeVar("T")
 S = _typ.TypeVar("S")
@@ -26,3 +37,14 @@ Catchable = Union[Type[Exception], Tuple[Type[Exception], ...]]
 
 #: Something that can be passed as the index option for sidekick functions.
 Index = Union[int, bool, Seq]
+
+#: Interfaces
+Magma = Generic
+Semigroup = Magma
+Monoid = Semigroup
+Group = Monoid
+Lattice = Group
+
+Functor = Generic
+Applicative = Functor
+Monad = Applicative

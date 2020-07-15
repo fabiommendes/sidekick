@@ -1,10 +1,8 @@
 import random
 from functools import lru_cache
 
-from .record import Record, clean_field, normalize_field_mapping, RecordMeta
+from .named_record import Record, clean_field, normalize_field_mapping, RecordMeta
 from .._utils import snake_case
-
-__all__ = ["union", "Case", "Union"]
 
 
 class union(type):
