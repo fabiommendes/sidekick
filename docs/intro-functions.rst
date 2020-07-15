@@ -9,16 +9,16 @@ structures such as ``for``, ``if``'s, ``with``, etc.
 
 Python is a multi-paradigm language that allows functional programming but was not
 conceived specifically for it. Functional programming is only practical if we have
-means of easily creating new functions and using them in cooperation. This means that
+means of easily creating new functions and using them in cooperation. This usually means that
 functional code tends to be littered with many small functions that are passed to
 other (high order) functions to accomplish some elaborate task. Think of those functions
 as Lego bricks: they are simple, easy to grasp, tend to fit nicely with each other,
-but when used in conjunction can create elaborate structures.
+but when used in conjunction can create beautiful and elaborate structures.
 
-Creating functions in Python usually means lots of ``def`` statements
-and ``lambdas`` [#lambda]_. This approach is perhaps a little bit clumsy for everyday
-FP use, hence Sidekick provides more efficient ways to construct new functions by
-implementing some new functionality on top of standard Python idioms. Those
+Creating functions in Python usually involves ``def`` statements and ``lambdas`` [#lambda]_.
+This approach is perhaps a little bit clumsy for everyday
+FP use because the syntax is a little bit heavy, hence Sidekick provides more
+efficient ways to construct new functions by on top of standard Python idioms. Those
 approaches can be split into 3 basic ideas:
 
 1) Specialization_: constrain a generic function by fixing some of its arguments.
@@ -51,8 +51,8 @@ Consider a simple function:
 
 
 It seems like it is only a function declaration, but in reality it does a few
-more things: it gives the function a name, defines its documentation string and
-sets an implicit scope for global variables. For top level functions of your
+more things: it gives the function a name, defines its documentation string, create
+type hints and sets an implicit scope for global variables. For top level functions of your
 public API, in which you probably want to declare all those properties, this is a
 very efficient syntax.
 
@@ -71,7 +71,7 @@ Put the same function in a different context and ``def's`` start to feel verbose
    sequence. The code above thus increment each element in a sequence of numbers
    by one.
 
-Not only this code spends two whole lines to define such a trivial function, it
+Not only this code spends two lines to define such a trivial function, it
 forces us to explicitly come up with a name which does not clarify its intent
 anymore than seeing ``n + 1`` in the body of the function. `Naming is hard`_,
 and we should avoid doing it if it has no purpose in making some piece of code
@@ -130,13 +130,14 @@ idealized version. Consider the function bellow:
         return x + y
 
 This "complicated" two argument function can be easily simplified into a
-single argument function by passing x and y as values in a tuple, as such:
+single argument function by passing x and y as a tuple, as such:
 
 .. testcode:: default
 
     def add_tuple(args):
         return args[0] + args[1]
 
+   add_tuple((1, 2))  # Returns 3
 
 A second approach is to think that a multi-argument function is just a function
 that returns a second function that receives the remaining arguments. The function
@@ -146,7 +147,7 @@ idea in a foundational field of computer science called `Lambda calculus`_.
 
 .. _Lambda calculus: https://en.wikipedia.org/wiki/Lambda_calculus
 
-The curried version of the "add" funtion is show bellow.
+The curried version of the "add" function is show bellow.
 
 .. testcode:: default
 
@@ -203,7 +204,7 @@ Ok, it is good that we can automatically curry functions. But why would anyone
 want to do that in any real world programming problem?
 
 Remember when we said that the increment function (``lambda x: x + 1``) was just
-a special case of addition when one of the arguments is was fixed to 1? This kind of
+a special case of addition when one of the arguments is fixed to 1? This kind of
 "specialized" functions are trivial to create using curried functions: just apply
 the arguments you want to fix and the result will be a specialized version
 of the original function:
@@ -308,12 +309,14 @@ limitations of Python syntax and runtime and will *never* be fixed in Sidekick.
 * **Containment check**: ``(X in seq)`` or ``(seq in X)``. Use :func:`sidekick.op.contains`
   instead.
 * **Method calling**: ``X.attr`` immediately returns a function that retrieves the
-  ``.attr`` attribute of its argument. We cannot specify a method to obtain a
-  behavior similar to `operator.methodcaller`_. :func:`sidekick.functions.method`
-  can produce method callers with an specialized syntax.
+  ``.attr`` attribute of its argument. It is not possible, therefore, to specify the arguments
+  of a method like the builtin `operator.methodcaller`_ function. For those situations,
+  :func:`sidekick.functions.method` can produce method callers with an specialized syntax.
 
 .. _operator.methodcaller: https://docs.python.org/3/library/operator.html#operator.methodcaller
 
+.. TODO:
+   Placeholder section
 
 ``sidekick.op`` module
 ----------------------
@@ -329,11 +332,7 @@ application
 >>> succ(41)
 42
 
-.. TODO:
-    Create a proper documentation
-
-.. TODO:
-    Placeholder section
+More details in the :mod:`sidekick.op` documentation page.
 
 
 .. _Composition:
@@ -427,30 +426,32 @@ sk.iter([2, 3, 4, 8, 9])
 methods and properties, but we refer to the class documentation for more details.
 
 
-Applicative syntax
-------------------
+Argument piping syntax
+----------------------
 
 Bitwise operators compose fn-functions. Sidekick also provides a syntax to
-apply arguments into functions. Ideally, the syntax should be equal to
-F#'s function application operation, i.e.,
+apply arguments to those functions. Ideally, we would like to mimic some
+established syntax. A lot of functional languages adopted to F#'s function
+application operation, i.e.,
 
-::
+.. code-block:: F#
 
-    x |> function == function <| x == function(x)
+    (x |> function) == (function <| x) == function(x)
 
 Unfortunately, this is not valid Python and it could only be implemented
 changing the core language, not as a mere library feature. The next best
 thing would be to re-purpose existing operators. Unfortunately, we do not
 have very good options here: bitwise operators are already taken (hence,
-we can't use the pipe ``|`` operator), comparison operators do not work
-well in chained operations [#chain]_ and arithmetic operators have a
-high precedence which makes the annoying to use.
+we can't use the next best option, the pipe ``|`` operator), comparison
+operators do not work well in chained operations [#chain]_ and arithmetic
+operators have a high precedence which makes the annoying to use.
 
 .. [#chain] Python translates chains like ``x > f > g`` to ``x > f and f > g``.
    This breaks the chain of function application and makes those operators
-   unusable for this task.
+   fragile for this task.
 
-Sidekick makes the following (admittedly less than ideal) choices:
+Given those limitations, sidekick makes the following (admittedly less
+than ideal) choices:
 
 .. doctest::
 
@@ -464,13 +465,228 @@ just to explore how the language would look like if it had dedicated
 operators like ``g <| f <| x`` and ``x |> f |> g``. In practical terms,
 overloading ``>``, ``<``, ``**`` and ``//`` to represent function application just
 save us the annoyance of wrapping a long argument in parenthesis when we
-want to do function application. This is acceptable in interactive sessions,
-but it is highly non advisable in production code. That is why sidekick comes
-with a ``evil`` module to control when the extended interface should be
-enabled.
+want to do a quick function application in a terminal section. This is acceptable
+for "throw away code" but it is highly not recommended in production code.
+That is why sidekick comes with a ``evil`` module that helpts to control when this
+extended interface should be enabled or not.
 
 By default, fn-functions accept ``>``, ``<``, ``**`` and ``//`` to perform
-function application. We can execute :func:`sidekick.evil.no_evil` to disable
-this behavior. If you are feeling lucky, however, :func:`sidekick.evil.forbidden_powers`
+function application. We can execute :func:`sidekick.evil.no_evil` to explicitly
+disable this behavior. If you are feeling lucky, however, :func:`sidekick.evil.forbidden_powers`
 extend this behavior even to regular Python functions. It uses ugly hacks and
-obfuscated code, so we could not stress more to never use it in production code.
+obfuscated code, so we could not stress more to **never** use it in anything
+remotely serious.
+
+
+Applicative mapping
+...................
+
+You might have seen CS theorists talking about applicative functors,
+monads and whatnot. In Sidekick those concepts were adapted to Python and
+were given less intimidating names and definitions.
+
+The ``sk.apply(func, col)`` is a special function that applies `func` to
+elements of a collection, preserving its type. Each collection must
+therefore implement this "mapping interface" (a.k.a Functor, if you like
+fancy names). Depending on the kind of collection, it may come in two
+flavors. The first behaves mostly like a regular mapping:
+
+>>> sk.apply(op.mul(2), [1, 2, 3])
+[2, 4, 6]
+
+Notice how the result is a list not an iterator. This is implemented
+by instances of the :class:`sidekick.functions.Apply` class.
+
+>>> issubclass(list, Apply)
+True
+
+The second flavor accepts more parameters and automatically knows
+how to broadcast values according to the type of the first
+argument. Again, each type that implements this interface defines
+its own behavior. In the case of lists and most sequence types,
+it executes the function in all tuples formed by combining the
+arguments and flatten the result.
+
+>>> sk.apply(op.mul, [1, 2, 3], [2])
+[2, 4, 6]
+
+This special kind of function application has its own operator.
+If ``f`` is a sidekick function, ``f @ x`` is the same as ``sk.apply(f, x)``.
+
+We will not discuss here the intricacies of how does it work and how to
+support new types. It suffices to say that :func:`sidekick.functions.apply`
+also knows how to coerce the additional arguments into the proper
+context application. In the case of lists, it simply wraps non-sequence types into
+a singleton list. So we would just have called it like
+
+>>> sk.apply(op.mul, [1, 2, 3], 2)
+[2, 4, 6]
+
+It is possible to support ``sk.apply`` in your own types and even
+to implement support for third party classes. This is described in the
+documentation of the :class:`Apply` class. Incidentally, the ability
+to support third party classes is essential to support lists,
+sets and other built-in types internally in Sidekick.
+
+
+Sidekick function API and semantics
+===================================
+
+Functions have a somewhat minimalist interface: we can introspect and
+call them. This section shows how sidekick functions extends functions
+with a few useful methods and operators. We call those sidekick-enabled function
+as fn-functions, since they are created using the fn decorator:
+
+.. testcode::
+
+    @sk.fn
+    def add(x, y):
+        return x + y
+
+
+Extended function semantics
+---------------------------
+
+Most sidekick functions that expect function arguments actually accept some
+other Python types and interpret them as functions. This idea is taken from
+the builtin ``filter`` function that interprets ``None`` as an identity
+(actually, the documentation mentions that None is equivalent to bool, which
+in the context of filter has the same effect as an identity function).
+
+We extend this idea quite a bit further to also accept Mappings, Sets, and
+strings as function representations. The first two have strong mathematical
+basis: in the most basic mathematical definition, functions **are** mappings
+and it seems a little bit odd that we cannot use maps in places that expect
+functions.
+
+
+**Maps**
+
+Using a map in a place that expects a function has the same
+effect as wrapping it in a ``lambda x: mapping.get(x, x)``.
+
+>>> sk.map({3: 'fizz', 5: 'buzz'}, range(10))  # not a correct fizz-buzz!
+sk.iter([0, 1, 2, 'fizz', 4, 'buzz', ...])
+
+In fact, there are many ways to convert a mapping into a Python function,
+considering different strategies for handling invalid values. We chosen this
+one (i.e., returning missing values as-is) since it is the least convenient
+to express with one-liners. In mathematical jargon, we are extending the
+domain of the map with the identity function. Not performing this extension
+would force us to select one of two other obvious possibilities:
+
+* Raise errors for missing keys
+* Return null values for missing keys
+
+Either way is easy to implement with one-liners. Raising errors,
+
+>>> dic = {3: 'fizz', 4: 'buzz'}
+>>> next(sk.map(dic.__getitem__, range(10)))
+Traceback
+...
+KeyError: 0
+
+or returning ``None``s,
+
+>>> sk.map(dic.get, range(10))
+sk.iter([None, None, None, 'fizz', None, 'buzz', ...])
+
+
+**Sets**
+
+Sets are interpreted as function that maps elements to booleans, returning
+``True`` for items that belong to the set and ``False`` otherwise.
+
+>>> sk.remove({1, 2, 3}, range(10))
+sk.iter([0, 4, 5, 6, 7, ...])
+
+
+**None and Ellipsis**
+
+``None`` and ``...`` represent identity functions. The difference
+is in the way both handle multiple arguments. None is a simple
+identity: it simply returns its single argument. The ellipsis
+is what identity would be if multiple arguments were passed as
+tuples.
+
+To see the difference, let us wrap those with to_callable to
+produce real functions:
+
+>>> id_none = sk.to_callable(None)
+>>> id_ellipsis = sk.to_callable(...)
+
+When called with a single argument, both are equal:
+
+>>> id_none(x) == id_ellipsis(x) == x
+True
+
+``id_none`` does not accept multiple arguments and id_ellipsis treats
+them as tuples
+
+>>> id_ellipsis(1, 2, 3)
+(1, 2, 3)
+
+
+**Strings**
+
+Finally, sidekick accept strings that represent very simple functions.
+They come in three flavors:
+
+1) Operators:
+
+>>> sk.reduce('+', [1, 2, 3])
+6
+
+2) Lambdas
+
+>>> sk.map('x: x + 1', [1, 2, 3])
+sk.iter([2, 3, 4])
+
+3) Regex match
+
+>>> sk.filter(r'/\w+/', ['foo', 'foo bar'])
+'foo'
+
+4) Regex replacement
+
+>>> sk.filter(r'/.+?(\w+)/a $1/', ['foo', 'foo bar'])
+sk.iter(['a foo', 'a bar'])
+
+
+Fn-function methods
+...................
+
+All functions in the :mod:`sidekick.functions` module are also exposed
+as methods of fn-functions, when it makes sense. The documentation
+for :class:`sidekick.functions.fn` shows a complete list, but a little
+guesswork can go a long way finding how functions are exposed as methods.
+
+Consider the ``div`` function bellow
+
+.. testcode::
+
+    @sk.fn
+    def div(x: float, y: float) -> float:
+        return x / y
+
+All introspection functions such as :func:`sk.signature`, :func:`sk.arity`,
+:func:`sk.stub`, etc, have the corresponding methods,
+
+>>> div.signature()
+(x: float, y: float) -> float
+
+Functions that receive a function and return a modified version are also
+exposed. When it makes sense, they call the transformed function directly
+instead of returning a new function.
+
+This is the behavior of ``flip``, ``background``, ``result``, and others.
+
+>>> div.flip(2, 4)  # Attention: 4 / 2, since arguments are flipped
+2.0
+
+Other functions return new functions since the immediate execution
+would not make much sense.
+
+>>> half = div.fix_args(X, 2)
+>>> half(10)
+5.0
