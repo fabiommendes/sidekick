@@ -1,6 +1,6 @@
 import pytest
 
-from sidekick import Record, Maybe, Nothing, Union, Case, maybe, Ok, Err, rcall
+from sidekick import Record, Maybe, Nothing, Union, Case, to_maybe, Ok, Err
 from sidekick.types.union import SingletonMeta, SingletonMixin
 
 UnionMeta = type(Union)
@@ -278,8 +278,8 @@ class _TestMaybe(_TestADT):
         assert not nothing
 
     def test_maybe_function_conversions(self, Maybe):
-        assert maybe(42) == Maybe.Just(42)
-        assert maybe(None) == Maybe.Nothing
+        assert to_maybe(42) == Maybe.Just(42)
+        assert to_maybe(None) == Maybe.Nothing
 
     def test_logical_operations(self, just, nothing):
         assert just | nothing == nothing | just == just
@@ -292,8 +292,8 @@ class _TestMaybe(_TestADT):
         assert just + nothing == nothing
 
     def test_maybe_function(self, just, nothing):
-        assert maybe(42) == just
-        assert maybe(None) == nothing
+        assert to_maybe(42) == just
+        assert to_maybe(None) == nothing
 
 
 class _TestResult:

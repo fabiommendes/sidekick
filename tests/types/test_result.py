@@ -4,7 +4,7 @@ from sidekick import (
     Result,
     Ok,
     Err,
-    result,
+    to_result,
     X,
     Just,
     Nothing,
@@ -14,8 +14,8 @@ from sidekick import (
     rpipe,
     error,
     rpipeline,
-    catch_exceptions,
 )
+from sidekick.types.result import results
 
 
 class TestResult:
@@ -42,8 +42,8 @@ class TestResult:
         exc = Err(ValueError)
         exc_ = Err(ValueError("foo"))
 
-        assert exc == ValueError
-        assert exc_ == ValueError
+        assert exc.catches(ValueError)
+        assert exc_.catches(ValueError)
         assert err.flip() == Ok("error")
 
         assert err.map((X * 2)) is err
@@ -83,14 +83,14 @@ class TestResult:
         assert rpipe(1.0, half, str) == Ok("0.5")
         assert rpipe(ok, (X / 2), str) == Ok("21.0")
         assert rpipe(ok, half, str) == Ok("21.0")
-        assert rpipe(ok, (X / 0)) == ZeroDivisionError
+        assert rpipe(ok, (X / 0)).catches(ZeroDivisionError)
         assert rpipe(42, half_err) == Ok(21)
-        assert rpipe(21, half_err) == ValueError
+        assert rpipe(21, half_err).catches(ValueError)
         assert rpipe(err, half_err) is err
 
-        assert div_err(1, 0) == ZeroDivisionError
+        assert div_err(1, 0).catches(ZeroDivisionError)
         assert div_err(1, 2) == Ok(0.5)
-        assert div_err2(1, 0) == ZeroDivisionError
+        assert div_err2(1, 0).catches(ZeroDivisionError)
         assert div_err2(1, 2) == Ok("0.5")
 
         assert first_error(1, 2, 3) is None
@@ -99,23 +99,23 @@ class TestResult:
         assert first_error(IndexError, 1, 2) is IndexError
 
     def test_catch_exceptions_block(self):
-        with catch_exceptions() as err:
+        with results() as res:
             x = int("a")
-            err.put(x / 2)
+            res.append(x / 2)
 
-        assert err.get() == ValueError
-        assert err
+        assert res.value.catches(ValueError)
+        assert res
 
-        with catch_exceptions() as err:
+        with results() as res:
             x = int(3.14)
-            err.put(x / 2)
+            res.append(x / 2)
 
-        assert err.get() == Ok(1.5)
-        assert not err
+        assert res.value == Ok(1.5)
+        assert res
 
         with pytest.raises(ValueError):
-            with catch_exceptions(ZeroDivisionError) as err:
-                err.put(int("1/0"))
+            with results(ZeroDivisionError) as res:
+                res.append(int("1/0"))
 
-        assert err.get() == ValueError
-        assert err
+        assert res.value.catches(RuntimeError)
+        assert not res

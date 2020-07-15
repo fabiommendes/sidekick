@@ -92,3 +92,26 @@ class TestCreation:
 
         assert sk.iterate(op.mul, 1, index=1) == LL(1, 1, 2, 6, 24, 120, ...)
         assert sk.iterate(fn, 1, index=sk.nums()) == LL(1, 1, 2, 4, 7, 11, 16, ...)
+
+
+class TestHypothesis:
+    FN_PRED_SEQ = {}
+    FN_SELECTOR = {}
+
+    def test_functions_that_do_not_change_size_of_iterables(self):
+        ...
+
+    def test_functions_that_filter_iterables(self):
+        filters = [
+            sk.filter,
+            sk.remove,
+            sk.dedupe,
+            sk.unique,
+            sk.take,
+            sk.rtake,
+            sk.drop,
+            sk.rdrop,
+        ]
+
+    def test_functions_that_filter_and_transform_iterables(self):
+        ...
