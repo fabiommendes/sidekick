@@ -2,7 +2,7 @@ import operator
 from collections import namedtuple
 from functools import singledispatch
 
-from .._operators import SYMBOLS, op_wrapper_class
+from .._operators import OP_SYMBOLS, op_wrapper_class
 
 flip = lambda f: lambda x, y: f(y, x)
 
@@ -195,7 +195,7 @@ def call_node(*args, **kwargs):
 #
 # Rendering ASTs
 #
-OP_SYMBOLS = dict(SYMBOLS)
+OP_SYMBOLS = dict(OP_SYMBOLS)
 OP_SYMBOLS[operator.attrgetter] = "."
 
 

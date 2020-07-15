@@ -1,5 +1,7 @@
 from copy import copy
 
+from .._utils import dedent, indent
+
 
 class lazy_property:
     """
@@ -65,3 +67,30 @@ class mixed_accessor:
 
     def __set__(self, instance, value):
         raise TypeError
+
+
+def augment_documentation_with_signature(func):
+    try:
+        doc = func.__doc__
+    except AttributeError:
+        return None
+
+    if doc:
+        # noinspection PyBroadException
+        try:
+            decl = str(func.declaration())
+        except:
+            return doc
+        doc = (
+            dedent(doc)
+            + f"""
+
+Notes:
+    Function signature
+
+    .. code-block:: python
+
+        {indent(8, decl)}
+"""
+        )
+    return doc

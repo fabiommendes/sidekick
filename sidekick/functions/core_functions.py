@@ -1,8 +1,21 @@
 import inspect
-from functools import singledispatch
+from functools import singledispatch, lru_cache
 
-from ..typing import Any, Callable, FunctionType, Mapping, FunctionTypes
-from ..typing import NamedTuple, Iterable, Tuple, TYPE_CHECKING
+from .signature import Signature
+from .stub import Stub
+from .. import _operators as operators
+from ..typing import (
+    Any,
+    Callable,
+    FunctionType,
+    Mapping,
+    FunctionTypes,
+    Set,
+    T,
+    Tuple,
+    Union,
+    TYPE_CHECKING,
+)
 
 if TYPE_CHECKING:
     from .fn import fn  # noqa: F401
@@ -74,8 +87,12 @@ def to_callable(func: Any) -> Callable:
     This defines the following semantics:
 
     * Sidekick's fn: extract the inner function.
-    * None: return the identity function.
+    * None: return an identity function.
+    * ...: return an tuple identity function, i.e., it behaves like identity
+      for single argument calls, but return tuples when multiple arguments are
+      given. Keyword arguments are ignored.
     * Mappings: map.__getitem__
+    * Sets: set.__contains__
     * Functions, methods and other callables: returned as-is.
     """
 
@@ -91,12 +108,72 @@ to_callable.register = _to_callable.register
 to_callable.dispatch = _to_callable.dispatch
 
 to_callable.register(FunctionType, lambda fn: fn)
-to_callable.register(type(None), lambda fn: lambda x: x)
-to_callable.register(Mapping, lambda dic: dic.__getitem__)
+to_callable.register(Mapping, lambda dic: lambda x: map_function(dic, x))
+to_callable.register(Set, lambda set_: set_.__contains__)
+
+
+def tuple_identity(*args: T, **kwargs) -> Union[T, Tuple[T, ...]]:
+    """
+    An extended splicing function when multiple arguments are given.
+
+    It returns its argument when a single argument is given, or the tuple of
+    args when the number of arguments is different from 1.
+
+    This behavior is consistent with the algebraic properties of tuple types
+    in languages that support real tuples. Python tuples are just immutable
+    arrays and accept single element tuples. Languages that with a more rigorous
+    implementation of tuples tend to collapse Tuple[T] -> T and usually associate
+    Tuple[] -> Nullable type.
+    """
+    if len(args) == 1:
+        return args[0]
+    return args
+
+
+def identity(*args, **kwargs):
+    """
+    A simple identity function that accepts a single positional argument
+    and ignore keywords.
+    """
+    (x,) = args
+    return x
+
+
+identity.fn_extends = None
+tuple_identity.fn_extends = ...
+
+to_callable.register(type(None), lambda fn: identity)
+to_callable.register(type(Ellipsis), lambda _: tuple_identity)
+
+
+def map_function(dic, x):
+    try:
+        return dic.get(x, x)
+    except (KeyError, AttributeError):
+        return x
+
+
+@to_callable.register(str)
+def _(code, ns=None):
+    try:
+        return operators.FROM_SYMBOLS[code]
+    except KeyError:
+        pass
+    return compile_callable(code, ns)
+
+
+@lru_cache(128)
+def compile_callable(code, ns=None):
+    """
+    Convert strings to the corresponding lambda functions.
+    """
+
+    code = compile(f"lambda {code}", "<sidekick>", "eval", dont_inherit=True)
+    return eval(code, {} if ns is None else ns)
 
 
 @singledispatch
-def arity(func: Callable):
+def arity(func: Callable, how="short"):
     """
     Return arity of a function.
 
@@ -107,80 +184,26 @@ def arity(func: Callable):
     """
 
     if hasattr(func, "arity"):
-        return func.arity()
-
-    spec = inspect.getfullargspec(func)
-    if spec.varargs or spec.varkw or spec.kwonlyargs:
-        raise TypeError("cannot curry a variadic function")
-    return len(spec.args)
+        return func.arity(how)
+    return signature(func).arity(how)
 
 
 @singledispatch
-def signature(func: Callable) -> inspect.Signature:
+def signature(func: Callable) -> Signature:
     """
     Return the signature of a function.
     """
-
-    if hasattr(func, "signature"):
-        return func.signature()
-
-    return inspect.Signature.from_callable(func)
+    return Signature.from_signature(inspect.signature(func))
 
 
 @singledispatch
-def stub(func: Callable) -> "Stub":
+def declaration(func: Callable) -> "Stub":
     """
     Return a :class:`Stub` object representing the function signature.
     """
 
     sig = signature(func)
     return Stub(func.__name__, (sig,))
-
-
-class Stub(NamedTuple):
-    """
-    Represent a function declaration Stub.
-    """
-
-    name: str
-    signatures: Tuple[inspect.Signature]
-
-    def __str__(self):
-        return self.render()
-
-    def _stub_declarations(self) -> Iterable[str]:
-        name = self.name
-
-        if len(self.signatures) == 0:
-            yield f"def {name}(*args, **kwargs) -> Any: ..."
-        elif len(self.signatures) == 1:
-            yield f"def {name}{self.signatures[0]}: ..."
-        else:
-            for sep, sig in enumerate(self.signatures):
-                prefix = "\n" if sep else ""
-                return f"{prefix}@overload\ndef {name}{sig}: ..."
-
-    def _import_declarations(self) -> Iterable[str]:
-        raise NotImplementedError
-
-    def required_imports(self) -> set:
-        """
-        Return set of imported symbols
-        """
-
-        return set()
-
-    def render(self, imports=False) -> str:
-        """
-        Render complete stub file, optionally including imports.
-        """
-
-        stubs = "\n".join(self._stub_declarations())
-        if imports:
-            head = "\n".join(self._import_declarations())
-            return f"{head}\n\n{stubs}"
-        else:
-            return stubs
 
 
 def quick_fn(func: callable) -> "fn":

@@ -2,7 +2,7 @@ from invoke import task
 
 
 @task
-def test(ctx, all=False, maxfail=None):
+def test(ctx, all=False, maxfail=None, verbose=False):
     """
     Run tests.
     """
@@ -11,6 +11,8 @@ def test(ctx, all=False, maxfail=None):
         doctest(ctx)
     else:
         flags.extend(["--lf", f"--maxfail={maxfail or 2}"])
+    if verbose:
+        flags.append("-vv")
     flags = " ".join(flags)
     ctx.run(f"python -c 'import sidekick.api' && pytest tests/ {flags}", pty=True)
 

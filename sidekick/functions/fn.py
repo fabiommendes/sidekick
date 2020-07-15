@@ -1,9 +1,10 @@
 from functools import partial
 from types import MappingProxyType as mappingproxy
 
-from .core_functions import arity, signature, stub, to_callable, make_xor
+from .core_functions import arity, declaration, to_callable, make_xor, signature
 from .fn_placeholders import compile_ast, call_node
-from .utils import mixed_accessor, lazy_string
+from .signature import Signature
+from .utils import mixed_accessor, lazy_string, lazy_property
 from .._modules import GetAttrModule, set_module_class
 from ..typing import Union
 
@@ -31,7 +32,7 @@ class FunctionMeta(type):
 
     def __new__(mcs, name, bases, ns):
         new = super().__new__(mcs, name, bases, ns)
-        new.__doc__ = lazy_string(lambda x: x.__getattr__("__doc__"), new.__doc__ or "")
+        new.__doc__ = lazy_string(lambda x: x.__getattr__("__doc__"), new.__doc__)
         new.__module__ = lazy_string(
             lambda x: x.__getattr__("__module__"), new.__module__ or ""
         )
@@ -63,18 +64,15 @@ class fn(metaclass=FunctionMeta):
     func: callable = property(lambda self: self._func)
     __sk_callable__: callable = property(lambda self: self._func)
 
-    @property
+    @lazy_property
     def __wrapped__(self):
-        try:
-            return self.__dict__["__wrapped__"]
-        except KeyError:
-            return self._func
+        return self._func
 
-    @__wrapped__.setter
-    def __wrapped__(self, value):
-        self.__dict__["__wrapped__"] = value
+    @lazy_property
+    def __signature__(self):
+        return signature(self.__wrapped__)
 
-    _ok = _err = None
+    _ok = _err = _to_result = None
     args = ()
     keywords = mappingproxy({})
 
@@ -126,6 +124,7 @@ class fn(metaclass=FunctionMeta):
     def __init__(self, func):
         self._func = to_callable(func)
         self.__dict__ = {}
+        self.__annotations__ = getattr(self._func, "__annotations__", None)
 
     def __repr__(self):
         try:
@@ -218,10 +217,10 @@ class fn(metaclass=FunctionMeta):
         return arity(self.__sk_callable__)
 
     def signature(self):
-        return signature(self.__sk_callable__)
+        return self.__signature__
 
-    def stub(self):
-        return stub(self)
+    def declaration(self):
+        return declaration(self)
 
     #
     # Partial application
@@ -284,7 +283,7 @@ class fn(metaclass=FunctionMeta):
         Exceptions are converted to Err() cases.
         """
         try:
-            return self._ok(self.func(*args, **kwargs))
+            return self._to_result(self.func(*args, **kwargs))
         except Exception as exc:
             return self._err(exc)
 
@@ -301,6 +300,11 @@ class Curried(fn):
 
     __slots__ = ("args", "_arity", "keywords")
     __sk_callable__ = property(lambda self: self)
+
+    @lazy_property
+    def __signature__(self):
+        sig = signature(self.__wrapped__)
+        return sig.partial(*self.args, **self.keywords)
 
     def __init__(
         self,
