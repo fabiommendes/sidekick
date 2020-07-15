@@ -2,15 +2,15 @@
 fn-aware functions from the builtin operator module.
 """
 import operator as _op
-import re
+import re as _re
 from functools import wraps as _wraps
 
 from .functions import fn as _fn
 
-re = re.compile(r"Same as (?P<op>.+?(?=(,|\.$| \()))(?P<tail>[.,]?.*)")
 
-
-def _fix(f, what):
+def _fix(
+    f, what, re=_re.compile(r"Same as (?P<op>.+?(?=(,|\.$| \()))(?P<tail>[.,]?.*)")
+):
     out = _wraps(f)(what)
     if out.__doc__:
         doc = out.__doc__.strip().rstrip(".") + "."
@@ -131,7 +131,5 @@ length_hint = _fn(_op.length_hint)
 attrgetter = _fn1(_op.attrgetter)
 itemgetter = _fn1(_op.itemgetter)
 methodcaller = _fn1(_op.methodcaller)
-
-del _fn, _fn1, _fn2, _fn3, re
 
 __all__ = [name for name in globals() if not name.startswith("_")]

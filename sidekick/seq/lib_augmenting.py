@@ -8,7 +8,7 @@ from ..functions import fn
 from ..typing import Seq, TYPE_CHECKING, NOT_GIVEN, Func, T
 
 if TYPE_CHECKING:
-    from .. import api as sk
+    from .. import api as sk  # noqa: F401
 
 
 @fn.curry(2)

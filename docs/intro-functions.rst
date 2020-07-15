@@ -431,20 +431,20 @@ Argument piping syntax
 
 Bitwise operators compose fn-functions. Sidekick also provides a syntax to
 apply arguments to those functions. Ideally, we would like to mimic some
-established syntax. A lot of functional languages adopted to F#'s function
+established syntax. Many functional languages adopt F#'s function
 application operation, i.e.,
 
 .. code-block:: F#
 
     (x |> function) == (function <| x) == function(x)
 
-Unfortunately, this is not valid Python and it could only be implemented
+This is not valid Python and it could only be implemented
 changing the core language, not as a mere library feature. The next best
 thing would be to re-purpose existing operators. Unfortunately, we do not
 have very good options here: bitwise operators are already taken (hence,
 we can't use the next best option, the pipe ``|`` operator), comparison
 operators do not work well in chained operations [#chain]_ and arithmetic
-operators have a high precedence which makes the annoying to use.
+operators have a high precedence which makes them somewhat annoying to use.
 
 .. [#chain] Python translates chains like ``x > f > g`` to ``x > f and f > g``.
    This breaks the chain of function application and makes those operators
@@ -462,12 +462,11 @@ than ideal) choices:
 
 We do not really encourage the use of those operators, but they are here
 just to explore how the language would look like if it had dedicated
-operators like ``g <| f <| x`` and ``x |> f |> g``. In practical terms,
-overloading ``>``, ``<``, ``**`` and ``//`` to represent function application just
-save us the annoyance of wrapping a long argument in parenthesis when we
+piping operators. In practical terms, overloading ``>``, ``<``, ``**`` and ``//`` to represent
+function application just save us the annoyance of wrapping a long argument in parenthesis when we
 want to do a quick function application in a terminal section. This is acceptable
 for "throw away code" but it is highly not recommended in production code.
-That is why sidekick comes with a ``evil`` module that helpts to control when this
+That is why sidekick comes with a ``evil`` module that helps to control when this
 extended interface should be enabled or not.
 
 By default, fn-functions accept ``>``, ``<``, ``**`` and ``//`` to perform
@@ -482,7 +481,7 @@ Applicative mapping
 ...................
 
 You might have seen CS theorists talking about applicative functors,
-monads and whatnot. In Sidekick those concepts were adapted to Python and
+monads and whatnot. In Sidekick, those concepts were adapted to Python and
 were given less intimidating names and definitions.
 
 The ``sk.apply(func, col)`` is a special function that applies `func` to
@@ -494,10 +493,10 @@ flavors. The first behaves mostly like a regular mapping:
 >>> sk.apply(op.mul(2), [1, 2, 3])
 [2, 4, 6]
 
-Notice how the result is a list not an iterator. This is implemented
+Notice how the result is a list, not an iterator. This is implemented
 by instances of the :class:`sidekick.functions.Apply` class.
 
->>> issubclass(list, Apply)
+>>> issubclass(list, sk.Apply)
 True
 
 The second flavor accepts more parameters and automatically knows
@@ -505,7 +504,7 @@ how to broadcast values according to the type of the first
 argument. Again, each type that implements this interface defines
 its own behavior. In the case of lists and most sequence types,
 it executes the function in all tuples formed by combining the
-arguments and flatten the result.
+arguments and flattening the result.
 
 >>> sk.apply(op.mul, [1, 2, 3], [2])
 [2, 4, 6]
@@ -521,6 +520,16 @@ a singleton list. So we would just have called it like
 
 >>> sk.apply(op.mul, [1, 2, 3], 2)
 [2, 4, 6]
+
+The first argument after the application function determines the behavior
+of apply and therefore specifies the return type. Hence, be careful because
+those two very similar application produces results of different types.
+
+>>> sk.apply(op.mul, [1, 2, 3], {2})
+[2, 4, 6]
+
+>>> sk.apply(op.mul, {1, 2, 3}, [2])
+{2, 4, 6}
 
 It is possible to support ``sk.apply`` in your own types and even
 to implement support for third party classes. This is described in the

@@ -7,7 +7,7 @@ from ..functions import fn
 from ..typing import Iterator, Tuple, T, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .. import api as sk
+    from .. import api as sk  # noqa: F401
 
 NOT_GIVEN = object()
 _iter = iter

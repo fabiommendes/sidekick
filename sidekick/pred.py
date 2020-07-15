@@ -3,7 +3,11 @@ from itertools import zip_longest
 from ._toolz import isdistinct, isiterable
 from .functions import always
 from .functions import fn, quick_fn, to_callable
-from .typing import Callable, overload, NOT_GIVEN, Any, TypeCheck, Seq
+from .typing import Callable, overload, Any, TypeCheck, Seq, NOT_GIVEN, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import sidekick.api as sk  # noqa: F401
+    from sidekick.api import _  # noqa: F401
 
 __all__ = [
     # Compositions
@@ -206,12 +210,12 @@ def is_a(cls: TypeCheck) -> Callable[[Any], bool]:
 
 
 @overload
-def is_a(cls: TypeCheck, x: Any) -> bool:
+def is_a(cls: TypeCheck, x: Any) -> bool:  # noqa: F811
     ...
 
 
 @fn.curry(2)
-def is_a(cls, x):
+def is_a(cls, x):  # noqa: F811
     """
     Check if x is an instance of cls.
 
@@ -293,12 +297,12 @@ def has_pattern(pattern: str) -> Callable[[str], bool]:
 
 
 @overload
-def has_pattern(pattern: str, st: str) -> bool:
+def has_pattern(pattern: str, st: str) -> bool:  # noqa: F811
     ...
 
 
-def has_pattern(pattern, st=NOT_GIVEN):
-    """
+def has_pattern(pattern, st=NOT_GIVEN):  # noqa: F811
+    r"""
     Check if string contains pattern.
 
     This function performs a pattern scan. If you want to match the beginning of
@@ -306,9 +310,9 @@ def has_pattern(pattern, st=NOT_GIVEN):
     end.
 
     Examples:
-        >>> sk.has_pattern("\d{2}", "year, 1942")
+        >>> sk.has_pattern(r"\d{2}", "year, 1942")
         True
-        >>> sk.has_pattern("^\d{2}$", "year, 1942")
+        >>> sk.has_pattern(r"^\d{2}$", "year, 1942")
         False
 
         This function is also very useful to filter or process string data.

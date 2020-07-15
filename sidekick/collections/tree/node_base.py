@@ -1,7 +1,7 @@
 import operator as op
-from typing import Optional, Sequence, Callable
 
 from .node_iterators import NodeOrLeafIteratorMixin
+from ...typing import Optional, Sequence, Callable
 
 
 class NodeOrLeaf(NodeOrLeafIteratorMixin):
@@ -209,4 +209,4 @@ class NodeOrLeaf(NodeOrLeafIteratorMixin):
         return self._pretty_printer(self, tree_style=style, node_renderer=renderer)
 
 
-from .node_classes import Node
+from .node_classes import Node  # noqa: E402

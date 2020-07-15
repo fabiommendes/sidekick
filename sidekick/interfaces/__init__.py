@@ -433,7 +433,7 @@ method, it is not a correct applicative functor.
 FlatApply
 =========
 """
-
+# flake8: noqa
 from .semigroup import semigroup
 from .monoid import monoid, combine, combine_map, times
 from .group import group, dual

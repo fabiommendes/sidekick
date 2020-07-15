@@ -8,8 +8,8 @@ from ..functions import fn, to_callable
 from ..typing import Func, Pred, Seq, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .. import api as sk, Union
-    from ..api import X
+    from .. import api as sk, Union  # noqa: F401
+    from ..api import X  # noqa: F401
 
 _filter = filter
 

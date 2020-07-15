@@ -1,3 +1,4 @@
+# flake8: noqa
 from .anonymous_record import record, namespace
 from .maybe import Maybe, Just, Nothing, to_maybe, mapply, mfilter, mpipe, mpipeline
 from .named_record import Record, Namespace

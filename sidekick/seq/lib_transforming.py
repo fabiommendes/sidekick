@@ -6,7 +6,7 @@ from ..functions import fn, to_callable
 from ..typing import Func, Seq, Index, TYPE_CHECKING, Pred
 
 if TYPE_CHECKING:
-    from ..api import sk, X, Y, op
+    from ..api import sk, X, Y, op  # noqa: F401
 
 _map = map
 

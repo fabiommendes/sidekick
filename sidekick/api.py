@@ -1,4 +1,5 @@
 # noinspection PyUnresolvedReferences
+# flake8: noqa
 from . import op
 
 # noinspection PyUnresolvedReferences

@@ -8,7 +8,7 @@ from ..functions import fn
 from ..typing import Seq, Union, Raisable, Callable, Func, TYPE_CHECKING, NOT_GIVEN
 
 if TYPE_CHECKING:
-    from .. import api as sk, to_callable
+    from .. import api as sk, to_callable  # noqa: F401
 
 
 class UnalignedZipError(Exception):

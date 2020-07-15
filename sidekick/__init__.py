@@ -10,6 +10,7 @@ A companion library that enhance your functional superpowers.
 # functions or are re-exported from a proper location.
 #
 __author__ = "Fábio Macêdo Mendes"
-__version__ = "0.8.1"
+__version__ = "0.8.2"
 
+# flake8: noqa
 from .api import *

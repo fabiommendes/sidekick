@@ -6,8 +6,8 @@ from ..functions import fn, to_callable
 from ..typing import Seq, T, NOT_GIVEN, TYPE_CHECKING, Pred
 
 if TYPE_CHECKING:
-    from .. import api as sk
-    from ..api import X
+    from .. import api as sk  # noqa: F401
+    from ..api import X  # noqa: F401
 
 
 @fn.curry(2)

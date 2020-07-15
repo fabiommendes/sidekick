@@ -8,7 +8,6 @@ from operator import itemgetter
 import toolz
 
 from ..functions import fn, to_callable
-from ..seq import is_empty
 from ..typing import Pred, T, NOT_GIVEN
 from ..typing import Seq, Func
 
@@ -19,7 +18,7 @@ _map = lambda pred: lambda seq: map(pred, seq)
 
 
 @fn.curry(2)
-def random_sample(prob: float, seq: Seq, *, random_state=None) -> Iter:
+def random_sample(prob: float, seq: Seq, *, random_state=None) -> Seq:
     """
     Choose with probability ``prob`` if each element of seq will be included in
     the output sequence.
@@ -31,7 +30,7 @@ def random_sample(prob: float, seq: Seq, *, random_state=None) -> Iter:
 
 
 @fn.curry(2)
-def select_positions(indices: Seq, seq: Seq, *, silent=False) -> Iter:
+def select_positions(indices: Seq, seq: Seq, *, silent=False) -> Seq:
     """
     Return a sequence with values in the positions specified by indices.
 
@@ -66,7 +65,7 @@ def select_positions(indices: Seq, seq: Seq, *, silent=False) -> Iter:
 
 
 @fn.curry(2)
-def drop_positions(indices: Seq, seq: Seq, *, silent=False) -> Iter:
+def drop_positions(indices: Seq, seq: Seq, *, silent=False) -> Seq:
     """
     Drop all elements in the given positions. Similarly to :func:select_positions`,
     it requires a (possibly infinite) sorted sequence of indices.
@@ -136,7 +135,7 @@ def get(idx, seq: Seq, **kwargs):
 
 
 @fn.curry(2)
-def take_nth(n: int, seq: Seq) -> Iter:
+def take_nth(n: int, seq: Seq) -> Seq:
     """
     Return every nth item in sequence.
 
@@ -155,7 +154,7 @@ _enumerate = enumerate
 
 
 @fn.curry(3)
-def select_indexes(selector, pred: Pred, seq: Seq, *, start=0, enter=False) -> Iter:
+def select_indexes(selector, pred: Pred, seq: Seq, *, start=0, enter=False) -> Seq:
     """
     Take a selection function such as filter, takewhile, etc, apply it to sequence
     and return the filtered indexes instead of values.
@@ -182,7 +181,7 @@ def select_indexes(selector, pred: Pred, seq: Seq, *, start=0, enter=False) -> I
 
 
 @fn.curry(3)
-def select_indexed(selector, pred: Pred, seq: Seq, *, start=0) -> Iter:
+def select_indexed(selector, pred: Pred, seq: Seq, *, start=0) -> Seq:
     """
     Take a selection function such as filter, takewhile, etc, apply it to sequence
     and return tuples of (index, value).
@@ -251,7 +250,7 @@ def strip(prefix, seq):
 
 
 @fn
-def inits(seq: Seq) -> Iter:
+def inits(seq: Seq) -> Seq:
     """
     Return all sub-sequences at beginning of seq.
 

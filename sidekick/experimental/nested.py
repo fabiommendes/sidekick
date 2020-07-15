@@ -2,7 +2,7 @@ from collections import deque
 
 from sidekick import generator
 from ..functions import fn, to_callable
-from ..typing import Seq, Pred, Func
+from ..typing import Seq, Pred, Func, Seq
 
 SEQ_TYPES = (list, tuple, Seq)
 is_seqcont = lambda x: isinstance(x, SEQ_TYPES)
@@ -12,7 +12,7 @@ __all__ = ["flatten", "tree_leaves", "tree_nodes"]
 
 @fn.curry(1)
 @generator
-def deep_flatten(seq: Seq, *, follow: Pred = is_seqcont) -> Iter:
+def deep_flatten(seq: Seq, *, follow: Pred = is_seqcont) -> Seq:
     """
     Flattens arbitrary nested sequence of values and other sequences.
 
@@ -30,7 +30,7 @@ def deep_flatten(seq: Seq, *, follow: Pred = is_seqcont) -> Iter:
 
 
 @fn.generator
-def flatten(seq: Seq) -> Iter:
+def flatten(seq: Seq) -> Seq:
     """
     Flattens one level of a sequence of sequences.
 
@@ -44,7 +44,7 @@ def flatten(seq: Seq) -> Iter:
 
 # Adapted from funcy
 @fn.generator
-def tree_leaves(root: Seq, *, follow: Pred = is_seqcont, children: Func = iter) -> Iter:
+def tree_leaves(root: Seq, *, follow: Pred = is_seqcont, children: Func = iter) -> Seq:
     """
     A way to list or iterate over all the tree leaves.
 
@@ -73,7 +73,7 @@ def tree_leaves(root: Seq, *, follow: Pred = is_seqcont, children: Func = iter) 
 
 @fn.curry(1)
 @generator
-def tree_nodes(root: Seq, follow: Pred = is_seqcont, children: Func = iter) -> Iter:
+def tree_nodes(root: Seq, follow: Pred = is_seqcont, children: Func = iter) -> Seq:
     """
     A way to list or iterate over all the tree nodes.
 

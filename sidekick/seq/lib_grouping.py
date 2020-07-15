@@ -20,8 +20,8 @@ from ..typing import (
 
 _next = next
 if TYPE_CHECKING:
-    from .. import api as sk
-    from ..api import X, Y
+    from .. import api as sk  # noqa: F401
+    from ..api import X, Y  # noqa: F401
 
     p = ""
 

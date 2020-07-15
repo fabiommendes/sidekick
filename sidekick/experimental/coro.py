@@ -22,12 +22,11 @@
 # """
 from collections import deque
 from math import sqrt
-
 from threading import Thread
 from time import sleep
 
-from ..types import record
 from ..functions import to_callable
+from ..types import record
 
 
 def feed(coro, seq):
@@ -247,13 +246,6 @@ def coroutine_transform(func):
     return wrapped
 
 
-def filter(func, obj):
-    while True:
-        x = obj.get()
-        if func(x):
-            obj.send(x)
-
-
 def reduce_acc(func, x, obj):
     obj.send(x)
     while True:
@@ -330,7 +322,3 @@ def iterator(func, *args):
 
         except StopIteration:
             break
-
-
-from types import coroutine
-from asyncio import coroutine, sleep

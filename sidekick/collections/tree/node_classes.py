@@ -1,4 +1,4 @@
-from typing import List, Sequence, MutableSequence
+from ...typing import MutableSequence
 
 from .children import Children
 from .node_base import NodeOrLeaf
