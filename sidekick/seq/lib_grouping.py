@@ -2,7 +2,7 @@ from itertools import tee, chain, takewhile, dropwhile, islice
 
 from toolz import groupby
 
-from .iter import iter as sk_iter
+from .iter import Iter
 from .lib_basic import uncons
 from .._toolz import partition_all, partition as _partition, sliding_window, partitionby
 from ..functions import fn, to_callable
@@ -45,7 +45,7 @@ def group_by(key: Func, seq: Seq) -> dict:
 @fn.curry(2)
 def chunks(
     n: Union[int, Iterable[int]], seq: Seq[T], *, pad=NOT_GIVEN, drop: bool = False
-) -> Seq[Tuple[T, ...]]:
+) -> Iter[Tuple[T, ...]]:
     """
     Partition sequence into non-overlapping tuples of length n.
 
@@ -90,17 +90,17 @@ def chunks(
     """
     if isinstance(n, int):
         if drop:
-            return sk_iter(_partition(n, seq))
+            return Iter(_partition(n, seq))
         elif pad is not NOT_GIVEN:
-            return sk_iter(_partition(n, seq, pad))
+            return Iter(_partition(n, seq, pad))
         else:
-            return sk_iter(partition_all(n, seq))
+            return Iter(partition_all(n, seq))
     elif drop:
-        return sk_iter(_chunks_sizes_ex(n, seq, True, None))
+        return Iter(_chunks_sizes_ex(n, seq, True, None))
     elif pad:
-        return sk_iter(_chunks_sizes_ex(n, seq, False, pad))
+        return Iter(_chunks_sizes_ex(n, seq, False, pad))
     else:
-        return sk_iter(_chunks_sizes(n, seq))
+        return Iter(_chunks_sizes(n, seq))
 
 
 def _chunks_sizes(ns, seq):
@@ -137,7 +137,7 @@ def _chunks_sizes_ex(ns, seq, drop, pad):
 
 
 @fn.curry(2)
-def chunks_by(func: Func, seq: Seq, how: str = "values") -> Seq:
+def chunks_by(func: Func, seq: Seq, how: str = "values") -> Iter:
     """
     Partition sequence into chunks according to a function.
 
@@ -187,15 +187,15 @@ def chunks_by(func: Func, seq: Seq, how: str = "values") -> Seq:
         :func:`partition`
     """
     if how == "values":
-        return sk_iter(partitionby(to_callable(func), seq))
+        return Iter(partitionby(to_callable(func), seq))
     elif how == "pairs":
-        return sk_iter(_chunks_pairs(func, seq))
+        return Iter(_chunks_pairs(func, seq))
     elif how == "left":
-        return sk_iter(_chunks_left(func, seq))
+        return Iter(_chunks_left(func, seq))
     elif how == "right":
-        return sk_iter(_chunks_right(func, seq))
+        return Iter(_chunks_right(func, seq))
     elif how in ("drop", "split"):
-        return sk_iter(_chunks_split(func, seq))
+        return Iter(_chunks_split(func, seq))
     else:
         raise ValueError(f"invalid method: {how!r}")
 
@@ -261,7 +261,7 @@ def _chunks_split(pred, seq):
 
 
 @fn.curry(2)
-def window(n: int, seq: Seq) -> Seq:
+def window(n: int, seq: Seq) -> Iter:
     """
     Return a sequence of overlapping sub-sequences of size n.
 
@@ -280,7 +280,7 @@ def window(n: int, seq: Seq) -> Seq:
 
 
 @fn.curry(1)
-def pairs(seq: Seq, *, prev=NOT_GIVEN, next=NOT_GIVEN) -> Seq:
+def pairs(seq: Seq, *, prev=NOT_GIVEN, next=NOT_GIVEN) -> Iter:
     """
     Returns an iterator of a pair adjacent items.
 
@@ -314,9 +314,9 @@ def pairs(seq: Seq, *, prev=NOT_GIVEN, next=NOT_GIVEN) -> Seq:
     elif prev is NOT_GIVEN:
         a, b = tee(seq)
         _next(b, None)
-        return sk_iter(zip(a, chain(b, [next])))
+        return Iter(zip(a, chain(b, [next])))
     elif next is NOT_GIVEN:
-        return sk_iter(_pairs_prev(seq, prev))
+        return Iter(_pairs_prev(seq, prev))
     else:
         raise TypeError("must specify either prev or next keyword arguments, not both")
 
@@ -380,18 +380,18 @@ def partition(
                     break
                 else:
                     first.append(x)
-        return first, sep, sk_iter(seq)
+        return first, sep, Iter(seq)
 
     if isinstance(key, int):
         a, b = tee(seq)
-        return sk_iter(islice(a, key)), sk_iter(islice(b, key, None))
+        return Iter(islice(a, key)), Iter(islice(b, key, None))
     else:
         pred = to_callable(key)
         a, b = tee((pred(x), x) for x in seq)
         value = lambda x: x[1]
         return (
-            sk_iter(map(value, takewhile(lambda x: not x[0], a))),
-            sk_iter(map(value, dropwhile(lambda x: not x[0], b))),
+            Iter(map(value, takewhile(lambda x: not x[0], a))),
+            Iter(map(value, dropwhile(lambda x: not x[0], b))),
         )
 
 
@@ -414,4 +414,4 @@ def distribute(n: int, seq: Seq) -> Tuple[Seq, ...]:
         sk.iter([1, 3, 5])
     """
     results = tee(seq, n)
-    return tuple(sk_iter(islice(it, i, None, n)) for i, it in enumerate(results))
+    return tuple(Iter(islice(it, i, None, n)) for i, it in enumerate(results))

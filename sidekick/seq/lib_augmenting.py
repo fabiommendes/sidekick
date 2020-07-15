@@ -1,7 +1,7 @@
 import itertools
 from collections import deque
 
-from .iter import iter as sk_iter, generator
+from .iter import Iter, generator
 from .lib_basic import uncons
 from .. import _toolz as toolz
 from ..functions import fn
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 @fn.curry(2)
-def interpose(elem, seq: Seq) -> Seq:
+def interpose(elem, seq: Seq) -> Iter:
     """
     Introduce element between each pair of elements in seq.
 
@@ -20,11 +20,11 @@ def interpose(elem, seq: Seq) -> Seq:
         >>> sk.interpose("a", [1, 2, 3])
         sk.iter([1, 'a', 2, 'a', 3])
     """
-    return sk_iter(toolz.interpose(elem, seq))
+    return Iter(toolz.interpose(elem, seq))
 
 
 @fn.curry(2)
-def pad(value, seq: Seq, size: int = None, step: int = None) -> Seq:
+def pad(value, seq: Seq, size: int = None, step: int = None) -> Iter:
     """
     Fill resulting sequence with value after the first sequence terminates.
 
@@ -54,7 +54,7 @@ def pad(value, seq: Seq, size: int = None, step: int = None) -> Seq:
         out = _pad_multiple(value, seq, step)
     if size is not None:
         out = itertools.islice(out, size)
-    return sk_iter(out)
+    return Iter(out)
 
 
 def _pad_multiple(value, seq, n):
@@ -67,7 +67,7 @@ def _pad_multiple(value, seq, n):
 
 
 @fn.curry(2)
-def pad_with(func: Func, seq: Seq, nargs=1, default=NOT_GIVEN) -> Seq:
+def pad_with(func: Func, seq: Seq, nargs=1, default=NOT_GIVEN) -> Iter:
     """
     Pad sequence iterating the last item with func.
 
@@ -108,7 +108,7 @@ def pad_with(func: Func, seq: Seq, nargs=1, default=NOT_GIVEN) -> Seq:
             out = itertools.islice(_pad_iterate_n(nargs, func, seq), nargs)
         else:
             out = _pad_iterate_n(nargs, func, seq)
-    return sk_iter(out)
+    return Iter(out)
 
 
 def _pad_last(seq, default):
@@ -143,7 +143,7 @@ def _pad_iterate_n(n, func, seq):
 
 
 @fn.curry(2)
-def append(elem: T, seq: Seq[T]) -> Seq[T]:
+def append(elem: T, seq: Seq[T]) -> Iter[T]:
     """
     Return a new sequence with element appended to the end.
 
@@ -151,12 +151,12 @@ def append(elem: T, seq: Seq[T]) -> Seq[T]:
         >>> sk.append(4, [1, 2, 3])
         sk.iter([1, 2, 3, 4])
     """
-    return sk_iter(itertools.chain(seq, [elem]))
+    return Iter(itertools.chain(seq, [elem]))
 
 
 @fn.curry(3)
 @generator
-def insert(idx: int, value: T, seq: Seq[T]) -> Seq[T]:
+def insert(idx: int, value: T, seq: Seq[T]) -> Iter[T]:
     """
     Return sequence that inserts value at the given index.
 

@@ -2,8 +2,8 @@ import itertools
 from collections import deque
 from numbers import Real
 
+from .iter import generator, Iter
 from .util import to_index_seq, INDEX_DOC
-from .iter import generator, iter as sk_iter
 from ..functions import fn, to_callable
 from ..typing import Seq, TYPE_CHECKING, T, Callable, Index
 
@@ -31,8 +31,8 @@ def cycle(seq, n=None):
         sk.iter([1, 2, 3, 1, 2, 3, ...])
     """
     if n is not None:
-        return sk_iter(_ncycle(n, seq))
-    return sk_iter(itertools.cycle(seq))
+        return Iter(_ncycle(n, seq))
+    return Iter(itertools.cycle(seq))
 
 
 # This implementation accepts infinite sequences
@@ -56,7 +56,7 @@ def repeat(obj, times=None):
         >>> sk.repeat(42, times=5)
         sk.iter([42, 42, 42, 42, 42])
     """
-    return sk_iter(itertools.repeat(obj, times))
+    return Iter(itertools.repeat(obj, times))
 
 
 @fn
@@ -81,14 +81,26 @@ def repeatedly(func, *args, **kwargs):
 
 @fn
 @generator
-def singleton(obj):
+def singleton(obj: T, expand: bool = False) -> Iter[T]:
     """
     Return iterator with a single object.
+
+    Args:
+        obj:
+            Single element of sequence.
+        expand:
+            If True, return elements of object if it is iterable or wrap it into
+            a singleton iterator if it is not.
 
     Examples:
         >>> sk.singleton(42)
         sk.iter([42])
     """
+    if expand:
+        try:
+            yield from obj
+        except TypeError:
+            pass
     yield obj
 
 
@@ -183,7 +195,7 @@ def iterate(func: Callable[..., T], x: T, *args, index: Index = None):
         else:
             out = _iterate_indexed_n(func, index, (x, *args))
 
-    return sk_iter(out)
+    return Iter(out)
 
 
 def _iterate(func, x):
@@ -258,13 +270,13 @@ class _nums(fn):
             raise TypeError
 
     def __iter__(self):
-        return sk_iter(itertools.count())
+        return Iter(itertools.count())
 
     def from_sequence(self, seq):
         """
         Create iterator from sequence of numbers.
         """
-        return sk_iter(self._from_sequence(seq))
+        return Iter(self._from_sequence(seq))
 
     def _from_sequence(self, seq):
         if len(seq) < 2:
@@ -322,13 +334,13 @@ class _nums(fn):
         out = itertools.count(start, step)
         if stop is not None:
             out = itertools.takewhile(lambda x: x < stop, out)
-        return sk_iter(out)
+        return Iter(out)
 
-    def evenly_spaced(self, a: Real, b: Real, n: int) -> Seq:
+    def evenly_spaced(self, a: Real, b: Real, n: int) -> Iter:
         """
         Return a sequence of n evenly spaced numbers from a to b.
         """
-        return sk_iter(_evenly_spaced(a, b, n))
+        return Iter(_evenly_spaced(a, b, n))
 
 
 def _evenly_spaced(a, b, n):
@@ -341,7 +353,7 @@ def _evenly_spaced(a, b, n):
 
 
 @_nums
-def nums(*args: int) -> Seq[int]:
+def nums(*args: int) -> Iter[int]:
     """
     Create numeric sequences.
 
@@ -351,10 +363,10 @@ def nums(*args: int) -> Seq[int]:
     """
     n = len(args)
     if n == 0:
-        return sk_iter(itertools.count(0))
+        return Iter(itertools.count(0))
     elif n == 1:
-        return sk_iter(itertools.count(args[0]))
-    return sk_iter(nums.from_sequence(args))
+        return Iter(itertools.count(args[0]))
+    return Iter(nums.from_sequence(args))
 
 
 def stop_seq(e):

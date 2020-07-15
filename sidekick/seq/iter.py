@@ -2,6 +2,7 @@ import itertools
 import operator
 from functools import wraps
 
+from .._utils import safe_repr
 from ..functions import fn
 from ..typing import Iterator, Tuple, T, TYPE_CHECKING
 
@@ -12,7 +13,7 @@ NOT_GIVEN = object()
 _iter = iter
 
 
-class iter(Iterator):
+class Iter(Iterator[T]):
     """
     Base sidekick iterator class.
 
@@ -30,7 +31,7 @@ class iter(Iterator):
     _iterator: Iterator[T]
 
     def __new__(cls, iterator: Iterator[T], size_hint=NotImplemented):
-        if isinstance(iterator, iter):
+        if isinstance(iterator, Iter):
             return iterator
 
         new = object.__new__(cls)
@@ -51,13 +52,19 @@ class iter(Iterator):
             try:
                 head.append(next(it))
             except StopIteration:
-                display = map(repr, head)
+                display = map(safe_repr, head)
                 self._iterator = _iter(head)
+                self._size_hint = len(head)
+                break
+            except Exception as ex:
+                ex_name = type(ex).__name__
+                display = [*map(safe_repr, head), f"... ({ex_name})"]
+                self._iterator = yield_and_raise(head, ex)
                 self._size_hint = len(head)
                 break
         else:
             self._iterator = itertools.chain(_iter(head), it)
-            display = [*map(repr, head[:-1]), "..."]
+            display = [*map(safe_repr, head[:-1]), "..."]
         data = ", ".join(display)
         return f"sk.iter([{data}])"
 
@@ -79,10 +86,10 @@ class iter(Iterator):
 
         elif isinstance(item, slice):
             a, b, c = item.start, item.step, item.stop
-            return iter(itertools.islice(self._iterator, a, b, c))
+            return Iter(itertools.islice(self._iterator, a, b, c))
 
         elif callable(item):
-            return iter(filter(item, self._iterator), self._size_hint)
+            return Iter(filter(item, self._iterator), self._size_hint)
 
         elif isinstance(item, list):
             if not item:
@@ -100,16 +107,16 @@ class iter(Iterator):
         else:
             size = operator.length_hint(item, -1)
             size = None if size == -1 else size
-            return iter(compress_or_select(item, self._iterator), size)
+            return Iter(compress_or_select(item, self._iterator), size)
 
     def __add__(self, other, _chain=itertools.chain):
         if hasattr(other, "__iter__"):
-            return iter(_chain(self._iterator, other))
+            return Iter(_chain(self._iterator, other))
         return NotImplemented
 
     def __radd__(self, other, _chain=itertools.chain):
         if hasattr(other, "__iter__"):
-            return iter(_chain(other, self._iterator))
+            return Iter(_chain(other, self._iterator))
         return NotImplemented
 
     def __iadd__(self, other, _chain=itertools.chain):
@@ -119,12 +126,12 @@ class iter(Iterator):
         if isinstance(other, int):
             if other < 0:
                 raise ValueError("cannot multiply by negative integers")
-            return iter(cycle_n(self._iterator, other))
+            return Iter(cycle_n(self._iterator, other))
         try:
             data = _iter(other)
         except TypeError:
             return NotImplemented
-        return iter(itertools.product([self._iterator, data]))
+        return Iter(itertools.product([self._iterator, data]))
 
     def __rmul__(self, other):
         if isinstance(other, int):
@@ -133,11 +140,11 @@ class iter(Iterator):
             data = _iter(other)
         except TypeError:
             return NotImplemented
-        return iter(itertools.product([data, self._iterator]))
+        return Iter(itertools.product([data, self._iterator]))
 
     def __rmatmul__(self, fn):
         if callable(fn):
-            return iter(map(fn, self._iterator), self._size_hint)
+            return Iter(map(fn, self._iterator), self._size_hint)
         return NotImplemented
 
     def __length_hint__(self, _hint=operator.length_hint):
@@ -146,9 +153,19 @@ class iter(Iterator):
         return self._size_hint
 
     #
+    # Conversion to collections
+    #
+    list = property(list)
+    tuple = property(tuple)
+    set = property(set)
+    frozenset = property(frozenset)
+    str = property(lambda self: "".join(self))
+    bytes = property(lambda self: b"".join(self))
+
+    #
     # API
     #
-    def copy(self) -> "iter":
+    def copy(self) -> "Iter":
         """
         Return a copy of iterator. Consuming the copy do not consume the
         original iterator.
@@ -158,9 +175,9 @@ class iter(Iterator):
         efficient to convert it to a list and produce multiple iterators.
         """
         self._iterator, other = itertools.tee(self._iterator, 2)
-        return iter(other, self._size_hint)
+        return Iter(other, self._size_hint)
 
-    def tee(self, n=1) -> Tuple["iter"]:
+    def tee(self, n=1) -> Tuple["Iter"]:
         """
         Split iterator into n additional copies.
 
@@ -168,7 +185,7 @@ class iter(Iterator):
         """
         self._iterator, *rest = itertools.tee(self._iterator, n + 1)
         n = self._size_hint
-        return tuple(iter(it, n) for it in rest)
+        return tuple(Iter(it, n) for it in rest)
 
     def peek(self, n: int) -> Tuple:
         """
@@ -256,9 +273,10 @@ def generator(func):
         sk.iter([1, 1, 2, 3, 5, 8, ...])
     """
 
+    @fn
     @wraps(func)
     def gen(*args, **kwargs):
-        return iter(func(*args, **kwargs))
+        return Iter(func(*args, **kwargs))
 
     return gen
 
@@ -268,6 +286,14 @@ def stop(x=None):
     Raise StopIteration with the given argument.
     """
     raise StopIteration(x)
+
+
+def yield_and_raise(data, exc):
+    """
+    Return content from data and then raise exception.
+    """
+    yield from data
+    raise exc
 
 
 fn.generator = staticmethod(generator)

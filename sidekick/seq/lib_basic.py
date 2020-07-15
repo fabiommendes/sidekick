@@ -1,7 +1,7 @@
 from collections import deque
 from itertools import islice
 
-from .iter import generator, iter as sk_iter
+from .iter import generator, Iter
 from ..functions import fn, to_callable
 from ..typing import Seq, T, NOT_GIVEN, TYPE_CHECKING, Pred
 
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 @fn.curry(2)
 @generator
-def cons(x: T, seq: Seq[T]) -> Seq[T]:
+def cons(x: T, seq: Seq[T]) -> Iter[T]:
     """
     Construct operation. Add x to beginning of sequence.
 
@@ -48,7 +48,7 @@ def uncons(seq: Seq[T], default=NOT_GIVEN) -> (T, Seq[T]):
     """
     seq = iter(seq)
     try:
-        return next(seq), sk_iter(seq)
+        return next(seq), Iter(seq)
     except StopIteration:
         if default is NOT_GIVEN:
             raise ValueError("Cannot deconstruct empty sequence.")
@@ -301,7 +301,7 @@ def _assure_given(x, error=None, not_given=NOT_GIVEN):
 
 
 @fn.curry(1)
-def consume(seq: Seq, *, default=None) -> Seq:
+def consume(seq: Seq, *, default=None) -> Iter:
     """
     Consume iterator for its side-effects and return last value or None.
 

@@ -1,6 +1,6 @@
 import itertools
 
-from .iter import iter as sk_iter, generator
+from .iter import Iter, generator
 from .lib_basic import is_empty
 from .util import vargs
 from .. import _toolz as toolz
@@ -25,7 +25,7 @@ class UnalignedZipError(Exception):
 
 
 @fn
-def concat(seqs: Union[Seq, Seq[Seq]], *extra) -> Seq:
+def concat(seqs: Union[Seq, Seq[Seq]], *extra) -> Iter:
     """
     Concatenates all iterators in sequence of iterators.
 
@@ -41,8 +41,8 @@ def concat(seqs: Union[Seq, Seq[Seq]], *extra) -> Seq:
         sk.iter([0, 0, 1, 0, 1, 2, ...])
     """
     if extra:
-        return sk_iter(itertools.chain(seqs, *extra))
-    return sk_iter(itertools.chain.from_iterable(seqs))
+        return Iter(itertools.chain(seqs, *extra))
+    return Iter(itertools.chain.from_iterable(seqs))
 
 
 @fn
@@ -61,13 +61,13 @@ def interleave(seqs: Union[Seq, Seq[Seq]], *extra):
     """
     if extra:
         seqs = (seqs, *extra)
-    return sk_iter(toolz.interleave(seqs))
+    return Iter(toolz.interleave(seqs))
 
 
 @generator
 def zip_aligned(
     *args: Seq, error: Callable[[], Raisable] = UnalignedZipError.default
-) -> Seq:
+) -> Iter:
     """
     Zip and raises an error if sizes do not match.
 
@@ -100,7 +100,7 @@ def zip_aligned(
 
 
 @fn
-def diff(*seqs: Seq, key: Func = None, default=NOT_GIVEN) -> Seq:
+def diff(*seqs: Seq, key: Func = None, default=NOT_GIVEN) -> Iter:
     """
     Return those items that differ in a pairwise comparison between sequences.
 
@@ -113,22 +113,22 @@ def diff(*seqs: Seq, key: Func = None, default=NOT_GIVEN) -> Seq:
         kwargs["key"] = to_callable(key)
     if default is not NOT_GIVEN:
         kwargs["default"] = default
-    return sk_iter(toolz.diff(*vargs(seqs), **kwargs))
+    return Iter(toolz.diff(*vargs(seqs), **kwargs))
 
 
 @fn.curry(4)
-def join(leftkey: Func, leftseq: Seq, rightkey: Func, rightseq: Seq, **kwargs) -> Seq:
+def join(leftkey: Func, leftseq: Seq, rightkey: Func, rightseq: Seq, **kwargs) -> Iter:
     """
     Join two sequences on common attributes.
     """
 
     leftkey = to_callable(leftkey)
     rightkey = to_callable(rightkey)
-    return sk_iter(toolz.join(leftkey, leftseq, rightkey, rightseq, **kwargs))
+    return Iter(toolz.join(leftkey, leftseq, rightkey, rightseq, **kwargs))
 
 
 @fn
-def merge_sorted(*seqs, key=None) -> Seq:
+def merge_sorted(*seqs, key=None) -> Iter:
     """
     Merge and sort a collection of sorted collections.
 
@@ -138,4 +138,4 @@ def merge_sorted(*seqs, key=None) -> Seq:
     """
     seqs = seqs[0] if len(seqs) == 1 else seqs
     key = key and to_callable(key)
-    return sk_iter(toolz.merge_sorted(*seqs, key=key))
+    return Iter(toolz.merge_sorted(*seqs, key=key))

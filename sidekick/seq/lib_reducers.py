@@ -1,7 +1,7 @@
 import warnings
 from functools import reduce as _reduce
 
-from .iter import iter as sk_iter, generator
+from .iter import Iter, generator
 from .lib_basic import uncons
 from .._toolz import accumulate as _accumulate, topk as _topk, reduceby
 from ..functions import fn, to_callable
@@ -58,7 +58,7 @@ def reduce(func: Func, seq: Seq, init=NOT_GIVEN):
 
 
 @fn.curry(2)
-def acc(func: Func, seq: Seq) -> Seq:
+def acc(func: Func, seq: Seq) -> Iter:
     """
     Like :func:`scan`, but uses first item of sequence as initial value.
 
@@ -67,11 +67,11 @@ def acc(func: Func, seq: Seq) -> Seq:
         :func:`reduce`
     """
     func = to_callable(func)
-    return sk_iter(_accumulate(func, seq))
+    return Iter(_accumulate(func, seq))
 
 
 @fn.curry(3)
-def scan(func: Func, init, seq: Seq) -> Seq:
+def scan(func: Func, init, seq: Seq) -> Iter:
     """
     Returns a sequence of the intermediate folds of seq by func.
 
@@ -86,7 +86,7 @@ def scan(func: Func, init, seq: Seq) -> Seq:
         :func:`fold`
     """
     func = to_callable(func)
-    return sk_iter(_accumulate(func, seq, init))
+    return Iter(_accumulate(func, seq, init))
 
 
 @fn.curry(4)
@@ -166,7 +166,7 @@ def reduce_together(seq: Seq, **kwargs):
 
 @fn.curry(1)
 @generator
-def scan_together(seq: Seq, **kwargs) -> Seq[dict]:
+def scan_together(seq: Seq, **kwargs) -> Iter[dict]:
     """
     Folds using multiple functions simultaneously.
 
@@ -196,7 +196,7 @@ def scan_together(seq: Seq, **kwargs) -> Seq[dict]:
 
 
 @fn.curry(1)
-def acc_together(seq: Seq, **kwargs) -> Seq[dict]:
+def acc_together(seq: Seq, **kwargs) -> Iter[dict]:
     """
     Similar to fold_together, but only works on non-empty sequences.
 

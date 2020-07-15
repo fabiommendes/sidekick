@@ -12,7 +12,7 @@ __all__ = ["flatten", "tree_leaves", "tree_nodes"]
 
 @fn.curry(1)
 @generator
-def deep_flatten(seq: Seq, *, follow: Pred = is_seqcont) -> Seq:
+def deep_flatten(seq: Seq, *, follow: Pred = is_seqcont) -> Iter:
     """
     Flattens arbitrary nested sequence of values and other sequences.
 
@@ -30,7 +30,7 @@ def deep_flatten(seq: Seq, *, follow: Pred = is_seqcont) -> Seq:
 
 
 @fn.generator
-def flatten(seq: Seq) -> Seq:
+def flatten(seq: Seq) -> Iter:
     """
     Flattens one level of a sequence of sequences.
 
@@ -44,7 +44,7 @@ def flatten(seq: Seq) -> Seq:
 
 # Adapted from funcy
 @fn.generator
-def tree_leaves(root: Seq, *, follow: Pred = is_seqcont, children: Func = iter) -> Seq:
+def tree_leaves(root: Seq, *, follow: Pred = is_seqcont, children: Func = iter) -> Iter:
     """
     A way to list or iterate over all the tree leaves.
 
@@ -73,7 +73,7 @@ def tree_leaves(root: Seq, *, follow: Pred = is_seqcont, children: Func = iter) 
 
 @fn.curry(1)
 @generator
-def tree_nodes(root: Seq, follow: Pred = is_seqcont, children: Func = iter) -> Seq:
+def tree_nodes(root: Seq, follow: Pred = is_seqcont, children: Func = iter) -> Iter:
     """
     A way to list or iterate over all the tree nodes.
 

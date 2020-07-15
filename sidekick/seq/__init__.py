@@ -1,4 +1,6 @@
-from .iter import iter, generator
+from functools import wraps
+
+from .iter import Iter, generator
 from .lib_augmenting import interpose, pad, pad_with, append, insert
 from .lib_basic import (
     cons,
@@ -13,6 +15,7 @@ from .lib_basic import (
     length,
     consume,
 )
+from .lib_combining import concat, interleave, zip_aligned, merge_sorted, join, diff
 from .lib_creation import cycle, iterate, repeat, repeatedly, singleton, unfold, nums
 from .lib_grouping import (
     group_by,
@@ -55,10 +58,10 @@ from .lib_selecting import (
     converge,
 )
 from .lib_transforming import map, zip_map
-from .lib_combining import concat, interleave, zip_aligned, merge_sorted, join, diff
 
 __all__ = [
     # Core
+    "Iter",
     "iter",
     "generator",
     # Basic
@@ -135,3 +138,63 @@ __all__ = [
     "join",
     "diff",
 ]
+
+
+def iter(obj):
+    """
+    Convert iterable to a sidekick Iter() iterator.
+    """
+    return Iter(obj)
+
+
+#
+# Fluent interface for the Iter class
+#
+def register_fluent_interface(ns=globals(), blacklist=()):
+    from ..functions import fn
+
+    def make_method(idx, func, sig):
+        @wraps(func)
+        def method(self, *args, **kwargs):
+            args = list(args)
+            args.insert(idx, self)
+            return func(*args, **kwargs)
+
+        method.__signature__ = sig.partial(seq=...)
+        return method
+
+    for name in __all__:
+        func = ns[name]
+        if not isinstance(func, fn) or hasattr(Iter, name) or name in blacklist:
+            continue
+
+        sig = func.signature()
+        names = sig.argnames()
+        try:
+            idx = names.index("seq")
+        except ValueError:
+            continue
+        else:
+            setattr(Iter, name, make_method(idx, func, sig))
+
+    class Mixin:
+        @wraps(map)
+        def map(self: Iter, func, index=None):
+            return map(func, self, index=index)
+
+        @wraps(filter)
+        def filter(self: Iter, func, index=None):
+            return filter(func, self, index=index)
+
+        @wraps(zip_map)
+        def zip_map(self: Iter, funcs, index=None):
+            return zip_map(funcs, self, index=index)
+
+    for k, v in vars(Mixin).items():
+        if k.startswith("_"):
+            continue
+        setattr(Iter, k, v)
+
+
+register_fluent_interface()
+del register_fluent_interface

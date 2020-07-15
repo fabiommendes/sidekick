@@ -8,7 +8,7 @@ from ..typing import Seq
 
 
 @fn.curry(2)
-def pluck(idx, seqs: Iterable[Seq], **kwargs) -> Seq:
+def pluck(idx, seqs: Iterable[Seq], **kwargs) -> Iter:
     """
     Maps :func:`get` over each sequence in seqs.
     """

@@ -2,7 +2,7 @@ import itertools
 from collections import deque
 from itertools import filterfalse, dropwhile, takewhile, islice
 
-from .iter import iter as sk_iter, generator
+from .iter import Iter, generator
 from .lib_basic import uncons
 from ..functions import fn, to_callable
 from ..typing import Func, Pred, Seq, Union, TYPE_CHECKING
@@ -38,11 +38,11 @@ def filter(pred: Pred, seq: Seq):
         :func:`separate`
     """
     pred = to_callable(pred)
-    return sk_iter(_filter(pred, seq))
+    return Iter(_filter(pred, seq))
 
 
 @fn.curry(2)
-def remove(pred: Pred, seq: Seq) -> Seq:
+def remove(pred: Pred, seq: Seq) -> Iter:
     """
     Opposite of filter. Return those items of sequence for which pred(item)
     is False
@@ -55,7 +55,7 @@ def remove(pred: Pred, seq: Seq) -> Seq:
         :func:`filter`.
         :func:`separate`
     """
-    return sk_iter(filterfalse(to_callable(pred), seq))
+    return Iter(filterfalse(to_callable(pred), seq))
 
 
 @fn.curry(2)
@@ -98,13 +98,13 @@ def separate(pred: Func, seq: Seq, consume: bool = False) -> (Seq, Seq):
     else:
         a, b = itertools.tee((x, pred(x)) for x in seq)
         return (
-            sk_iter(x for x, keep in a if keep),
-            sk_iter(x for x, exclude in b if not exclude),
+            Iter(x for x, keep in a if keep),
+            Iter(x for x, exclude in b if not exclude),
         )
 
 
 @fn.curry(2)
-def drop(key: Union[Pred, int], seq: Seq) -> Seq:
+def drop(key: Union[Pred, int], seq: Seq) -> Iter:
     """
     Drop items from the start of iterable.
 
@@ -128,14 +128,14 @@ def drop(key: Union[Pred, int], seq: Seq) -> Seq:
         :func:`rdrop`
     """
     if isinstance(key, int):
-        return sk_iter(islice(seq, key, None))
+        return Iter(islice(seq, key, None))
     else:
-        return sk_iter(dropwhile(to_callable(key), seq))
+        return Iter(dropwhile(to_callable(key), seq))
 
 
 @fn.curry(2)
 @generator
-def rdrop(key: Union[Pred, int], seq: Seq) -> Seq:
+def rdrop(key: Union[Pred, int], seq: Seq) -> Iter:
     """
     Drop items from the end of iterable.
 
@@ -174,7 +174,7 @@ def rdrop(key: Union[Pred, int], seq: Seq) -> Seq:
 
 
 @fn.curry(2)
-def take(key: Union[Pred, int], seq: Seq) -> Seq:
+def take(key: Union[Pred, int], seq: Seq) -> Iter:
     """
     Return the first entries iterable.
 
@@ -198,14 +198,14 @@ def take(key: Union[Pred, int], seq: Seq) -> Seq:
         :func:`drop`
     """
     if isinstance(key, int):
-        return sk_iter(islice(seq, key))
+        return Iter(islice(seq, key))
     else:
-        return sk_iter(takewhile(to_callable(key), seq))
+        return Iter(takewhile(to_callable(key), seq))
 
 
 @fn.curry(2)
 @generator
-def rtake(key: Union[Pred, int], seq: Seq) -> Seq:
+def rtake(key: Union[Pred, int], seq: Seq) -> Iter:
     """
     Return the last entries iterable.
 
@@ -239,7 +239,7 @@ def rtake(key: Union[Pred, int], seq: Seq) -> Seq:
 
 @fn.curry(1)
 @generator
-def unique(seq: Seq, *, key: Func = None, exclude: Seq = (), slow=False) -> Seq:
+def unique(seq: Seq, *, key: Func = None, exclude: Seq = (), slow=False) -> Iter:
     """
     Returns the given sequence with duplicates removed.
 
@@ -292,7 +292,7 @@ def unique(seq: Seq, *, key: Func = None, exclude: Seq = (), slow=False) -> Seq:
 
 @fn.curry(1)
 @generator
-def dedupe(seq: Seq, *, key: Func = None) -> Seq:
+def dedupe(seq: Seq, *, key: Func = None) -> Iter:
     """
     Remove duplicates of successive elements.
 
@@ -329,7 +329,7 @@ def dedupe(seq: Seq, *, key: Func = None) -> Seq:
 
 @fn.curry(2)
 @generator
-def converge(pred: Pred, seq: Seq) -> Seq:
+def converge(pred: Pred, seq: Seq) -> Iter:
     """
     Test convergence with the predicate function by passing the last two items
     of sequence. If pred(penultimate, last) returns True, stop iteration.

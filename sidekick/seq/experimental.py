@@ -19,7 +19,7 @@ _map = lambda pred: lambda seq: map(pred, seq)
 
 
 @fn.curry(2)
-def random_sample(prob: float, seq: Seq, *, random_state=None) -> Seq:
+def random_sample(prob: float, seq: Seq, *, random_state=None) -> Iter:
     """
     Choose with probability ``prob`` if each element of seq will be included in
     the output sequence.
@@ -31,7 +31,7 @@ def random_sample(prob: float, seq: Seq, *, random_state=None) -> Seq:
 
 
 @fn.curry(2)
-def select_positions(indices: Seq, seq: Seq, *, silent=False) -> Seq:
+def select_positions(indices: Seq, seq: Seq, *, silent=False) -> Iter:
     """
     Return a sequence with values in the positions specified by indices.
 
@@ -66,7 +66,7 @@ def select_positions(indices: Seq, seq: Seq, *, silent=False) -> Seq:
 
 
 @fn.curry(2)
-def drop_positions(indices: Seq, seq: Seq, *, silent=False) -> Seq:
+def drop_positions(indices: Seq, seq: Seq, *, silent=False) -> Iter:
     """
     Drop all elements in the given positions. Similarly to :func:select_positions`,
     it requires a (possibly infinite) sorted sequence of indices.
@@ -136,7 +136,7 @@ def get(idx, seq: Seq, **kwargs):
 
 
 @fn.curry(2)
-def take_nth(n: int, seq: Seq) -> Seq:
+def take_nth(n: int, seq: Seq) -> Iter:
     """
     Return every nth item in sequence.
 
@@ -155,7 +155,7 @@ _enumerate = enumerate
 
 
 @fn.curry(3)
-def select_indexes(selector, pred: Pred, seq: Seq, *, start=0, enter=False) -> Seq:
+def select_indexes(selector, pred: Pred, seq: Seq, *, start=0, enter=False) -> Iter:
     """
     Take a selection function such as filter, takewhile, etc, apply it to sequence
     and return the filtered indexes instead of values.
@@ -182,7 +182,7 @@ def select_indexes(selector, pred: Pred, seq: Seq, *, start=0, enter=False) -> S
 
 
 @fn.curry(3)
-def select_indexed(selector, pred: Pred, seq: Seq, *, start=0) -> Seq:
+def select_indexed(selector, pred: Pred, seq: Seq, *, start=0) -> Iter:
     """
     Take a selection function such as filter, takewhile, etc, apply it to sequence
     and return tuples of (index, value).
@@ -251,7 +251,7 @@ def strip(prefix, seq):
 
 
 @fn
-def inits(seq: Seq) -> Seq:
+def inits(seq: Seq) -> Iter:
     """
     Return all sub-sequences at beginning of seq.
 
