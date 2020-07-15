@@ -1,12 +1,12 @@
 from types import MemberDescriptorType
 
-from .._operators import NAMES, UNARY, BINARY, COMPARISON
+from .._operators import OP_NAMES, UNARY, BINARY, COMPARISON
 from ..functions import call
 
 ZOMBIE_CLASSES = {}
-UNARY_METHODS = [NAMES[op] for op in UNARY]
+UNARY_METHODS = [OP_NAMES[op] for op in UNARY]
 UNARY_METHODS.extend(["iter"])
-BINARY_METHODS = [NAMES[op].rstrip("_") for op in COMPARISON + BINARY]
+BINARY_METHODS = [OP_NAMES[op].rstrip("_") for op in COMPARISON + BINARY]
 RBINARY_METHODS = ["r" + op for op in BINARY_METHODS]
 BINARY_METHODS.extend(["getitem", "getattr"])
 ARBITRARY_METHODS = ["setitem", "call"]

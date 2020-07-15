@@ -5,7 +5,10 @@ _property = property
 
 __all__ = ["lazy", "delegate_to", "alias", "property"]
 
-ATTR_ERROR_MSG = """An AttributeError was raised when evaluating a lazy property.
+ATTR_ERROR_MSG = """An AttributeError was raised when evaluating the {name}
+lazy property:
+
+    AttributeError: {error}
 
 This is often an error and the default behavior is to prevent such errors to
 cascade to let Python think that the attribute does not exist. If you really
@@ -94,12 +97,16 @@ def lazy(
         return lambda f: lazy(f, shared=shared, name=name, attr_error=attr_error)
 
     if attr_error is False:
-        attr_error = always(RuntimeError(ATTR_ERROR_MSG))
+
+        def attr_error(e):
+            name = prop.name
+            return RuntimeError(ATTR_ERROR_MSG.format(error=e, name=name))
 
     if shared:
-        return _SharedLazy(func, name=name, attr_error=attr_error)
+        prop = _SharedLazy(func, name=name, attr_error=attr_error)
     else:
-        return _Lazy(func, name=name, attr_error=attr_error)
+        prop = _Lazy(func, name=name, attr_error=attr_error)
+    return prop
 
 
 def property(fget=None, fset=None, fdel=None, doc=None):
