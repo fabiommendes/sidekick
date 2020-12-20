@@ -15,6 +15,7 @@ Pred = _typ.Union[_typ.Callable, _typ.Dict, _typ.Set, None]
 
 # Types
 FunctionTypes = FunctionType, MethodType, BuiltinFunctionType, BuiltinMethodType
+FunctionWrapperTypes = (staticmethod,)
 Fn2 = _typ.Callable[[_typ.Any, _typ.Any], _typ.Any]
 Seq = _typ.Iterable
 T = _typ.TypeVar("T")

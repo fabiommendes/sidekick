@@ -1,6 +1,14 @@
 from . import core_functions as _core
-from .core_functions import to_fn, to_function, to_callable, quick_fn
-from .fn import fn
+from .core_functions import (
+    to_fn,
+    to_function,
+    to_callable,
+    quick_fn,
+    signature,
+    arity,
+    declaration as stub,
+)
+from .fn import fn, wrap_fn_functions as _wrap_fn_functions
 from .fn_placeholders import X, Y, F, placeholder, _, Placeholder
 from .lib_arguments import (
     flip,
@@ -117,6 +125,4 @@ __all__ = [
     "variadic_args",
 ]
 
-arity = fn(_core.arity)
-signature = fn(_core.signature)
-stub = fn(_core.declaration)
+_wrap_fn_functions(globals(), exclude={"fn"})

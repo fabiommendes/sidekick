@@ -28,7 +28,7 @@ class Zombie:
     argument.
 
     Args:
-*        func:
+        func:
             Any callable used to create the final object.
 
     Examples:

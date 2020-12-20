@@ -6,7 +6,7 @@ from .fn_placeholders import compile_ast, call_node
 from .signature import Signature
 from .utils import mixed_accessor, lazy_string, lazy_property
 from .._modules import GetAttrModule, set_module_class
-from ..typing import Union
+from ..typing import Union, Dict, Any
 
 set_module_class(__name__, GetAttrModule)
 identity = lambda x: x
@@ -69,7 +69,7 @@ class fn(metaclass=FunctionMeta):
         return self._func
 
     @lazy_property
-    def __signature__(self):
+    def __signature__(self) -> Signature:
         return signature(self.__wrapped__)
 
     _ok = _err = _to_result = None
@@ -213,10 +213,19 @@ class fn(metaclass=FunctionMeta):
     def __getattr__(self, attr):
         return getattr(self.__wrapped__, attr)
 
-    def arity(self):
+    def arity(self, how="short") -> Signature:
+        """
+        Return function arity.
+
+        The default behaviour how="short" returns the minimal arity before
+        saturating the function.
+        """
         return arity(self.__sk_callable__)
 
-    def signature(self):
+    def signature(self) -> Signature:
+        """
+        Return a signature object.
+        """
         return self.__signature__
 
     def declaration(self):
@@ -372,6 +381,31 @@ def update_arguments(src, dest: dict):
         raise TypeError(f"duplicated keyword arguments: {duplicate}")
     dest.update(src)
     return dest
+
+
+def wrap_fn_functions(globs: Dict[str, Any], lst=None, exclude=()):
+    """
+    Wraps all function in namespace using fn.
+
+    This avoids the @fn decorator that sometimes confuses static checkers.
+    """
+
+    if lst is None:
+        lst = [
+            k
+            for k, v in globs.items()
+            if callable(v) and not isinstance(v, type) and not k.startswith("_")
+        ]
+
+    for k in lst:
+        v = globs[k]
+        if k in exclude or isinstance(v, fn):
+            continue
+        try:
+            globs[k] = fn(v)
+        except Exception as e:
+            cls = type(e)
+            raise RuntimeError(f"cannot wrap {v} as {k}, {cls}: {e}")
 
 
 def __getattr__(name):

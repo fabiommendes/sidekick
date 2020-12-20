@@ -1,5 +1,6 @@
 import inspect
-from functools import singledispatch, lru_cache
+from functools import singledispatch, lru_cache, wraps
+from decorator import decorator
 
 from .signature import Signature
 from .stub import Stub
@@ -15,6 +16,7 @@ from ..typing import (
     Tuple,
     Union,
     TYPE_CHECKING,
+    FunctionWrapperTypes,
 )
 
 if TYPE_CHECKING:
@@ -36,11 +38,21 @@ def to_fn(func: Any) -> "fn":
         return fn(func)
 
 
-def to_function(func: Any, name=None) -> FunctionType:
+def to_function(func: Any, name=None, keep_signature=False) -> FunctionType:
     """
     Return object as as Python function.
 
     Non-functions are wrapped into a function definition.
+
+    Args:
+        func:
+            Callable object to be coerced to FunctionType.
+        name:
+            Force __name__ to have the given value. This modify lambdas and
+            create wrappings for other function types.
+        keep_signature:
+            If true and func is not a FunctionType, wraps into a python function
+            with proper signature.
     """
 
     func = to_callable(func)
@@ -50,8 +62,12 @@ def to_function(func: Any, name=None) -> FunctionType:
             func.__name__ = name
         return func
 
+    @wraps(func)
     def f(*args, **kwargs):
         return func(*args, **kwargs)
+
+    if keep_signature:
+        f = decorator(func)(f)
 
     if name is not None:
         f.__name__ = name
@@ -101,6 +117,8 @@ def to_callable(func: Any) -> Callable:
     except AttributeError:
         if isinstance(func, FunctionTypes):
             return func
+        elif isinstance(func, FunctionWrapperTypes):
+            return func.__func__
         return _to_callable(func)
 
 
