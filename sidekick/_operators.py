@@ -135,9 +135,11 @@ def op_wrapper_class(
             if unary:
                 __abs__ = unary(getattr(operator, "abs", abs))
                 __int__ = unary(getattr(operator, "int", int))
+                __float__ = unary(getattr(operator, "float", float))
+                __complex__ = unary(getattr(operator, "complex", complex))
+                __index__ = unary(operator.index)
                 __neg__ = unary(operator.neg)
                 __pos__ = unary(operator.pos)
-                __index__ = unary(operator.index)
 
         if bitwise:
             __and__ = binary(operator.and_)
