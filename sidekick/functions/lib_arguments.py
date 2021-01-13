@@ -138,13 +138,13 @@ def set_null(func, /, *defaults: Any, **kwargs) -> fn:
         (value,) = defaults
 
         def fun(x, /, *args, **kwargs):
-            kwargs = fix_null(default_kwargs, kwargs)
+            kwargs = _fix_null(default_kwargs, kwargs)
             return func(value if x is None else x, *args, **kwargs)
 
     else:
 
         def fun(*args, **kwargs):
-            kwargs = fix_null(default_kwargs, kwargs)
+            kwargs = _fix_null(default_kwargs, kwargs)
             args = iter(args)
             pre = (y if x is None else x for x, y in zip(args, defaults))
             return func(*pre, *args, **kwargs)
@@ -152,7 +152,7 @@ def set_null(func, /, *defaults: Any, **kwargs) -> fn:
     return quick_fn(fun)
 
 
-def fix_null(ref, out):
+def _fix_null(ref, out):
     for k, v in ref.items():
         if out.get(k, v) is None:
             out[k] = v

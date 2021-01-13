@@ -234,19 +234,6 @@ class fn(metaclass=FunctionMeta):
     #
     # Partial application
     #
-    def thunk(self, /, *args, **kwargs):
-        """
-        Pass all arguments to function, without executing.
-
-        Returns a thunk, i.e., a zero-argument function that evaluates only
-        during the first execution and re-use the computed value in future
-        evaluations.
-
-        See Also:
-            :func:`thunk`
-        """
-        return thunk(*args, **kwargs)(self)  # noqa: F821
-
     def partial(self, /, *args, **kwargs):
         """
         Return a fn-function with all given positional and keyword arguments

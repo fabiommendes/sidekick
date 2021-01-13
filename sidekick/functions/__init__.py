@@ -1,4 +1,6 @@
 from . import core_functions as _core
+from . import fn_instances as _instances
+from . import fn_mixins as _mixins
 from .core_functions import (
     to_fn,
     to_function,
@@ -9,6 +11,7 @@ from .core_functions import (
     declaration as stub,
 )
 from .fn import fn, wrap_fn_functions as _wrap_fn_functions
+from .fn_interfaces import semigroup, monoid, group, apply, apply_flat, mtimes, mconcat
 from .fn_placeholders import X, Y, F, placeholder, _, Placeholder
 from .lib_arguments import (
     flip,
@@ -18,6 +21,7 @@ from .lib_arguments import (
     skip_args,
     splice_args,
     variadic_args,
+    set_null,
 )
 from .lib_combinators import (
     identity,
@@ -58,7 +62,6 @@ from .stub import Stub
 from .._modules import set_module_class, LazyPackage
 
 set_module_class(__name__, LazyPackage)
-
 __all__ = [
     # Base
     "_",
@@ -80,6 +83,14 @@ __all__ = [
     "to_function",
     "to_callable",
     "to_fn",
+    # Functional interfaces,
+    "semigroup",
+    "monoid",
+    "group",
+    "apply",
+    "apply_flat",
+    "mtimes",
+    "mconcat",
     # Partial application
     "curry",
     "partial",
@@ -123,6 +134,9 @@ __all__ = [
     "skip_args",
     "splice_args",
     "variadic_args",
+    "set_null",
 ]
 
 _wrap_fn_functions(globals(), exclude={"fn", "placeholder", "_", "X", "Y"})
+_instances.register_all()
+_mixins.patch_fn()

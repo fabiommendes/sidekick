@@ -109,7 +109,7 @@ class FnArgumentsMixin(FnMixin):
         """
         Splice first argument.
         """
-        return self.func(*xs, *args, **kwargs)
+        return self._func(*xs, *args, **kwargs)
 
     def set_null(self, /, *defaults: Any, **kwargs: Any) -> fn:
         """
@@ -185,7 +185,7 @@ class LibRuntime(FnMixin):
         """
         Return as a thunk.
         """
-        return self._mod.thunk(*args, **kwargs)(self)
+        return self._mod.thunk(self, *args, **kwargs)
 
     call_after = curry_n(1, "call_after", {"default"})
     call_at_most = curry_n(1, "call_at_most")
@@ -259,3 +259,14 @@ class LibRuntime(FnMixin):
 
         func = to_callable(func)
         return safe_func
+
+
+def patch_fn():
+    """
+    Patch the fn() object with those functions.
+    """
+    for typ in [FnMixin, FnArgumentsMixin, LibRuntime, LibCombinators, LibComposition]:
+        for k, v in vars(typ).items():
+            if k.startswith("_") and k != "_mod" or hasattr(fn, k):
+                continue
+            setattr(fn, k, v)

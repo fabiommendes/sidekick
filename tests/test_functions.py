@@ -1,6 +1,5 @@
 import operator as op
 import time
-from types import FunctionType
 from inspect import Signature
 
 import pytest
@@ -8,7 +7,8 @@ import pytest
 import sidekick.api as sk
 from sidekick import Nothing, Just
 from sidekick import placeholder as _
-from sidekick.api import X
+from sidekick.api import X, Y
+from types import FunctionType
 
 
 class TestCoreFunctions:
@@ -51,6 +51,93 @@ class TestCoreFunctions:
         # Lambdas and name control
         assert sk.to_function(_ + 1, "fn").__name__ == "fn"
         assert sk.to_function(lambda n: n + 1, "fn").__name__ == "fn"
+
+
+class TestFnAPIMethods:
+    def test_fn_operators(self):
+        fn = sk.fn
+        id = lambda x: x
+        for a, b in [(fn, fn), (fn, id), (id, fn)]:
+            f = a(X < 10)
+            g = b(X > 0)
+            assert (h := f & g)(5) and not h(20) and not h(-1)
+            assert (h := f | g)(5) and h(20) and h(-1)
+            assert not (h := f ^ g)(5) and h(20) and h(-1)
+
+    def test_fn_core_attributes(self):
+        ...
+
+    def test_fn_methods_for_argument_selection(self):
+        f = sk.fn(op.add)
+        g = sk.fn(op.sub)
+        h = sk.fn(sum)
+
+        # Arg selection
+        assert g(1, 3) == g.flip(3, 1)
+        assert g(1, 3) == g.reverse_args(3, 1)
+        assert f.select_args([1, 2], 1, 2, 4, 8) == 6
+        assert f.select_args([1, 2])(1, 2, 4, 8) == 6
+        assert f.skip_args(2, 1, 2, 4, 8) == 12
+        assert f.skip_args(2)(1, 2, 4, 8) == 12
+        assert f.keep_args(2, 1, 2, 4, 8) == 3
+        assert f.keep_args(2)(1, 2, 4, 8) == 3
+        assert f.keep_args(2)(1, 2, 4, 8) == 3
+        assert f.splice_args([1, 2]) == 3
+        assert f.splice_args([1], 2) == 3
+        assert f.set_null(1, 2)(None, 3) == 4
+        assert h.variadic_args(1, 2, 3, 4) == 10
+
+    def test_fn_methods_for_function_composition(self):
+        f = sk.fn(op.add)
+        assert f.do(1, 2) == 1
+
+        g = sk.fn(X + 1)
+        assert g.compose(g)(1) == 3
+        assert g.pipeline(g, g, g)(1) == 5
+        assert g.juxt(g, g, g)(1) == (2, 2, 2, 2)
+
+    def test_fn_methods_runtime_modification(self):
+        f = sk.fn(op.add)
+        g = f.once()
+
+        assert g(1, 3) == f(1, 3) == 4
+        assert g(1, 5) == 4
+        assert f(1, 5) == 6
+
+        lst = [1, 2, 3]
+        f = sk.fn(lst.pop).thunk(1)
+        assert lst == [1, 2, 3]
+        assert f() == 2 and lst == [1, 3]
+
+        lst = [1, 2, 3]
+        f = sk.fn(lst.pop).call_after(2)
+        assert f() is None and lst == [1, 2, 3]
+        assert f() is None and lst == [1, 2, 3]
+        assert f() == 3 and lst == [1, 2]
+
+        lst = [1, 2, 3]
+        f = sk.fn(lst.pop).call_at_most(3)
+        assert f() == 3 and lst == [1, 2]
+        assert f() == 2 and lst == [1]
+        assert f() == 1 and lst == []
+        assert f() == 1 and lst == []
+
+
+class TestFunctionalInterfaces:
+    def test_algebra_instances(self):
+        assert sk.semigroup[list]([], [1], [2, 3]) == [1, 2, 3]
+        assert sk.monoid[list]([], [1], [2, 3]) == [1, 2, 3]
+        assert sk.group["+"](1, 2, 3, 4, 5) == 15
+        assert sk.group["*"](1, 2, 3, 4, 5) == 120
+
+    def test_functor_instances(self):
+        assert sk.apply[list](X + 1, [1, 2, 3]) == [2, 3, 4]
+
+    def test_applicative_instances(self):
+        assert sk.apply[list]((X + Y), [1, 2], [3, 4]) == [4, 5, 5, 6]
+
+    def test_monad_instances(self):
+        assert sk.apply_flat[list](lambda n: [n, n], [1, 2, 3]) == [1, 1, 2, 2, 3, 3]
 
 
 class TestCombinators:

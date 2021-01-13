@@ -1,13 +1,18 @@
 import copy
-import operator
+from collections import ChainMap
 from functools import reduce, partial, singledispatch
-from itertools import chain, product
-from numbers import Number
+from itertools import chain
 
-from ..functions import fn, to_callable, compose
-from ..properties import alias
-from ..seq import uncons, singleton
-from ..typing import T, MutableMapping, Iterable, Callable
+from .core_functions import to_callable
+from .fn import fn
+from ..typing import T, MutableMapping, Callable
+
+
+#
+# Utility functions and types
+#
+def _raise_key_error(x):
+    raise KeyError(x)
 
 
 class UnitFactory:
@@ -23,7 +28,7 @@ class UnitFactory:
         return obj()
 
 
-class IndexedFunc(MutableMapping, type(fn)):
+class IndexedFunc(type(fn)):
     """
     A fn-function that accepts indexing.
 
@@ -31,56 +36,60 @@ class IndexedFunc(MutableMapping, type(fn)):
     specific types or contexts.
     """
 
-    def __init__(self, name, cls, ns, **kwargs):
-
+    def __init__(cls, name, typ, ns, **kwargs):
         # We want to use singledispatch algorithm to find best implementations
-        # to type-based keys
-        self._type_dispatcher = singledispatch(_raise_key_error)
+        # to type-based missing keys
+        cls._type_dispatcher = singledispatch(
+            lambda x, *args: _raise_key_error(type(x))
+        )
 
         # This dict holds the non-type based keys
-        self._non_type_registry = {}
+        cls._registry = {}
 
         # A cache for both types
-        self._cache = {}
+        cls._cache = ChainMap({}, cls._registry)
 
-    def __contains__(self, item):
-        return item in self._non_type_registry or self._type_dispatcher.registry
+    def __contains__(cls, item):
+        return item in cls._registry
 
-    def __getitem__(self, key):
+    def __getitem__(cls, key):
         try:
-            return self._cache[key]
+            return cls._cache[key]
         except KeyError:
-            if isinstance(key, type):
-                value = self._type_dispatcher.dispatch(key)
-            else:
-                value = self._non_type_registry[key]
-            self._cache[key] = value
+            if not isinstance(key, type):
+                raise
+            cls._cache[key] = value = cls._type_dispatcher.dispatch(key)
             return value
 
-    def __delitem__(self, key):
-        cls = type(self).__name__
-        raise KeyError(f"cannot delete implementations from {cls}")
+    def __delitem__(cls, key):
+        raise KeyError(f"cannot delete implementations from {cls.__name__}")
 
-    def __setitem__(self, key, value):
-        if key in self:
-            cls = type(self).__name__
-            raise KeyError(f"cannot override implementations in {cls}")
+    def __setitem__(cls, key, value):
+        if key in cls:
+            raise KeyError(f"cannot override {key} implementation in {cls.__name__}")
 
+        cls._registry[key] = cls._cache[key] = value
         if isinstance(key, type):
-            self._non_type_registry[key] = value
-        else:
-            self._type_dispatcher.register(key, value)
+            cls._type_dispatcher.register(key, value)
+            cls._cache.clear()
+            cls._cache.update(cls._registry)
 
-        for base in type(self).__bases__:
-            if isinstance(base, IndexedFunc) and key not in base:
+        for base in cls.__bases__:
+            if isinstance(base, IndexedFunc):
                 base[key] = value
 
-    def __len__(self):
-        return len(self._non_type_registry) + len(self._type_dispatcher.registry)
+    def __len__(cls):
+        return len(cls._registry)
 
-    def __iter__(self):
-        yield from self._type_dispatcher.registry
-        yield from self._non_type_registry
+    def __iter__(cls):
+        yield from cls._registry
+
+    # This metaclass interacts poorly with ABCMeta. We just copy the relevant
+    # methods instead of inheriting from MutableMapping.
+    keys = MutableMapping.keys
+    values = MutableMapping.values
+    items = MutableMapping.items
+    get = MutableMapping.get
 
 
 class semigroup(fn, metaclass=IndexedFunc):
@@ -90,23 +99,52 @@ class semigroup(fn, metaclass=IndexedFunc):
     In sidekick, semigroups are implemented as a variadic function with the
     following signatures:
 
-    * fn(x) = x
+    * fn(xs) = fn(*xs)
     * fn(x, y) = op(x, y)
     * fn(x, y, z) = op(op(x, y), z) = op(x, op(y, z))
+    * and so on for mor arguments...
 
     ``op`` is the associative binary operator that defines the particular
     semigroup structure. Calling a semigroup function with more arguments simply
     combine all elements using the semigroup definition.
     """
 
-    description = alias("__doc__")
+    @property
+    def description(self):
+        return self.__doc__
+
+    @description.setter
+    def description(self, value):
+        self.__doc__ = value
 
     @classmethod
     def from_operator(cls, op, description=None):
         """
         Creates a new semigroup function from the given binary operator.
         """
-        return cls(lambda *args: reduce(op, args), description)
+
+        def semigroup_fn(x_or_seq, /, *xs):
+            if xs:
+                return reduce(op, xs, x_or_seq)
+            return reduce(op, x_or_seq)
+
+        return cls(semigroup_fn, description)
+
+    @classmethod
+    def from_reducer(cls, func, description=None):
+        """
+        Creates a new semigroup from a function that reduces a
+        non-empty sequence of arguments.
+        """
+
+        def semigroup_fn(*args):
+            if (n := len(args)) == 1:
+                return func(args[0])
+            elif n == 0:
+                raise TypeError("semigroup requires at least one argument")
+            return func(args)
+
+        return cls(semigroup_fn, description)
 
     @property
     def unit(self):
@@ -131,12 +169,13 @@ class semigroup(fn, metaclass=IndexedFunc):
         Accumulate iterable using binary reduction of all of its elements.
         """
         op = self._func
+        iterable = iter(iterable)
         try:
-            x, rest = uncons(iterable)
-        except ValueError:
+            x = next(iterable)
+        except StopIteration:
             return
         yield x
-        for y in rest:
+        for y in iterable:
             yield (x := op(x, y))
 
     def times(self, x: T, n: int) -> T:
@@ -194,11 +233,39 @@ class monoid(semigroup):
         Creates monoid from binary operator.
         """
         if unit is not None:
-            return cls(lambda *args: reduce(op, args) if args else unit)
+
+            def monoid_fn(*args):
+                if (n := len(args)) == 0:
+                    return unit
+                elif n == 1:
+                    return reduce(op, args, unit)
+                else:
+                    return reduce(op, args, unit)
+
         elif unit_factory is not None:
-            return cls(lambda *args: reduce(op, args) if args else unit_factory())
+
+            def monoid_fn(*args):
+                if (n := len(args)) == 0:
+                    return unit_factory()
+                elif n == 1:
+                    return reduce(op, args, unit_factory())
+                else:
+                    return reduce(op, args)
+
         else:
             raise TypeError("unit or unit_factory must be given")
+        return cls(monoid_fn)
+
+    @classmethod
+    def from_reducer(cls, func, description=None):
+        """
+        Creates a new monoid from a function that reduces a sequence of arguments.
+        """
+
+        def monoid_fn(*args):
+            return func(args[0]) if len(args) == 1 else func(args)
+
+        return cls(monoid_fn, description)
 
     unit = UnitFactory()
 
@@ -248,24 +315,19 @@ class group(monoid):
         mono = monoid.from_operator(op, unit, unit_factory)
         return cls.from_monoid(mono, inv=inv)
 
+    # noinspection PyMethodOverriding
+    @classmethod
+    def from_reducer(cls, func, *, inv, description=None):
+        """
+        Creates a group from semigroup, supplying the inverse function and the
+        unit element or the unit factory.
+        """
+        mono = monoid.from_reducer(func, description)
+        return cls.from_monoid(mono, inv=inv)
+
     def __init__(self, func, inv, description=None):
         super().__init__(func, description)
         self.inv = inv
-
-
-#
-# Useful semigroups/groups/monoids
-#
-group[Number, "+"] = group["+"] = group.from_operator(operator.add, 0, inv=lambda x: -x)
-group[Number, "*"] = group["*"] = group.from_operator(
-    operator.mul, 1, inv=lambda x: 1 / x
-)
-monoid[type(lambda: ...)] = monoid["function"] = monoid(to_callable(compose))
-monoid[str] = monoid(lambda *args: "".join(args))
-monoid[bytes] = monoid(lambda *args: b"".join(args))
-monoid[tuple] = monoid(lambda *args: tuple(chain(*args)))
-monoid[list] = monoid(lambda *args: list(chain(*args)))
-monoid[set] = monoid(lambda *args: set(chain(*args)))
 
 
 def mtimes(value, n):
@@ -293,25 +355,6 @@ def mconcat(*args):
     values = args[0] if len(args) == 1 else args
     instance = semigroup[type(values[0])]
     return instance(*values)
-
-
-@monoid
-def coalesce(xs):
-    """
-    Coalescing monoid: return None if first argument is None else return the
-    second argument.
-
-    Examples:
-        >>> coalesce(None, None, "not null")
-        'not null'
-    """
-    for x in xs:
-        if x is not None:
-            return x
-    return None
-
-
-monoid["coalesce"] = coalesce
 
 
 #
@@ -356,7 +399,7 @@ class apply(ApplyMixin, fn, metaclass=IndexedFunc):
     * So on...
     """
 
-    description = alias("__doc__")
+    description = semigroup.description
 
     def from_binary(self, op):
         """
@@ -373,7 +416,7 @@ class apply(ApplyMixin, fn, metaclass=IndexedFunc):
         return lambda func: cls(func, wrap, description)
 
 
-class apply_flat(ApplyMixin, fn):
+class apply_flat(ApplyMixin, fn, metaclass=IndexedFunc):
     """
     A function that implements monadic bind.
 
@@ -400,64 +443,10 @@ class apply_flat(ApplyMixin, fn):
         """
         Calls a simple function that returns an non-wrapped result.
         """
-        return self(compose(self.wrap, f), *args, **kwargs)
+        return self(lambda x: self.wrap(f(x, **kwargs)), *args)
 
     def flatten(self, m):
         """
         Flatten monad.
         """
         return self(lambda x: x, m)
-
-
-#
-# Useful functors and monads
-#
-def intersection(sets: Iterable[set]):
-    """Intersection of sets"""
-    s, rest = uncons(sets)
-    s = set(s)
-    for x in rest:
-        s.intersection_update(x)
-    return s
-
-
-def apply_iter(f, *args: Iterable) -> Iterable:
-    if len(args) == 1:
-        return map(f, args[0])
-    return (f(*args_i) for args_i in product(*args))
-
-
-def apply_flat_iter(f, *args: Iterable) -> Iterable:
-    return chain.from_iterable(apply_iter(f, *args))
-
-
-def apply_dict(f, *args: dict):
-    """
-    Dicts are not true applicative objects since we cannot implement a reasonable
-    wrap() function.
-    """
-    if len(args) == 1:
-        return {k: f(v) for k, v in args[0].items()}
-    keys = intersection(map(set, args))
-    return {f(*(d[k] for d in product(*args))) for k in keys}
-
-
-# Applicative instances
-apply["iter"] = apply(apply_iter, singleton)
-apply[set] = apply(compose(set, apply_iter), lambda x: {x})
-apply[tuple] = apply(compose(tuple, apply_iter), lambda x: (x,))
-apply[list] = apply(compose(list, apply_iter), lambda x: [x])
-apply[dict] = apply(apply_dict)
-
-# Monad instances
-apply_flat["iter"] = apply_flat(apply_flat_iter, singleton)
-apply_flat[set] = apply_flat(compose(set, apply_flat_iter), lambda x: {x})
-apply_flat[tuple] = apply_flat(compose(tuple, apply_flat_iter), lambda x: (x,))
-apply_flat[list] = apply_flat(compose(list, apply_flat_iter), lambda x: [x])
-
-
-#
-# Utility functions
-#
-def _raise_key_error(x):
-    raise KeyError(x)
