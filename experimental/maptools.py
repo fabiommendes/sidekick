@@ -1,4 +1,4 @@
-from ..functions import fn, to_callable
+from sidekick.functions import fn, to_callable
 
 
 @fn.annotate(2)

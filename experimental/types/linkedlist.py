@@ -1,8 +1,6 @@
 import collections.abc
 import itertools
 
-from ..types import Union
-
 Seq = collections.abc.Sequence
 _chain = itertools.chain
 _repeat = itertools.repeat

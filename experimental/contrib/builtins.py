@@ -1,7 +1,10 @@
+"""
+A builtins replacement. Should it be included in sidekick.api?
+"""
 import builtins as _builtins
 from functools import wraps as _wraps
 
-from ..functions import fn
+from sidekick.functions import fn
 
 _execute_with = lambda **kwargs: lambda f: f(**kwargs) or f
 _flipped = lambda f: _wraps(f)(lambda x, y: f(y, x))

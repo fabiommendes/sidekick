@@ -4,7 +4,7 @@ import typing as typ
 from warnings import warn
 
 from sidekick.typing import Func
-from ..functions import fn
+from sidekick.functions import fn
 
 Fn1 = fn.annotate(1)
 Fn2 = fn.annotate(2)
@@ -71,7 +71,7 @@ def starts_with(sub, st: str = NOT_GIVEN) -> PredOrBool:
     Checks if string st starts with substring sub.
 
     If only one argument is given, return a predicate function.
-        """
+    """
     if st is NOT_GIVEN:
         return fn(lambda x: x.startswith(sub))
     else:

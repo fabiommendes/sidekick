@@ -15,9 +15,9 @@ class IdMap(MutableMapping, dict):
     same value, but different identities are considered to be different keys.
     """
 
-    def __init__(self, iterable=(), **kwds):
+    def __init__(self, iterable=(), **kwargs):
         dict.__init__(self)
-        self.update(iterable, **kwds)
+        self.update(iterable, **kwargs)
 
     def __len__(self):
         return dict.__len__(self)

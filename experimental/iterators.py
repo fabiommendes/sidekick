@@ -1,7 +1,10 @@
+"""
+Special types of iterators.
+"""
 from collections import deque
 from collections.abc import Iterator
 
-from ..typing import NOT_GIVEN
+from sidekick._empty import EMPTY as NOT_GIVEN
 
 
 # noinspection PyPep8Naming

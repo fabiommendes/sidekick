@@ -1,8 +1,8 @@
 from collections import Counter
 from math import sqrt
 
-from ..functions import fn, to_callable
-from ..typing import Seq, Func, Pred
+from sidekick.functions import fn, to_callable
+from sidekick.typing import Seq, Func, Pred
 
 NOT_GIVEN = object()
 

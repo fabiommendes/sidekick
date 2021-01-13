@@ -1,7 +1,14 @@
+"""
+Curried versions of math functions.
+
+Should we add to contrib?
+Should we automate creation of those kinds of models?
+"""
 import math as _math
 
-from .builtins import _execute_with, _create_fn_functions
-from .functions import fn
+
+# from .builtins import _execute_with, _create_fn_functions
+# from .functions import fn
 
 
 #

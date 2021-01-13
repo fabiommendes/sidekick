@@ -1,8 +1,8 @@
 from collections import deque
 
 from sidekick import generator
-from ..functions import fn, to_callable
-from ..typing import Seq, Pred, Func, Seq
+from sidekick.functions import fn, to_callable
+from sidekick.typing import Seq, Pred, Func, Seq
 
 SEQ_TYPES = (list, tuple, Seq)
 is_seqcont = lambda x: isinstance(x, SEQ_TYPES)
