@@ -4,11 +4,7 @@ from collections import deque
 from keyword import iskeyword
 
 from hypothesis import strategies as st
-from hypothesis.strategies._internal.core import (
-    defines_strategy,
-    defines_strategy_with_reusable_values,
-)
-
+from hypothesis.strategies._internal.core import defines_strategy
 from ..seq import singleton, Iter
 
 IDENTIFIER_RE = re.compile(r"[^\d\W]\w*", re.ASCII)
@@ -17,7 +13,7 @@ SEQ_TYPES = (tuple, list, set, frozenset, deque)
 AtomT = bool, int, float, complex, str, bytes, type(None), type(Ellipsis)
 
 
-@defines_strategy
+@defines_strategy()
 def atoms(which="basic", finite=False):
     """
     Return atomic Python types.
@@ -67,7 +63,7 @@ def atoms(which="basic", finite=False):
     return st.one_of(*strategies)
 
 
-@defines_strategy_with_reusable_values
+@defines_strategy(force_reusable_values=True)
 def identifiers(allow_private=True, exclude=None):
     """
     Valid Python identifiers.
@@ -81,7 +77,7 @@ def identifiers(allow_private=True, exclude=None):
 
 
 # noinspection PyShadowingNames
-@defines_strategy
+@defines_strategy()
 def kwargs(values=atoms(), **kwargs):
     """
     Create dictionaries that represent valid keyword arguments.
