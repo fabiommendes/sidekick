@@ -45,10 +45,18 @@ def concat(seqs: Union[Seq, Seq[Seq]], *extra) -> Iter:
     return Iter(itertools.chain.from_iterable(seqs))
 
 
-@fn
-def interleave(seqs: Union[Seq, Seq[Seq]], *extra):
+@fn.curry(1)
+def interleave(seqs: Union[Seq, Seq[Seq]], *extra, aligned=False):
     """
     Interleave sequence of sequences.
+
+    Args:
+        seqs:
+            a sequence of sequences
+        aligned:
+            If True, stops when the first iterator exausts. Aligned does not
+            work with an infinite sequence of sequences, but all sequences in
+            this finite list may be inifinite.
 
     Examples:
         >>> sk.interleave([1, 2, 3], 'abc')
@@ -61,7 +69,23 @@ def interleave(seqs: Union[Seq, Seq[Seq]], *extra):
     """
     if extra:
         seqs = (seqs, *extra)
+    if aligned:
+        return Iter(_interleave_aligned(seqs))
     return Iter(toolz.interleave(seqs))
+
+
+def _interleave_aligned(seqs):
+    nexts = [iter(it).__next__ for it in seqs]
+    buffer = []
+    fill = buffer.extend
+
+    while True:
+        buffer.clear()
+        try:
+            fill(f() for f in nexts)
+            yield from buffer
+        except StopIteration:
+            break
 
 
 @generator

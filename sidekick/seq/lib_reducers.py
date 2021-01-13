@@ -5,7 +5,7 @@ from .iter import Iter, generator
 from .lib_basic import uncons
 from .._toolz import accumulate as _accumulate, topk as _topk, reduceby
 from ..functions import fn, to_callable
-from ..typing import Func, Seq, Pred, TYPE_CHECKING, NOT_GIVEN, Iterator
+from ..typing import Func, Seq, Pred, TYPE_CHECKING, NOT_GIVEN
 
 if TYPE_CHECKING:
     from .. import api as sk  # noqa: F401
@@ -165,13 +165,14 @@ def reduce_together(seq: Seq, **kwargs):
 
 
 @fn.curry(1)
-@generator
-def scan_together(seq: Seq, **kwargs) -> Iter[dict]:
+def scan_together(seq: Seq, *args, **kwargs) -> Iter[dict]:
     """
     Folds using multiple functions simultaneously.
 
     Initial value is passed as a tuple for each (operator, value) keyword
     argument.
+
+    If arguments are passed positionally, yields tuples of results.
 
     Examples:
         >>> seq = [1, 2, 3, 4, 5]
@@ -184,6 +185,17 @@ def scan_together(seq: Seq, **kwargs) -> Iter[dict]:
         {'sum': 10, 'prod': 24}
         {'sum': 15, 'prod': 120}
     """
+    if args and kwargs:
+        raise ValueError(
+            "cannot define positional and keyword arguments simultaneously"
+        )
+    elif args:
+        return Iter(_scan_together_args(seq, args))
+    elif kwargs:
+        return Iter(_scan_together_kwargs(seq, kwargs))
+
+
+def _scan_together_kwargs(seq, kwargs):
     data = [(k, f, [x0]) for k, (f, x0) in kwargs.items()]
     yield {k: x0[0] for k, f, x0 in data}
 
@@ -193,6 +205,13 @@ def scan_together(seq: Seq, **kwargs) -> Iter[dict]:
             box[0] = v = f(box[0], x)
             item[k] = v
         yield item
+
+
+def _scan_together_args(seq, args):
+    fs = [fn for fn, _ in args]
+    yield (ys := tuple(acc for _, acc in args))
+    for x in seq:
+        yield (ys := tuple(f(y, x) for (f, y) in zip(fs, ys)))
 
 
 @fn.curry(1)

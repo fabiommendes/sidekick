@@ -1,17 +1,21 @@
 import itertools
+import operator as op
 from collections import deque
 from itertools import filterfalse, dropwhile, takewhile, islice
 
 from .iter import Iter, generator
 from .lib_basic import uncons
+from .. import _toolz
+from .._empty import EMPTY as NOT_GIVEN
 from ..functions import fn, to_callable
-from ..typing import Func, Pred, Seq, Union, TYPE_CHECKING
+from ..typing import Func, Pred, Seq, Union, TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
     from .. import api as sk, Union  # noqa: F401
-    from ..api import X  # noqa: F401
+    from ..api import X, Y  # noqa: F401
 
 _filter = filter
+_snd = op.itemgetter(1)
 
 
 @fn.curry(2)
@@ -126,6 +130,7 @@ def drop(key: Union[Pred, int], seq: Seq) -> Iter:
     See Also:
         :func:`take`
         :func:`rdrop`
+        :func:`strip`
     """
     if isinstance(key, int):
         return Iter(islice(seq, key, None))
@@ -171,6 +176,43 @@ def rdrop(key: Union[Pred, int], seq: Seq) -> Iter:
                 yield from pending
                 yield x
                 clear()
+
+
+@fn.curry(2)
+def drop_at(indices: Seq, seq: Seq) -> Seq:
+    """
+    Drop all elements in the given positions.
+
+    Indices can be a set or a (possibly infinite) **sorted** iterable.
+
+    Examples:
+        >>> "".join(drop_at({1, 2, 4, 10}, "foobar"))
+        'fbr'
+
+    See Also:
+        :func:`drop`
+        :func:`take_at`
+    """
+    if isinstance(indices, set):
+        return Iter(x for i, x in enumerate(seq) if i not in indices)
+    return Iter(_drop_at_lazy(iter(indices), iter(seq)))
+
+
+def _drop_at_lazy(indices, seq):
+    idx = next(indices, None)
+    if idx is None:
+        return
+    for i, x in enumerate(seq):
+        if i == idx:
+            try:
+                idx = next(indices)
+            except StopIteration:
+                break
+        elif i > idx:
+            raise ValueError("non-decreasing sequence of indices")
+        else:
+            yield x
+    yield from seq
 
 
 @fn.curry(2)
@@ -235,6 +277,101 @@ def rtake(key: Union[Pred, int], seq: Seq) -> Iter:
             else:
                 clear()
         yield from tail
+
+
+@fn.curry(2)
+def take_at(indices: Seq, seq: Seq) -> Seq:
+    """
+    Return a sequence with values in the positions specified by indices.
+
+    Indices must be any non-decreasing (and possibly infinite) sequence.
+
+    If you want to pass a list of non-ordered indices, use the builtin sorted()
+    function before sending to this function. It raises a ValueError if a
+    non-decreasing sequence is detected.
+
+    Examples:
+        >>> "".join(take_at([0, 1, 1, 1, 4, 5, 10], "foo bar baz"))
+        'fooobaz'
+
+    See Also:
+        :func:`get`
+        :func:`drop_at`
+    """
+    return Iter(iter(indices), seq)
+
+
+def _take_at(indices, seq):
+    idx = next(indices, None)
+    if idx is None:
+        return
+    for i, x in enumerate(seq):
+        if i == idx:
+            yield x
+            for idx in indices:
+                if i == idx:
+                    yield x
+                else:
+                    break
+        elif i > idx:
+            raise ValueError("non-decreasing sequence of indices")
+
+
+@fn.curry(2)
+def strip(prefix: Seq, seq: Seq, partial=False, cmp=NOT_GIVEN) -> Iter:
+    """
+    If seq starts with the same elements as in prefix, remove them from
+    result.
+
+    Args:
+        prefix:
+            Prefix sequence to possibly removed from seq.
+        seq:
+            Sequence of input elements.
+        partial:
+            If True, remove partial matches with prefix.
+        cmp:
+            If given, uses as a comparation function between elements of prefix
+            and sequence. It removes elements that cmp(x, y) returns True.
+
+    Examples:
+        >>> ''.join(strip("ab", "abcd"))
+        'cd'
+        >>> strip(sk.repeat(3), range(6), partial=True, cmp=(X < Y)))
+        sk.iter([3, 4, 5])
+    """
+    if partial:
+        cmp = NOT_GIVEN.resolve(cmp, op.eq)
+        return Iter(_strip_partial(iter(prefix), iter(seq), cmp=cmp))
+    elif cmp is NOT_GIVEN:
+        return Iter(_strip_full(tuple(prefix), iter(seq)))
+    else:
+        return Iter(_strip_full_cmp(tuple(prefix), iter(seq), cmp))
+
+
+def _strip_partial(prefix, seq, cmp):
+    for x, y in zip(prefix, seq):
+        if not cmp(x, y):
+            yield y
+    yield from seq
+
+
+def _strip_full(prefix, seq):
+    elems = tuple(islice(seq, len(prefix)))
+    if elems == prefix:
+        yield from seq
+    else:
+        yield from elems
+        yield from seq
+
+
+def _strip_full_cmp(prefix, seq, cmp):
+    elems = tuple(islice(seq, len(prefix)))
+    if all(cmp(x, y) for x, y in zip(elems, seq)):
+        yield from seq
+    else:
+        yield from elems
+        yield from seq
 
 
 @fn.curry(1)
@@ -360,3 +497,31 @@ def converge(pred: Pred, seq: Seq) -> Iter:
         if pred(x, y):
             break
         x = y
+
+
+@fn.curry(2)
+def random_sample(prob: float, seq: Seq, *, random_state=None) -> Seq:
+    """
+    Choose with probability ``prob`` each element of seq to include in the
+    output sequence.
+    """
+    return _toolz.random_sample(prob, seq, random_state=random_state)
+
+
+@fn.curry(3)
+def indexed(transform, func: Callable, seq: Seq, *, start=0) -> Seq:
+    """
+    Take a function that receives a sequence and a function and transform it
+    to operate in a indexed sequence.
+
+    This is mostly useful for functions like filter, take, drop, etc that loose
+    indexing information after the transform.
+
+    Examples:
+        >>> seq = [5, 10, 2, 3, 25, 42]
+        >>> indexed(filter, (X >= 10), seq)
+        sk.iter([(1, 10), (4, 25), (5, 42)])
+    """
+    func = to_callable(func)
+    func_ = lambda x: func(_snd(x))
+    return transform(func_, enumerate(seq, start))

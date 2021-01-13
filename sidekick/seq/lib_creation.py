@@ -61,7 +61,7 @@ def repeat(obj, times=None):
 
 @fn
 @generator
-def repeatedly(func, *args, **kwargs):
+def repeatedly(func, /, *args, **kwargs):
     """
     Make infinite calls to a function with the given arguments.
 

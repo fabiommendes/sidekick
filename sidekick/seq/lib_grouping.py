@@ -1,4 +1,4 @@
-from itertools import tee, chain, takewhile, dropwhile, islice
+from itertools import tee, chain, takewhile, dropwhile, islice, count
 
 from toolz import groupby
 
@@ -415,3 +415,17 @@ def distribute(n: int, seq: Seq) -> Tuple[Seq, ...]:
     """
     results = tee(seq, n)
     return tuple(Iter(islice(it, i, None, n)) for i, it in enumerate(results))
+
+
+@fn
+def inits(seq: Seq) -> Seq:
+    """
+    Lazily return all sub-sequences at beginning of seq.
+
+    Examples:
+        >>> [''.join(sub) for sub in inits('abc')]
+        ['', 'a', 'ab', 'abc']
+    """
+    for i in count():
+        seq, consume = tee(seq)
+        yield islice(consume, i)

@@ -1,9 +1,11 @@
 from collections import deque
-from itertools import islice
+from itertools import islice, chain, repeat, tee
 
 from .iter import generator, Iter
+from .._empty import EMPTY as NOT_GIVEN
+from .._toolz import peek as _peek, peekn as _peekn
 from ..functions import fn, to_callable
-from ..typing import Seq, T, NOT_GIVEN, TYPE_CHECKING, Pred
+from ..typing import Seq, Any, Callable, T, TYPE_CHECKING, Pred, Tuple
 
 if TYPE_CHECKING:
     from .. import api as sk  # noqa: F401
@@ -52,7 +54,7 @@ def uncons(seq: Seq[T], default=NOT_GIVEN) -> (T, Seq[T]):
     except StopIteration:
         if default is NOT_GIVEN:
             raise ValueError("Cannot deconstruct empty sequence.")
-        return default, iter(())
+        return default, Iter(())
 
 
 #
@@ -249,7 +251,8 @@ def is_empty(seq: Seq) -> bool:
     Warning:
         This function consume first element of iterator. Use this only to assert
         that some iterator was consumed without using it later or create a copy
-        with `itertools.tee <https://docs.python.org/3/library/itertools.html#itertools.tee>`_
+        with `itertools.tee <https://docs.python.org/3/library/itertools.html#itertools
+        .tee>`_
         that will preserve the consumed element.
 
     Examples:
@@ -321,3 +324,108 @@ def consume(seq: Seq, *, default=None) -> Iter:
     for default in seq:
         pass
     return default
+
+
+@fn.curry(1)
+def peek(
+    seq: Seq, key: Callable[[Seq], Any] = NOT_GIVEN, default=NOT_GIVEN, n=NOT_GIVEN
+) -> Tuple[Any, Seq]:
+    """
+    Retrieve an element and return a tuple of (elem, seq).
+
+    The resulting sequence *includes* all elements of the original sequence.
+    If a callable key is given, it is used to partially consume the list and
+    produce the returning element.
+
+    Args:
+        seq:
+            Input sequence.
+        key:
+            A function that is used to inspect the sequence and produce the
+            element returned in the LHS. If key is known to always consume most
+             of the sequence, it is usually faster to convert to a list before
+             sending to this function.
+        default:
+            An optional default value to fill if sequence is empty.
+        n:
+            If given, return the first n elements of seq. Must not be given
+            with key.
+
+    Examples:
+        >>> peek((x*x for x in range(1, 101)), key=sk.second)
+        (4, sk.iter([1, 4, 9, 16, 25, ...]))
+    """
+    if key is NOT_GIVEN:
+        return _peek_direct(seq, n, default)
+    elif n is not NOT_GIVEN:
+        raise TypeError("cannot specify both key and size")
+    else:
+        return _peek_key(seq, to_callable(key), default)
+
+
+def _peek_direct(seq, size, default):
+    if size is NOT_GIVEN:
+        try:
+            elem, out = _peek(seq)
+        except StopIteration:
+            if default is NOT_GIVEN:
+                raise
+            return default, Iter(())
+        return elem, Iter(out)
+    else:
+        elem, out = _peekn(size, seq)
+        if default is not NOT_GIVEN and len(elem) < size:
+            elem += (default,) * (size - len(elem))
+        return elem, Iter(out)
+
+
+def _peek_key(seq, key, default):
+    out, dispose = tee(seq)
+    if default is not NOT_GIVEN:
+        dispose = chain(dispose, repeat(default))
+    return key(dispose), Iter(out)
+
+
+@fn.curry(2)
+def first_repeated(key: Pred, seq: Seq[T], default=NOT_GIVEN) -> Tuple[int, T]:
+    """
+    Return the index and value of first repeated element in sequence by predicate.
+
+    Raises a ValueError if no repeated element is found.
+
+    Args:
+        key:
+            A key function used to evaluate uniqueness. If None, check the first
+            repetition by value.
+        seq:
+            Input sequence.
+        default:
+            If given, return this value and the length of the consumed iterator
+            instead of raising an exception when no repetitions are found.
+
+    Examples:
+        >>> data = [
+        ...     {'name': 'John', 'id': 123},
+        ...     {'name': 'Paul', 'id': 234},
+        ...     {'name': 'John', 'id': 456},
+        ... ]
+        >>> first_repeated(X['name'], data)
+        (2, {'name': 'John', 'id': 456})
+    """
+    key = to_callable(key)
+    seen = set()
+    add = seen.add
+    i = 0
+    for i, x in enumerate(seq):
+        tag = key(x)
+        if tag in seen:
+            return i, x
+        try:
+            add(tag)
+        except TypeError:
+            # Slow fallback for non-hashable types
+            seen = list(seen)
+            add = seen.append
+    if default is NOT_GIVEN:
+        raise ValueError("no repeated element in sequence")
+    return i, default
