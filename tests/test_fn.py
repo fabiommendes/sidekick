@@ -115,6 +115,7 @@ class TestPredicateOperations:
         assert p(1) is False
 
     def test_predicate_accepts_extended_function_semantics(self):
+        print(_, type(_), _ == 2)
         assert fn(_ == 2)(2) is True
         assert fn(_ == 2)(3) is False
 

@@ -89,12 +89,12 @@ class fn(metaclass=FunctionMeta):
         return fn.curry(n, self.__sk_callable__)
 
     @curry.classmethod
-    def curry(cls, arity, func=None, **kwargs) -> Union["Curried", callable]:
+    def curry(cls, arity, /, func=None) -> Union["Curried", callable]:
         """
         Return a curried function with given arity.
         """
         if func is None:
-            return lambda f: fn.curry(arity, f, **kwargs)
+            return lambda f: fn.curry(arity, f)
         if isinstance(arity, int):
             return Curried(func, arity)
         else:
@@ -116,10 +116,10 @@ class fn(metaclass=FunctionMeta):
         return fn_obj
 
     @classmethod
-    def generator(cls, func, **kwargs) -> "fn":
+    def generator(cls, func) -> "fn":
         from ..seq import generator
 
-        return generator(func, **kwargs)
+        return generator(func)
 
     def __init__(self, func):
         self._func = to_callable(func)
@@ -234,7 +234,7 @@ class fn(metaclass=FunctionMeta):
     #
     # Partial application
     #
-    def thunk(self, *args, **kwargs):
+    def thunk(self, /, *args, **kwargs):
         """
         Pass all arguments to function, without executing.
 
@@ -247,7 +247,7 @@ class fn(metaclass=FunctionMeta):
         """
         return thunk(*args, **kwargs)(self)  # noqa: F821
 
-    def partial(self, *args, **kwargs):
+    def partial(self, /, *args, **kwargs):
         """
         Return a fn-function with all given positional and keyword arguments
         applied.
@@ -255,14 +255,14 @@ class fn(metaclass=FunctionMeta):
         f = self.__sk_callable__
         return fn(lambda *xs, **kw: f(*args, *xs, **kwargs, **kw))
 
-    def rpartial(self, *args, **kwargs):
+    def rpartial(self, /, *args, **kwargs):
         """
         Like partial, but fill positional arguments from right to left.
         """
         f = self.__sk_callable__
         return fn(lambda *xs, **kw: f(*xs, *args, **update_arguments(kwargs, kw)))
 
-    def single(self, *args, **kwargs):
+    def single(self, /, *args, **kwargs):
         """
         Similar to partial, but with a few constraints:
 
@@ -285,16 +285,18 @@ class fn(metaclass=FunctionMeta):
     #
     # Wrapping
     #
-    def result(self, *args, **kwargs):
+    def result(self, /, *args, **kwargs):
         """
-        Return a result instance after function call.
+        Call function and wraps result in an Ok(result) case.
 
-        Exceptions are converted to Err() cases.
+        Exceptions are converted to Err(exc) values.
         """
         try:
-            return self._to_result(self.func(*args, **kwargs))
+            value = self.func(*args, **kwargs)
         except Exception as exc:
             return self._err(exc)
+        else:
+            return self._to_result(value)
 
 
 # Slightly faster access for slotted object

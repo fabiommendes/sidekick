@@ -71,7 +71,7 @@ Put the same function in a different context and ``def's`` start to feel verbose
    sequence. The code above thus increment each element in a sequence of numbers
    by one.
 
-Not only this code spends two lines to define such a trivial function, it
+Not only this code spends two lines to define such a trivial throwaway function, it
 forces us to explicitly come up with a name which does not clarify its intent
 anymore than seeing ``n + 1`` in the body of the function. `Naming is hard`_,
 and we should avoid doing it if it has no purpose in making some piece of code
@@ -119,9 +119,9 @@ keyword arguments, splicing (the ``*args`` and ``**kwargs`` expansions), and it 
 even produce side effects outside of what is visible from the inputs and
 outputs of the function.
 
-If is often convenient for computer scientists to pretend in an idealized world
+If is often convenient to consider an idealized world
 in which all functions receive a single argument and return a single value. In
-fact, it is not even hard to transform some of those real world functions in this
+fact, it is not hard to transform real world functions to alternatives in this
 idealized version. Consider the function bellow:
 
 .. testcode:: default
@@ -185,7 +185,7 @@ True
 One nice thing about auto-currying is that it doesn't (usually) break preexisting
 interfaces. This new add function continues to be useful in contexts that the
 standard implementation would be applied, but it now also accepts receiving an
-incomplete set of arguments transforming add in a convenient factory.
+incomplete set of arguments transforming add into a convenient factory.
 
 Even for only two arguments, implementing auto-currying this way already
 seems like a lot of trouble. Fortunately, the :func:`sidekick.functions.curry` decorator
@@ -201,7 +201,7 @@ with very little extra work:
         return x + y
 
 Ok, it is good that we can automatically curry functions. But why would anyone
-want to do that in any real world programming problem?
+want to do that in any real world situation?
 
 Remember when we said that the increment function (``lambda x: x + 1``) was just
 a special case of addition when one of the arguments is fixed to 1? This kind of
@@ -212,6 +212,9 @@ of the original function:
 >>> incr = add(1)  # Fix first argument of add to 1
 >>> incr(41)
 42
+
+The ability to do that makes it very easy to compose little functions with other
+higher level functions to build powerful functional pipelines.
 
 
 .. _Creation:
@@ -290,23 +293,21 @@ We will create more interesting examples later using other sidekick functions
 and operators.
 
 The X and Y special objects cover most functionality in Python's ``operator``
-module, but provides a more flexible and perhaps a more intuitive interface.
+module, but provide a more flexible and perhaps a more intuitive interface.
 But just as `operator` has its share of oddities and caveats (e.g., division is
 called truediv, it does not expose have reverse operations such as radd,
 rsub, etc). There are some limitations of what the magic X and Y can do.
 
-Some operations **do not** work with those magic objects. Those are intrinsic
+Some operations **do not** work with those objects. Those are intrinsic
 limitations of Python syntax and runtime and will *never* be fixed in Sidekick.
 
-* **Short circuit operators:** ``(X or Y)`` and ``(X and Y)``. There is no perfect way to
-  reproduce short circuit evaluation with functions, hence sidekick does
-  not provide any real alternative.
+* **Short circuit operators:** ``(X or Y)`` and ``(X and Y)``.
 * **Identity checks:** ``(X is value)`` or ``(X is not value)``. Use
   :func:`sidekick.pred.is_identical` or its negative ``~sk.is_identical(value)`` instead.
 * **Assignment operators:** ``(X += value)``. Assignment operators are statements and
   cannot be assigned to values. This includes item deletion and item assignment for the
   same reason.
-* **Containment check**: ``(X in seq)`` or ``(seq in X)``. Use :func:`sidekick.op.contains`
+* **Containment check**: ``(X in seq)`` or ``(value in X)``. Use :func:`sidekick.op.contains`
   instead.
 * **Method calling**: ``X.attr`` immediately returns a function that retrieves the
   ``.attr`` attribute of its argument. It is not possible, therefore, to specify the arguments
@@ -344,8 +345,8 @@ Composing functions
 
 We mentioned before that good functional code behave like LEGO bricks: they
 can easily fit each other and we can organize them in countless and creative ways.
-The most common form of composition has the shape of a pipeline: we start with
-some piece of data and pass it through a series of functions to obtain the final
+The most common form of composition has the shape of a pipeline: starting with
+some data, pass it through a series of functions to obtain the final
 result. Sidekick captures that idea in the :func:`pipe` function.
 
 >>> sk.pipe(10, op.mul(4), op.add(2))
@@ -383,7 +384,7 @@ Composition syntax
 
 Many functional languages have special operators dedicated to function composition.
 Python don't, but that does not prevent us from being creative. Most sidekick
-functions are not actually real functions, but rather instances of an special
+functions are not real Python functions, but rather instances of an special
 class :class:`fn`. fn-functions extend regular functions in a number of interesting ways.
 
 The first and perhaps more fundamental change is that fn-functions accept bitwise shift
@@ -413,14 +414,14 @@ f returns a "falsy" value like Python's ``or`` operator.
 Logical composition of predicate functions is specially useful in methods such
 as filter, take_while, etc, that receive predicates.
 
->>> sk.filter(sk.is_divisible_by(3) | sk.is_divisible_by(2), range(10))
-sk.iter([0, 2, 3, 4, 6, 8, ...])
+>>> sk.filter(sk.is_divisible_by(3) | sk.is_divisible_by(5), range(10, 100))
+sk.iter([10, 12, 15, 18, 20, ...])
 
 The pipe operator ``|`` represents the standard or, while ``^`` is interpreted
 as exclusive or.
 
->>> sk.filter(sk.is_divisible_by(3) ^ sk.is_divisible_by(2), range(10))
-sk.iter([2, 3, 4, 8, 9])
+>>> sk.filter(sk.is_divisible_by(3) ^ sk.is_divisible_by(5), range(10, 100))
+sk.iter([10, 12, 18, 20, 21, ...])
 
 :class:`fn` also extend regular functions with additional
 methods and properties, but we refer to the class documentation for more details.
@@ -460,9 +461,10 @@ than ideal) choices:
     f @ arg  == sk.apply(f, arg)  # This is the applicative version, more on this later!
 
 
-We do not really encourage the use of those operators, but they are here
-just to explore how the language would look like if it had dedicated
-piping operators. In practical terms, overloading ``>``, ``<``, ``**`` and ``//`` to represent
+We do not really encourage the use of those operators, but they exist
+just to explore how the language would look like if we can really squeeze our eyes
+and pretend that ``>`` and ``<``  are actually ``|>`` and ``<|``.
+In practical terms, overloading ``>``, ``<``, ``**`` and ``//`` to represent
 function application just save us the annoyance of wrapping a long argument in parenthesis when we
 want to do a quick function application in a terminal section. This is acceptable
 for "throw away code" but it is highly not recommended in production code.
@@ -512,7 +514,7 @@ arguments and flattening the result.
 This special kind of function application has its own operator.
 If ``f`` is a sidekick function, ``f @ x`` is the same as ``sk.apply(f, x)``.
 
-We will not discuss here the intricacies of how does it work and how to
+We will not discuss the intricacies of how does it work and how to
 support new types. It suffices to say that :func:`sidekick.functions.apply`
 also knows how to coerce the additional arguments into the proper
 context application. In the case of lists, it simply wraps non-sequence types into
@@ -566,7 +568,8 @@ We extend this idea quite a bit further to also accept Mappings, Sets, and
 strings as function representations. The first two have strong mathematical
 basis: in the most basic mathematical definition, functions **are** mappings
 and it seems a little bit odd that we cannot use maps in places that expect
-functions.
+functions. Sets are explicitly enumerated containment functions, they return
+True for elements in the set and False, otherwise.
 
 
 **Maps**

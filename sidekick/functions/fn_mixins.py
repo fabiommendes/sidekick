@@ -79,39 +79,39 @@ class FnArgumentsMixin(FnMixin):
     Expose functions in sidekick.functions.lib_arguments as methods.
     """
 
-    def flip(_self, x, y, *args, **kwargs):
+    def flip(self, x, y, /, *args, **kwargs):
         """
         Executes flipping the first two arguments.
 
         Access as attribute to obtain a flipped version of function.
         """
-        return _self._func(y, x, *args, **kwargs)
+        return self._func(y, x, *args, **kwargs)
 
-    def reverse_args(_self, *args, **kwargs) -> fn:
+    def reverse_args(self, /, *args, **kwargs) -> fn:
         """
         Executes reversing the order of positional arguments.
 
         Access as attribute to obtain a reversed version of function.
         """
-        return _self._func(*args[::-1], **kwargs)
+        return self._func(*args[::-1], **kwargs)
 
     select_args = curry_n(1, "select_args")
     skip_args = curry_n(1, "skip_args")
     keep_args = curry_n(1, "keep_args")
 
-    def variadic_args(_self, *args, **kwargs):
+    def variadic_args(self, /, *args, **kwargs):
         """
         Pass variadic arguments as single tuple to function.
         """
-        return _self._func(args, **kwargs)
+        return self._func(args, **kwargs)
 
-    def splice_args(_self, x, *args, **kwargs):
+    def splice_args(self, xs, /, *args, **kwargs):
         """
         Splice first argument.
         """
-        return _self._func(*x, *args, **kwargs)
+        return self.func(*xs, *args, **kwargs)
 
-    def set_null(self, *defaults: Any, **kwargs: Any) -> fn:
+    def set_null(self, /, *defaults: Any, **kwargs: Any) -> fn:
         """
         Return a new function that replace all null arguments in the given positions
         by the provided default value.
@@ -125,7 +125,7 @@ class LibCombinators(FnMixin):
     Expose functions in sidekick.functions.lib_combinators as methods.
     """
 
-    def do(_self, *args, **kwargs):
+    def do(self, /, *args, **kwargs):
         """
         Execute function, but return the first argument.
 
@@ -134,7 +134,7 @@ class LibCombinators(FnMixin):
         """
         if not args:
             raise TypeError("requires at least a single argument.")
-        _self(*args, **kwargs)
+        self(*args, **kwargs)
         return args[0]
 
 
@@ -181,11 +181,11 @@ class LibRuntime(FnMixin):
         """
         return self._mod.once(self._func)
 
-    def thunk(_self, *args, **kwargs) -> FunctionType:
+    def thunk(self, /, *args, **kwargs) -> FunctionType:
         """
         Return as a thunk.
         """
-        return _self._mod.thunk(*args, **kwargs)(_self)
+        return self._mod.thunk(*args, **kwargs)(self)
 
     call_after = curry_n(1, "call_after", {"default"})
     call_at_most = curry_n(1, "call_at_most")
@@ -198,15 +198,18 @@ class LibRuntime(FnMixin):
         """
         return self._mod.throttle(dt, self)
 
-    def background(_self, *args, **kwargs) -> fn:
+    def background(self, /, *args, **kwargs) -> fn:
         """
         Execute function in the background.
+
+        Current implementation uses threads, but in the future it may use hooks
+        to other runtimes such as asyncio, curio, etc.
         """
 
         try:
-            bg_func = _self.__background
+            bg_func = self.__background
         except AttributeError:
-            bg_func = _self.__background = _self._mod.background(_self)
+            bg_func = self.__background = self._mod.background(self)
         return bg_func(*args, **kwargs)
 
     def catch(self, exception, *, handler=None, raises=None) -> "fn":
@@ -218,7 +221,9 @@ class LibRuntime(FnMixin):
         """
         return self._mod.catch(exception, handler=handler, raises=raises)(self)
 
-    def retry(n: int, func: Func, *, error: Catchable = Exception, sleep=None) -> fn:
+    def retry(
+        self, n: int, func: Func, *, error: Catchable = Exception, sleep=None
+    ) -> fn:
         """
         Retry to execute function at least n times before raising an error.
 

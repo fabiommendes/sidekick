@@ -162,7 +162,18 @@ class TestRuntime:
 
     def test_thunk(self):
         lst = [1, 2, 3]
-        fn = sk.thunk(0)(lst.pop)
+        fn = sk.thunk(lst.pop, 0)
+        assert fn() == 1
+        assert fn() == 1
+        assert lst == [2, 3]
+
+    def test_thunk_decorator(self):
+        lst = [1, 2, 3]
+
+        @sk.thunk(..., 0)
+        def fn(i):
+            return lst.pop(i)
+
         assert fn() == 1
         assert fn() == 1
         assert lst == [2, 3]

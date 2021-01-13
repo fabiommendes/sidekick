@@ -21,7 +21,7 @@ Eop = lambda op: lambda self, other: Expr(BinOp(op, self._ast, to_ast(other)))
 
 
 def Xop(op):
-    def operator(_self, other):
+    def operator(_, other):
         if other is X:
             return lambda x: op(x, x)
         elif other is Y:
@@ -33,7 +33,7 @@ def Xop(op):
 
 
 def Yop(op):
-    def operator(_self, other):
+    def operator(_, other):
         if other is X:
             return lambda x, y: op(y, x)
         elif other is Y:
@@ -98,8 +98,7 @@ class FMeta(type):
         new._fn = func
         return func
 
-    def __call__(*args, **kwargs):
-        cls, func, *args = args
+    def __call__(cls, func, /, *args, **kwargs):
         args = tuple(map(to_ast, args))
         kwargs = {k: to_ast(arg) for k, arg in kwargs.items()}
         return Expr(Call(Cte(func), args, kwargs))

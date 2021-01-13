@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from .. import api as sk  # noqa: F401
 
 
-def partial(*args, **kwargs) -> fn:
+def partial(func, /, *args, **kwargs) -> fn:
     """
     Return a new function that partially apply the given arguments and
     keywords.
@@ -30,11 +30,10 @@ def partial(*args, **kwargs) -> fn:
     See Also:
         :func:`rpartial`
     """
-    func, *args = args
     return quick_fn(_partial(to_callable(func), *args, **kwargs).__call__)
 
 
-def rpartial(func: Func, *args, **kwargs) -> fn:
+def rpartial(func: Func, /, *args, **kwargs) -> fn:
     """
     Partially apply arguments from the right.
 

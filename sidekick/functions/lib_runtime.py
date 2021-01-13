@@ -69,17 +69,21 @@ def once(func: Func) -> fn:
 
 
 @fn
-def thunk(*args, **kwargs) -> FunctionType:
+def thunk(func, /, *args, **kwargs) -> FunctionType:
     """
     A thunk that represents a lazy computation.
 
     Python thunks are represented by zero-argument functions that compute the
     value of computation on demand and store it for subsequent invocations.
 
-    This function is designed to be used as a decorator.
+    This function receives a function as the first argument, but behaves as a
+    decorator if the caller passes an ellipsis.
 
     Example:
-        >>> @sk.thunk(host='localhost', port=5432)
+        >>> conf = sk.thunk(dict)
+        >>> conf() is conf() == {}
+        True
+        >>> @sk.thunk(..., host='localhost', port=5432)
         ... def db(host, port):
         ...     print(f'connecting to SQL server at {host}:{port}...')
         ...     return {'host': host, 'port': port}
@@ -92,29 +96,26 @@ def thunk(*args, **kwargs) -> FunctionType:
     See Also:
         :func:`once`
     """
+    # We create the local binding without initializing the variable. We chose
+    # this approach instead of initializing with a "not_given" value, since the
+    # common path of returning the pre-computed result of func() can be
+    # executed faster inside a try/except block
+    if func is ...:
+        result = None
+        return lambda fn: thunk(fn, *args, **kwargs)
 
-    def decorator(func: Func, has_result=False) -> FunctionType:
-        func = to_callable(func)
+    @wraps(func)
+    def get_value():
+        nonlocal result
+        try:
+            return result
+        except NameError:
+            result = func(*args, **kwargs)
+            return result
 
-        # We create the local binding without initializing the variable. We chose
-        # this approach instead of initializing with a "not_given" value, since the
-        # common path of returning the pre-computed result of func() can be
-        # executed faster inside a try/except block
-        if has_result:
-            result = None
-
-        @wraps(func)
-        def limited():
-            nonlocal result
-            try:
-                return result
-            except NameError:
-                result = func(*args, **kwargs)
-                return result
-
-        return limited
-
-    return fn(decorator)
+    # Lambda golf:
+    # thunk = lambda f, *args: (lambda v=f(*args): lambda: v)()
+    return get_value
 
 
 @fn.curry(2)

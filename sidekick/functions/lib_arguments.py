@@ -127,20 +127,19 @@ def splice_args(func: Func, slice=None) -> fn:
 
 
 @fn
-def set_null(*args: Any, **kwargs) -> fn:
+def set_null(func, /, *defaults: Any, **kwargs) -> fn:
     """
     Return a new function that replace all null arguments in the given positions
     by the provided default value.
     """
-    func, *defaults = args
     default_kwargs = {k: v for k, v in kwargs.items() if v is not None}
 
     if len(defaults) == 1:
-        (x,) = defaults
+        (value,) = defaults
 
-        def fun(_x, *args, **kwargs):
+        def fun(x, /, *args, **kwargs):
             kwargs = fix_null(default_kwargs, kwargs)
-            return func(x if _x is None else _x, *args, **kwargs)
+            return func(value if x is None else x, *args, **kwargs)
 
     else:
 

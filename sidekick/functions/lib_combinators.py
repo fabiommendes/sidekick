@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 @fn
-def identity(x: T, *args, **kwargs) -> T:
+def identity(x: T, /, *args, **kwargs) -> T:
     """
     The identity function.
 
@@ -77,7 +77,7 @@ def rec(func: Callable[..., Any]) -> fn:
         the factorial only needs the usual numeric argument.
 
         >>> sk.map(
-        ...     sk.rec(lambda f, n: 1 if n == 0 else n * f(f, n - 1)),
+        ...     sk.rec(lambda rec, n: 1 if n == 0 else n * rec(rec, n - 1)),
         ...     range(10),
         ... )
         sk.iter([1, 1, 2, 6, 24, 120, ...])
@@ -195,7 +195,7 @@ def call(*args, **kwargs) -> fn:
 
 
 @fn.curry(2)
-def do(func, x, *args, **kwargs):
+def do(func, x, /, *args, **kwargs):
     """
     Runs ``func`` on ``x``, returns ``x``.
 
@@ -208,8 +208,8 @@ def do(func, x, *args, **kwargs):
     Examples:
         >>> log = []
         >>> inc = sk.do(log.append) >> (X + 1)
-        >>> [inc(1), inc(11)]
-        [2, 12]
+        >>> inc(1), inc(11)
+        (2, 12)
         >>> log
         [1, 11]
     """

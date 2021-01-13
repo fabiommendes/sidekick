@@ -125,4 +125,4 @@ __all__ = [
     "variadic_args",
 ]
 
-_wrap_fn_functions(globals(), exclude={"fn"})
+_wrap_fn_functions(globals(), exclude={"fn", "placeholder", "_", "X", "Y"})

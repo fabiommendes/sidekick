@@ -23,8 +23,6 @@ if TYPE_CHECKING:
     from .fn import fn  # noqa: F401
     from .. import api as sk  # noqa: F401
 
-_new = object.__new__
-
 
 def to_fn(func: Any) -> "fn":
     """
@@ -48,8 +46,8 @@ def to_function(func: Any, name=None, keep_signature=False) -> FunctionType:
         func:
             Callable object to be coerced to FunctionType.
         name:
-            Force __name__ to have the given value. This modify lambdas and
-            create wrappings for other function types.
+            Force __name__ to have the given value. This modifies lambdas
+            inplace and create wrapper methods for other function types.
         keep_signature:
             If true and func is not a FunctionType, wraps into a python function
             with proper signature.
@@ -148,12 +146,11 @@ def tuple_identity(*args: T, **kwargs) -> Union[T, Tuple[T, ...]]:
     return args
 
 
-def identity(*args, **kwargs):
+def identity(x, /, *args, **kwargs):
     """
     A simple identity function that accepts a single positional argument
     and ignore keywords.
     """
-    (x,) = args
     return x
 
 
@@ -224,14 +221,14 @@ def declaration(func: Callable) -> "Stub":
     return Stub(func.__name__, (sig,))
 
 
-def quick_fn(func: callable) -> "fn":
+def quick_fn(func: Callable) -> "fn":
     """
     Faster fn constructor.
 
     This is about twice as fast as the regular fn() constructor. It assumes that
-    fn is
+    fn is a FunctionType.
     """
-    new: fn = _new(fn)
+    new: fn = object.__new__(fn)
     new._func = func
     new.__dict__ = {}
     return new
