@@ -1,6 +1,13 @@
 import typing as _typ
-from types import FunctionType, MethodType, BuiltinFunctionType, BuiltinMethodType
+from types import (
+    FunctionType,
+    MethodType,
+    BuiltinFunctionType,
+    BuiltinMethodType,
+    MappingProxyType,
+)
 from typing import *
+from ._empty import empty
 
 #
 # Sidekick types
@@ -46,3 +53,22 @@ Lattice = Group
 Functor = Generic
 Applicative = Functor
 Monad = Applicative
+
+
+#: Empty values
+#: Sharing empty collection types is generally a good practice since coercing
+#: EMPTY_LIST to [] is generally an acceptable semantics.
+EMPTY_LIST = empty(list)
+EMPTY_DICT = empty(dict)
+EMPTY_SET = empty(set)
+EMPTY_ITERATOR = empty([].__iter__)
+
+#: Immutable container wrappers exist for symmetry and uniform syntax;
+#: e.g. we might want to use EMPTY_TUPLE | lst instead of lst | () to preserve
+#: the argument.
+EMPTY_TUPLE = empty(())
+EMPTY_FROZENSET = empty(frozenset())
+EMPTY_FROZENMAP = empty(MappingProxyType({}))
+EMPTY_INT = empty(0)
+EMPTY_FLOAT = empty(0.0)
+EMPTY_COMPLEX = empty(0j)

@@ -79,7 +79,15 @@ class Zombie:
             object.__getattribute__(self, "__dict__").update(result.__dict__)
 
         # Safer than obj.__class__ = type(result) since avoids custom __setattr__
-        object.__setattr__(self, "__class__", type(result))
+        cls = type(result)
+        try:
+            object.__setattr__(self, "__class__", cls)
+        except TypeError:
+            name = cls.__name__
+            raise TypeError(
+                f"Could not reassign {name} instance when waking up zombie object."
+                f"\n    Maybe you should try using deferred instead?"
+            )
         return self
 
 
