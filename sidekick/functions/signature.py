@@ -31,7 +31,8 @@ class Signature(inspect.Signature):
         """
         Return a sidekick Signature from a inspect.Signature instance.
         """
-        return cls(sig.parameters.values(), return_annotation=sig.return_annotation)
+        params = list(sig.parameters.values())
+        return cls(params, return_annotation=sig.return_annotation)
 
     @property
     def restype(self) -> type:
@@ -109,7 +110,7 @@ class Signature(inspect.Signature):
         params = [p for k, p in pairs if k not in partial.kwargs]
         return Signature(params, return_annotation=self.return_annotation)
 
-    def call(*args, **kwargs) -> "Result":
+    def call(self, func, /, *args, **kwargs) -> "Result":
         """
         Execute function and check if it conforms with both input and output
         signatures.
@@ -121,14 +122,14 @@ class Signature(inspect.Signature):
         Examples:
             >>> def add(x: int, y: int) -> int:
             ...     return x + y
+            >>> sig = Signature.from_callable(add)
             >>> sig.call(add, 1, 2)
             Ok(3)
-            >>> sig.call(add, 1, 2.0)
-            Err(TypeError('argument at position 1 (x) is a float, expect int'))
+            >>> sig.call(add, 1, 2j)
+            Err('invalid argument (y): complex, expect int')
         """
         from ..types import Err
 
-        self, func, *args = args
         bound = self.checked_args(*args, **kwargs)
         if not bound:
             return bound.map_error(lambda e: e.args[0])
@@ -153,7 +154,7 @@ class Signature(inspect.Signature):
             return Err(TypeError(f"invalid return type: {exc}"))
         return Ok(value)
 
-    def checked_args(*args, **kwargs) -> "Result":
+    def checked_args(self, /, *args, **kwargs) -> "Result":
         """
         Check if arguments conform to signature.
 
@@ -161,9 +162,15 @@ class Signature(inspect.Signature):
         """
         from ..types import Err, Ok
 
-        self, *args = args
         try:
-            return Ok(self.bind(*args, **kwargs))
+            bind: inspect.BoundArguments = self.bind(*args, **kwargs)
+            for name, sig in self.parameters.items():
+                value = bind.arguments[name]
+                try:
+                    typechecked(value, normalize_type(sig.annotation))
+                except TypeError as e:
+                    return Err(TypeError(f"invalid argument ({name}): {e}"))
+            return Ok(bind)
         except TypeError as ex:
             return Err(ex)
 

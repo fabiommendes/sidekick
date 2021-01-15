@@ -1,13 +1,9 @@
-import time
-from types import FunctionType
+from functools import cached_property
 
-from .core_functions import to_callable
-from .fn import fn
-from .utils import lazy_property
-from ..typing import TYPE_CHECKING, Any, Callable, Func, Catchable
+from ..typing import TYPE_CHECKING, Any, Callable, Catchable
 
 if TYPE_CHECKING:
-    pass
+    from .fn import fn
 
 
 def as_method(method, name):
@@ -17,26 +13,13 @@ def as_method(method, name):
     return method
 
 
-def as_last_argument(name):
-    """
-    Declare methods that pass fn._func as last argument to the corresponding
-    method in the API.
-    """
-
-    def method(self: FnMixin, *args, **kwargs):
-        api_func = getattr(self._mod, name)
-        return api_func(*args, self, **kwargs)
-
-    return as_method(method, name)
-
-
 def curry_n(n, name, options=()):
     """
     Curry if only one argument is given and execute if any additional arguments
     are passed.
     """
 
-    def method(self: FnMixin, *args, **kwargs):
+    def method(self: "FnMixin", *args, **kwargs):
         api_func = getattr(self._mod, name)
         api_kwargs = {k: kwargs.pop(k) for k in kwargs if k in options}
 
@@ -58,27 +41,23 @@ class FnMixin:
 
     _func: Callable
     __call__: Callable
+    __slots__ = ()
 
     if TYPE_CHECKING:
-        from .. import functions
+        from .. import functions as _mod
 
-        _mod = functions
-        del functions
+        _mod = _mod
     else:
 
-        @lazy_property
+        @cached_property
         def _mod(self):
             from .. import functions
 
             return functions
 
-
-# noinspection PyMethodParameters
-class FnArgumentsMixin(FnMixin):
-    """
-    Expose functions in sidekick.functions.lib_arguments as methods.
-    """
-
+    #
+    # Expose functions in sidekick.functions.lib_arguments as methods.
+    #
     def flip(self, x, y, /, *args, **kwargs):
         """
         Executes flipping the first two arguments.
@@ -87,7 +66,7 @@ class FnArgumentsMixin(FnMixin):
         """
         return self._func(y, x, *args, **kwargs)
 
-    def reverse_args(self, /, *args, **kwargs) -> fn:
+    def reverse_args(self, /, *args, **kwargs):
         """
         Executes reversing the order of positional arguments.
 
@@ -111,20 +90,16 @@ class FnArgumentsMixin(FnMixin):
         """
         return self._func(*xs, *args, **kwargs)
 
-    def set_null(self, /, *defaults: Any, **kwargs: Any) -> fn:
+    def set_null(self, /, *defaults: Any, **kwargs: Any) -> "fn":
         """
         Return a new function that replace all null arguments in the given positions
         by the provided default value.
         """
         return self._mod.set_null(self._func, *defaults, **kwargs)
 
-
-# noinspection PyMethodParameters
-class LibCombinators(FnMixin):
-    """
-    Expose functions in sidekick.functions.lib_combinators as methods.
-    """
-
+    #
+    # Expose functions in sidekick.functions.lib_combinators as methods.
+    #
     def do(self, /, *args, **kwargs):
         """
         Execute function, but return the first argument.
@@ -137,14 +112,10 @@ class LibCombinators(FnMixin):
         self(*args, **kwargs)
         return args[0]
 
-
-# noinspection PyMethodParameters
-class LibComposition(FnMixin):
-    """
-    Expose functions in sidekick.functions.lib_composition as methods.
-    """
-
-    def compose(self, *funcs):
+    #
+    # Expose functions in sidekick.functions.lib_composition as methods.
+    #
+    def compose(self, *funcs) -> "fn":
         """
         Compose with other functions.
 
@@ -152,7 +123,7 @@ class LibComposition(FnMixin):
         """
         return self._mod.compose(self, *funcs)
 
-    def pipeline(self, *funcs):
+    def pipeline(self, *funcs) -> "fn":
         """
         Compose with other functions.
 
@@ -160,20 +131,16 @@ class LibComposition(FnMixin):
         """
         return self._mod.pipeline(self, *funcs)
 
-    def juxt(self, *funcs, **kwargs):
+    def juxt(self, *funcs, **kwargs) -> "fn":
         """
         Return function that juxtaposes fn with all functions in the arguments.
         """
         return self._mod.juxt(self, *funcs, **kwargs)
 
-
-# noinspection PyMethodParameters
-class LibRuntime(FnMixin):
-    """
-    Expose functions in sidekick.functions.lib_runtime as methods.
-    """
-
-    def once(self) -> fn:
+    #
+    # Expose functions in sidekick.functions.lib_runtime as methods.
+    #
+    def once(self) -> "fn":
         """
         Version of function that perform a single invocation.
 
@@ -181,7 +148,7 @@ class LibRuntime(FnMixin):
         """
         return self._mod.once(self._func)
 
-    def thunk(self, /, *args, **kwargs) -> FunctionType:
+    def thunk(self, /, *args, **kwargs) -> Callable[[], Any]:
         """
         Return as a thunk.
         """
@@ -190,83 +157,62 @@ class LibRuntime(FnMixin):
     call_after = curry_n(1, "call_after", {"default"})
     call_at_most = curry_n(1, "call_at_most")
 
-    def throttle(self, dt: float) -> fn:
+    def throttle(self, dt: float, **kwargs) -> "fn":
         """
         Limit the rate of execution of func to once at each ``dt`` seconds.
 
         Return a new function.
         """
-        return self._mod.throttle(dt, self)
+        return self._mod.throttle(dt, self, **kwargs)
 
-    def background(self, /, *args, **kwargs) -> fn:
+    def background(self, /, *args, **kwargs) -> Any:
         """
         Execute function in the background.
 
         Current implementation uses threads, but in the future it may use hooks
         to other runtimes such as asyncio, curio, etc.
         """
+        return self._mod.background(self, *args, **kwargs)
 
-        try:
-            bg_func = self.__background
-        except AttributeError:
-            bg_func = self.__background = self._mod.background(self)
-        return bg_func(*args, **kwargs)
-
-    def catch(self, exception, *, handler=None, raises=None) -> "fn":
+    def catch(self, error, /, *args, **kwargs):
         """
-        Handle exception in function. If the exception occurs, it executes the given
-        handler.
+        Handle exception in function.
 
-        Return a new function.
+        If the exception occurs, return None or the value mapped from the error
+        mapping.
         """
-        return self._mod.catch(exception, handler=handler, raises=raises)(self)
+        return self._mod.catch(error, self, *args, **kwargs)
+
+    def catching(self, error) -> "fn":
+        """
+        Handle exception in function.
+
+        If the exception occurs, it executes the given handler.
+
+        Return a new function with the new error handling behavior.
+        """
+        return self._mod.catching(error, self)
 
     def retry(
-        self, n: int, func: Func, *, error: Catchable = Exception, sleep=None
-    ) -> fn:
+        self, n: int, /, *args, error: Catchable = Exception, sleep=None, **kwargs
+    ) -> "fn":
         """
-        Retry to execute function at least n times before raising an error.
+        Try to call function n types before raising an error.
 
-        This is useful for functions that may fail due to interaction with external
-        resources (e.g., fetch data from the network).
+        This is useful for functions that may fail due to interaction with
+        external resources (e.g., fetch data from the network).
 
         Args:
             n:
                 Maximum number of times to execute function
-            func:
-                Function that may raise errors.
             error:
                 Exception or tuple with suppressed exceptions.
             sleep:
-                Interval in which it sleeps between attempts.
+                Interval between attempts. This is a blocking function, hence
+                use with care.
 
-        Example:
-            >>> queue = [111, 7, None, None]
-            >>> process = sk.retry(5, lambda n: queue.pop() * n)
-            >>> process(6)
-            42
+        Other positional and keyword arguments are forwarded to function.
         """
 
-        @fn.wraps(func)
-        def safe_func(*args, **kwargs):
-            for _ in range(n - 1):
-                try:
-                    return func(*args, **kwargs)
-                except error:
-                    if sleep:
-                        time.sleep(sleep)
-            return func(*args, **kwargs)
-
-        func = to_callable(func)
-        return safe_func
-
-
-def patch_fn():
-    """
-    Patch the fn() object with those functions.
-    """
-    for typ in [FnMixin, FnArgumentsMixin, LibRuntime, LibCombinators, LibComposition]:
-        for k, v in vars(typ).items():
-            if k.startswith("_") and k != "_mod" or hasattr(fn, k):
-                continue
-            setattr(fn, k, v)
+        func = self._mod.retry(n, self, error=error, sleep=sleep)
+        return func(*args, **kwargs)

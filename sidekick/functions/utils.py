@@ -1,27 +1,10 @@
 from copy import copy
+from functools import cached_property
 
 from .._utils import dedent, indent
 
 
-class lazy_property:
-    """
-    Lazy property accessor.
-
-    Used to mirror wrapped function properties.
-    """
-
-    __slots__ = "func"
-
-    def __init__(self, func):
-        self.func = func
-
-    def __get__(self, instance, cls=None):
-        if instance is None:
-            return self
-        return self.func(instance)
-
-
-class lazy_string(lazy_property):
+class lazy_string(cached_property):
     __slots__ = "string"
 
     def __init__(self, func, string):

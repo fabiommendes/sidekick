@@ -88,7 +88,6 @@ Runtime control
    throttle
    background
    error
-   raising
    retry
    catch
 

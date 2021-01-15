@@ -102,6 +102,7 @@ Transforming
 
 .. autosummary::
    map
+   map_if
    zip_map
 
 

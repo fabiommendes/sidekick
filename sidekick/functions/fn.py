@@ -7,6 +7,7 @@ from .signature import Signature
 from .utils import mixed_accessor, lazy_string, lazy_property
 from .._modules import GetAttrModule, set_module_class
 from ..typing import Union, Dict, Any
+from . import fn_mixins as mixins
 
 set_module_class(__name__, GetAttrModule)
 identity = lambda x: x
@@ -55,7 +56,7 @@ class FunctionMeta(type):
     __lshift__ = __rlshift__ = __rrshift__ = __rshift__
 
 
-class fn(metaclass=FunctionMeta):
+class fn(mixins.FnMixin, metaclass=FunctionMeta):
     """
     Base class for function-like objects in Sidekick.
     """
@@ -258,7 +259,8 @@ class fn(metaclass=FunctionMeta):
           to the resulting function.
 
         Example:
-            >>> add = fn(lambda x, y: x + y)
+            >>> from sidekick.api import placeholder as _
+            >>> add = fn(X + Y)
             >>> g = add.single(_, 2 * _)
             >>> g(10)  # g(x) = x + 2 * x
             30
@@ -266,7 +268,7 @@ class fn(metaclass=FunctionMeta):
         Returns:
             fn
         """
-        ast = call_node(self.__sk_callable__, *args, **kwargs)
+        ast = call_node(to_callable(self), *args, **kwargs)
         return compile_ast(ast)
 
     #

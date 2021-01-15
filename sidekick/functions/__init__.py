@@ -1,6 +1,5 @@
 from . import core_functions as _core
 from . import fn_instances as _instances
-from . import fn_mixins as _mixins
 from .core_functions import (
     to_fn,
     to_function,
@@ -12,7 +11,7 @@ from .core_functions import (
 )
 from .fn import fn, wrap_fn_functions as _wrap_fn_functions
 from .fn_interfaces import semigroup, monoid, group, apply, apply_flat, mtimes, mconcat
-from .fn_placeholders import X, Y, F, placeholder, _, Placeholder
+from .fn_placeholders import X, Y, F, M, placeholder, _, Placeholder
 from .lib_arguments import (
     flip,
     select_args,
@@ -53,9 +52,9 @@ from .lib_runtime import (
     throttle,
     background,
     error,
-    raising,
     retry,
     catch,
+    catching,
 )
 from .signature import Signature
 from .stub import Stub
@@ -70,6 +69,7 @@ __all__ = [
     "X",
     "Y",
     "F",
+    "M",
     "placeholder",
     "Placeholder",
     "Signature",
@@ -123,8 +123,8 @@ __all__ = [
     "throttle",
     "background",
     "error",
-    "raising",
     "retry",
+    "catching",
     "catch",
     # Arguments
     "flip",
@@ -137,6 +137,5 @@ __all__ = [
     "set_null",
 ]
 
-_wrap_fn_functions(globals(), exclude={"fn", "placeholder", "_", "X", "Y"})
+_wrap_fn_functions(globals(), exclude={"fn", "placeholder", "_", "X", "Y", "M", "F"})
 _instances.register_all()
-_mixins.patch_fn()

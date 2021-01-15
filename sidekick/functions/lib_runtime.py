@@ -1,12 +1,23 @@
 import time
 from functools import wraps
-from types import FunctionType
 
-from sidekick._utils import to_raisable, catches
 from .core_functions import quick_fn
 from .fn import fn, to_callable
 from .lib_combinators import always
-from ..typing import NOT_GIVEN, TYPE_CHECKING, Func, Catchable, Raisable, Union
+from .._utils import to_raisable, is_raisable
+from ..typing import (
+    NOT_GIVEN,
+    TYPE_CHECKING,
+    Func,
+    Catchable,
+    Literal,
+    Callable,
+    overload,
+    Any,
+    Union,
+    Dict,
+    T,
+)
 
 Err = Ok = Result = None
 
@@ -16,11 +27,7 @@ if TYPE_CHECKING:
     from ..types.maybe import Maybe  # noqa: F401
     from ..types.result import Result  # noqa: F401
 
-    # Help with Pycharm's confusion with doctrings
-    host: None
-    port: None
-    name: None
-    data: None
+__doctest_skip__ = ["result"]
 
 
 @fn
@@ -52,24 +59,36 @@ def once(func: Func) -> fn:
     # this approach instead of initializing with a "not_given" value, since the
     # common path of returning the pre-computed result of func() can be
     # executed faster inside a try/except block
-    result = None
+    if False:
+        value = None  # noqa
 
     @wraps(func)
     @quick_fn
     def once_fn(*args, **kwargs):
-        nonlocal result
+        nonlocal value
         try:
-            return result
+            return value
         except NameError:
-            result = func(*args, **kwargs)
-            return result
+            value = func(*args, **kwargs)
+            return value
 
-    del result
     return once_fn
 
 
+@overload
+def thunk(
+    func: type(Ellipsis), /, *args, **kwargs
+) -> Callable[[Callable], Callable[[], Any]]:
+    ...
+
+
+@overload
+def thunk(func: Callable, /, *args, **kwargs) -> Callable[[], Any]:
+    ...
+
+
 @fn
-def thunk(func, /, *args, **kwargs) -> FunctionType:
+def thunk(func, /, *args, **kwargs):
     """
     A thunk that represents a lazy computation.
 
@@ -84,7 +103,7 @@ def thunk(func, /, *args, **kwargs) -> FunctionType:
         >>> conf() is conf() == {}
         True
         >>> @sk.thunk(..., host='localhost', port=5432)
-        ... def db(host, port):
+        ... def db(host, port):  # noqa
         ...     print(f'connecting to SQL server at {host}:{port}...')
         ...     return {'host': host, 'port': port}
         >>> db()
@@ -101,11 +120,11 @@ def thunk(func, /, *args, **kwargs) -> FunctionType:
     # common path of returning the pre-computed result of func() can be
     # executed faster inside a try/except block
     if func is ...:
-        result = None
-        return lambda fn: thunk(fn, *args, **kwargs)
+        result = None  # noqa
+        return lambda f: thunk(f, *args, **kwargs)
 
     @wraps(func)
-    def get_value():
+    def get_value() -> Any:
         nonlocal result
         try:
             return result
@@ -139,8 +158,9 @@ def call_after(n: int, func: Func, *, default=None) -> fn:
 
     See Also:
         :func:`once`
-        :func:`call_at_most`
     """
+    if n <= 0:  # nocover
+        raise ValueError("n must be positive")
 
     @fn.wraps(func)
     def after(*args, **kwargs):
@@ -179,10 +199,10 @@ def call_at_most(n: int, func: Func) -> fn:
         :func:`call_after`
     """
 
-    if n <= 0:
+    if n <= 0:  # nocover
         raise ValueError("n must be positive")
 
-    result = None
+    result = None  # noqa
 
     @fn.wraps(func)
     def at_most(*args, **kwargs):
@@ -199,11 +219,33 @@ def call_at_most(n: int, func: Func) -> fn:
 
 
 @fn.curry(2)
-def throttle(dt: float, func: Func) -> fn:
+def throttle(
+    dt: float,
+    func: Func,
+    policy: Literal["last", "block"] = "last",
+    clock: Callable[[], T] = time.monotonic,
+    sleep: Callable[[T], None] = time.sleep,
+) -> fn:
     """
     Limit the rate of execution of func to once at each ``dt`` seconds.
 
     When rate-limited, returns the last result returned by func.
+
+    Args:
+        dt:
+            Interval between actual function calls.
+        func:
+            Target function.
+        policy:
+            One of 'last' (default) or 'block'. Control how function behaves
+            when called between two successive intervals.
+            * 'last': return the last computed value.
+            * 'block': block execution until deadline is reached.
+        clock:
+            The timing function used to compute deadlines. Defaults to ``time.monotonic``
+        sleep:
+            Sleep function used in conjunction with clock. Both functions must use
+            the same time units.
 
     Example:
         >>> f = sk.throttle(1, (X * 2))
@@ -211,92 +253,153 @@ def throttle(dt: float, func: Func) -> fn:
         [42, 42, 42, 42]
     """
 
-    last_time = -float("inf")
+    deadline = -float("inf")
     last_result = None
 
-    @fn.wraps(func)
-    def limited(*args, **kwargs):
-        nonlocal last_time, last_result
-        now = time.monotonic()
-        if now - last_time >= dt:
-            last_time = now
-            last_result = func(*args, **kwargs)
-        return last_result
+    if policy == "last":
+
+        def limited(*args, **kwargs):
+            nonlocal deadline, last_result
+            now = clock()
+            if now >= deadline:
+                deadline = now + dt
+                last_result = func(*args, **kwargs)
+            return last_result
+
+    elif policy == "block":
+
+        def limited(*args, **kwargs):
+            nonlocal deadline
+            now = clock()
+            if now < deadline:
+                sleep(deadline - now)
+            deadline = now + dt
+            return func(*args, **kwargs)
+
+    else:  # nocover
+        raise TypeError(f"invalid policy: {policy!r}")
 
     func = to_callable(func)
-    return limited
+    return fn.wraps(func)(limited)
 
 
-@fn.curry(1)
-def background(func: Func, *, timeout: float = None, default=NOT_GIVEN) -> fn:
+class Background:
     """
-    Return a function that executes in the background.
+    Wraps a background computation.
+    """
 
-    The transformed function return a thunk that forces the evaluation of the
-    function in a blocking manner. Function can also be used as a decorator.
+    __slots__ = "_output", "_error", "thread"
+    _output: Any
+
+    def __init__(self, target):
+        from threading import Thread
+
+        self._error = None
+
+        def _real_target():
+            try:
+                self._output = target()
+            except Exception as e:
+                self._error = e
+
+        self.thread = Thread(target=_real_target)
+        self.thread.start()
+
+    def __repr__(self):
+        if self.thread.is_alive():
+            return "Background(...)"
+        elif self._error is not None:
+            return f"Background({self._error!r})"
+        else:
+            return f"Background({self._output!r})"
+
+    def __call__(self, **kwargs):
+        return self.get(**kwargs)
+
+    def get(self, timeout=None, *, default=NOT_GIVEN):
+        """
+        Return result of computation.
+
+        Can set optional timeout and default arguments.
+        """
+        try:
+            return self._output
+        except AttributeError:
+            pass
+        if self._error is not None:
+            raise self._error
+
+        self.thread.join(timeout)
+        if self.thread.is_alive():
+            if default is NOT_GIVEN:
+                raise TimeoutError
+            return default
+        if self._error is not None:
+            raise self._error
+        return self._output
+
+    def maybe(self) -> "Maybe":  # noqa
+        """
+        Return Just(result), if available or Nothing.
+        """
+        from ..types.maybe import Just, Nothing
+
+        sentinel = object()
+        res = self.get(0, default=sentinel)
+        return Nothing if res is sentinel else Just(res)
+
+    def result(self) -> "Result":  # noqa
+        """
+        Wrap result in an Result value.
+
+        Return Err(TimeoutError) if the function has not terminated yet.
+        """
+        from ..types.maybe import Err
+
+        try:
+            return self.maybe().to_result(TimeoutError)
+        except Exception as e:
+            return Err(e)
+
+
+def background(func: Func, /, *args, **kwargs) -> Background:
+    """
+    Run function in the background with the supplied arguments.
+
+    This function returns a Background value responsible for fetching the
+    result of computation. If called with no parameters, it blocks until the
+    function ends computation and return the result.
+
+    The function also accepts the timeout and default parameters.
 
     Args:
         func:
             Function or callable wrapped to support being called in the
             background.
-        timeout:
-            Timeout in seconds.
-        default:
-            Default value to return if if function timeout when evaluation is
-            requested, otherwise, raises a TimeoutError.
 
     Examples:
-
         >>> fib = lambda n: 1 if n <= 2 else fib(n - 1) + fib(n - 2)
-        >>> fib_bg = sk.background(fib, timeout=1.0)
-        >>> result = fib_bg(10)  # Do not block execution, return a thunk
-        >>> result()             # Call the result to get value (blocking operation)
-        55
+        >>> res = sk.background(fib, 30)  # Do not block execution, return a thunk
+
+        We can inspect partial results. ``res.maybe`` will return Just(value)
+        if computation is completed and ``Nothing`` otherwise.
+
+        >>> res.maybe()
+        Nothing
+
+        In order to inspect errors or the current state of excution, use
+        the result method.
+
+        >>> res.result()
+        Err(TimeoutError)
+
+        We can finally force completion using the blocking operation:
+
+        >>> res.get()
+        832040
     """
-
-    from threading import Thread
-
-    @fn.wraps(func)
-    def background_fn(*args, **kwargs):
-        output = None
-
-        def target():
-            nonlocal output
-            output = func(*args, **kwargs)
-
-        thread = Thread(target=target)
-        thread.start()
-
-        @once
-        def out(default=default, *, timeout=timeout):
-            """
-            Return result of computation.
-
-            Can set optional timeout and default arguments.
-            """
-            thread.join(timeout)
-            if thread.is_alive():
-                if default is NOT_GIVEN:
-                    raise TimeoutError
-                return default
-            return output
-
-        def maybe(*, timeout=timeout) -> "Maybe":
-            """
-            Return result if available.
-            """
-            from ..types.maybe import Just, Nothing
-
-            thread.join(timeout)
-            if thread.is_alive():
-                return Nothing
-            return Just(output)
-
-        out.maybe = maybe
-        return out
-
     func = to_callable(func)
-    return background_fn
+    return Background(lambda: func(*args, **kwargs))
 
 
 @fn
@@ -321,90 +424,87 @@ def error(exc):
     raise to_raisable(exc)
 
 
-@fn.curry(1)
-def raising(exc: Union[str, int, Raisable], n_args=None) -> fn:
-    """
-    Creates function that raises the given exception.
-
-    If argument is not an exception, raises ValueError(exc). The returning
-    function accepts any number of arguments.
-
-    Examples:
-        >>> func = sk.raising('some error')
-        >>> func()
-        Traceback (most recent call last):
-        ...
-        ValueError: some error
-
-    See Also:
-        * :func:`raising`: create a function that raises an error instead of
-          raising it immediately
-
-    """
-
-    if n_args:
-
-        @fn
-        def error_raiser(*args, **kwargs):
-            args = args[:n_args]
-            raise to_raisable(exc(*args))
-
-        return error_raiser
-    else:
-        return fn(lambda *args, **kwargs: error(exc))
-
-
 @fn.curry(2)
-def catch(
-    exception: Catchable, func: Func, *, handler: Func = None, raises: Raisable = None
-):
+def catch(exc: Union[Catchable, Dict[Catchable, Any]], func: Func, /, *args, **kwargs):
     """
     Handle exception in function. If the exception occurs, it executes the given
     handler.
 
     Examples:
-        >>> nan = sk.always(float('nan'))
-        >>> div = sk.catch(ZeroDivisionError, (X / Y), handler=nan)
-        >>> div(1, 0)
+        >>> div = (X / Y)
+        >>> print(sk.catch(ZeroDivisionError, div, 1, 0))
+        None
+
+        It is possible to map the return value in case of errors to other errors
+        or to other values.
+
+        >>> sk.catch({ZeroDivisionError: float('nan')}, div, 1, 0)
         nan
-
-        The function can be used to re-write exceptions by passing the optional
-        raises parameter.
-
-        >>> @sk.catch(KeyError, raises=ValueError("invalid name"))
-        ... def get_value(name):
-        ...     return data[name]
     """
 
-    func = to_callable(func)
-    if isinstance(raises, Exception):
-        handler = raising(raises)
-    elif callable(raises):
-        handler = lambda e: error(raises(e))
-    elif handler is None:
-        handler = always(None)
-    else:
-        handler = to_callable(handler)
-    return quick_fn(catches(exception, func, handler))
+    try:
+        return func(*args, **kwargs)
+    except Exception as e:
+        is_exc = isinstance(exc, type)
+        if is_exc and isinstance(e, exc):
+            return None
+        elif not is_exc:
+            res = exc[type(e)]
+            if is_raisable(res):
+                raise res
+            return res
+        raise
+
+
+@fn.curry(2)
+def catching(errors: Catchable, func: Func):
+    """
+    Similar to catch, but decorates a function rewriting its error handling
+    policy.
+
+    Examples:
+        >>> @sk.catching({KeyError: ValueError})
+        ... def get_value(name):
+        ...     return db[name]  # noqa
+    """
+
+    if isinstance(errors, type):
+        errors = {errors: None}
+
+    exceptions = tuple(errors)
+    handlers = {}
+
+    for err, handler in errors.items():
+        if is_raisable(handler):
+            handlers[err] = error.partial(handler)
+        else:
+            handlers[err] = always(handler)
+
+    def runner(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except exceptions as e:
+            try:
+                handler_fn = handlers[type(e)]
+            except KeyError:
+                raise
+            return handler_fn(e)
+
+    return quick_fn(runner)
 
 
 @fn
-def result(*args, **kwargs) -> "Result":
+def result(func, /, *args, **kwargs) -> "Result":
     """
     Execute function and wrap result in a Result type.
 
     If execution is successful, return Ok(result), if it raises an exception,
     return Err(exception).
 
-    >>> with result() as res:
-    ...    very_complex_computation()
-    ...    res.push(42)
-    >>> res.pop()
-    Ok(42)
-    >>> res.pop()
-    Err(...)
+    >>> res = result(very_complex_computation, 42)  # noqa
+    >>> res.is_ok  # computation was not successful!
+    False
     """
-    func, *args = args
     func = to_callable(func)
 
     try:
@@ -417,6 +517,7 @@ def result(*args, **kwargs) -> "Result":
         return Ok(res)
 
 
+# noinspection PyShadowingNames
 @fn.curry(2)
 def retry(n: int, func: Func, *, error: Catchable = Exception, sleep=None) -> fn:
     """

@@ -20,8 +20,9 @@ class Placeholder:
 Eop = lambda op: lambda self, other: Expr(BinOp(op, self._ast, to_ast(other)))
 
 
+# noinspection PyPep8Naming
 def Xop(op):
-    def operator(_, other):
+    def func(_, other):
         if other is X:
             return lambda x: op(x, x)
         elif other is Y:
@@ -29,11 +30,12 @@ def Xop(op):
         else:
             return lambda x: op(x, other)
 
-    return operator
+    return func
 
 
+# noinspection PyPep8Naming
 def Yop(op):
-    def operator(_, other):
+    def func(_, other):
         if other is X:
             return lambda x, y: op(y, x)
         elif other is Y:
@@ -41,7 +43,7 @@ def Yop(op):
         else:
             return lambda x, y: op(y, other)
 
-    return operator
+    return func
 
 
 Erop = lambda op: lambda self, value: Expr(BinOp(op, to_ast(value), self._ast))
@@ -80,39 +82,26 @@ class _Y(op_wrapper_class(Yop, Yrop, Yunary), Placeholder):
         return y
 
     def __getattr__(self, attr):
-        return lambda x, y: y
+        return lambda x, y: getattr(y, attr)
 
 
-Fop = lambda op: lambda self, x: lambda *args, **kwargs: op(
-    self._fn(*args, **kwargs), x
-)
-Frop = lambda op: lambda self, x: lambda *args, **kwargs: op(
-    x, self._fn(*args, **kwargs)
-)
-Funary = lambda op: lambda self: lambda *args, **kwargs: op(self._fn(*args, **kwargs))
-
-
-class FMeta(type):
-    def __getitem__(cls, func):
-        new = object.__new__(cls)
-        new._fn = func
-        return func
-
-    def __call__(cls, func, /, *args, **kwargs):
-        args = tuple(map(to_ast, args))
-        kwargs = {k: to_ast(arg) for k, arg in kwargs.items()}
-        return Expr(Call(Cte(func), args, kwargs))
-
-
-class F(op_wrapper_class(Fop, Frop), metaclass=FMeta):
-    __slots__ = ("_fn",)
-
-    @property
-    def __sk_callable__(self):
-        return self._fn
-
+class _M(Placeholder):
     def __repr__(self):
-        return "F"
+        return "M"
+
+    def __call__(self, *args, **kwargs):
+        return lambda fn: fn(*args, **kwargs)
+
+    def __getattr__(self, attr):
+        return lambda *args, **kwargs: operator.methodcaller(attr, *args, **kwargs)
+
+
+class _F:
+    def __getitem__(self, func):
+        return lambda *args, **kwargs: self(func, *args, **kwargs)
+
+    def __call__(self, func, /, *args, **kwargs):
+        return Expr(call_node(func, *args, **kwargs))
 
 
 class Expr(op_wrapper_class(Eop, Erop, Eunary), Placeholder):
@@ -123,10 +112,6 @@ class Expr(op_wrapper_class(Eop, Erop, Eunary), Placeholder):
     __slots__ = "_ast", "_callable"
 
     _name = property(lambda self: self.__repr__())
-
-    @property
-    def __wrapped__(self):
-        raise AttributeError("__wrapped__")
 
     @property
     def __sk_callable__(self):
@@ -145,6 +130,8 @@ class Expr(op_wrapper_class(Eop, Erop, Eunary), Placeholder):
         return source(self._ast)
 
     def __getattr__(self, attr):
+        if attr == "__wrapped__":
+            raise AttributeError
         return Expr(GetAttr(attr, self._ast))
 
     def __call__(self, *args, **kwargs):
@@ -180,13 +167,12 @@ def to_ast(obj: Expr):
         return Cte(obj)
 
 
-def call_node(*args, **kwargs):
+def call_node(func, /, *args, **kwargs):
     """
     Create a call node for ast.
     """
-    it = iter(args)
-    func = to_ast(next(it))
-    args = tuple(map(to_ast, it))
+    func = to_ast(func)
+    args = tuple(map(to_ast, args))
     kwargs = {k: to_ast(v) for k, v in kwargs.items()}
     return Call(func, args, kwargs)
 
@@ -406,3 +392,5 @@ def simplify_ast(ast):
 placeholder = _ = Expr(Var)
 X = _X()
 Y = _Y()
+M = _M()
+F = _F()
