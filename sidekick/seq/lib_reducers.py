@@ -35,7 +35,7 @@ def fold(func: Func, init, seq: Seq):
 
 
 @fn.curry(2)
-def reduce(func: Func, seq: Seq, init=NOT_GIVEN):
+def reduce(func: Func, seq: Seq, initial=NOT_GIVEN):
     """
     Like fold, but does not require initial value.
 
@@ -49,9 +49,9 @@ def reduce(func: Func, seq: Seq, init=NOT_GIVEN):
         :func:`fold`
         :func:`acc`
     """
-    if init is not NOT_GIVEN:
+    if initial is not NOT_GIVEN:
         warnings.warn("use the sk.fold() function to set initial values.")
-        return fold(func, init, seq)
+        return fold(func, initial, seq)
 
     func = to_callable(func)
     return _reduce(func, seq)

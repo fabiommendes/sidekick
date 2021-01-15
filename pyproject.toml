@@ -30,6 +30,7 @@ test = [ "pytest", "pytest-cov", "mock", "hypothesis" ]
 doc = [ "sphinx", "sphinx_rtd_theme" ]
 dev = [ "flake8", "black", "readme_renderer" ]
 hypothesis = [ "hypothesis" ]
+app-cfg = [ "function-framework", "flask", "json-rpc" ]
 
 
 [tool.flit.metadata.urls]

@@ -111,9 +111,10 @@ for loop wrapped inside parenthesis:
 >>> def counter(n):
 ...     return (i for i in range(n + 1))
 >>> list(counter(5))
-[0, 1, 2, 3]
+[0, 1, 2, 3, 4, 5]
 
 We can check for the existence of the __iter__ and __next__ methods
+
 >>> gen = counter(3)
 >>> gen.__iter__() is gen  # the __iter__ method return self!
 True
@@ -128,8 +129,8 @@ optional argument that declares a default value to use if the iterator is exhaus
 
 >>> next(gen)
 2
->>> next(gen, None), next(gen, None), , next(gen, None)
-3, None, None
+>>> next(gen, None), next(gen, None), next(gen, None)
+(3, None, None)
 
 It is hard to argue against the generator expression for the class based definition
 in this simple example. The generator expression only works, however, because the
@@ -214,7 +215,9 @@ Consider the simple for loop bellow:
 
 We express it functionally using the pattern
 
->>> sk.reduce(lambda x, y: x + y, lst, initial=0)
+>>> seq = range(11)
+>>> sk.reduce(lambda x, y: x + y, seq, initial=0)
+55
 
 The reduce function uses a binary operator (in this case, the "+" operator) to
 accumulate the result of an operation across every element of a sequence. In this

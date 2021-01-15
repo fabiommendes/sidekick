@@ -137,7 +137,7 @@ single argument function by passing x and y as a tuple, as such:
     def add_tuple(args):
         return args[0] + args[1]
 
-   add_tuple((1, 2))  # Returns 3
+    add_tuple((1, 2))  # Returns 3
 
 A second approach is to think that a multi-argument function is just a function
 that returns a second function that receives the remaining arguments. The function
@@ -592,7 +592,7 @@ would force us to select one of two other obvious possibilities:
 
 Either way is easy to implement with one-liners. Raising errors,
 
->>> dic = {3: 'fizz', 4: 'buzz'}
+>>> dic = {3: 'fizz', 5: 'buzz'}
 >>> next(sk.map(dic.__getitem__, range(10)))
 Traceback
 ...
@@ -661,7 +661,7 @@ sk.iter([2, 3, 4])
 
 4) Regex replacement
 
->>> sk.filter(r'/.+?(\w+)/a $1/', ['foo', 'foo bar'])
+>>> sk.filter(r"/.+?(\w+)/a $1/", ['foo', 'foo bar'])
 sk.iter(['a foo', 'a bar'])
 
 
@@ -685,7 +685,7 @@ All introspection functions such as :func:`sk.signature`, :func:`sk.arity`,
 :func:`sk.stub`, etc, have the corresponding methods,
 
 >>> div.signature()
-(x: float, y: float) -> float
+<Signature (x: float, y: float) -> float>
 
 Functions that receive a function and return a modified version are also
 exposed. When it makes sense, they call the transformed function directly
@@ -699,6 +699,6 @@ This is the behavior of ``flip``, ``background``, ``result``, and others.
 Other functions return new functions since the immediate execution
 would not make much sense.
 
->>> half = div.fix_args(X, 2)
+>>> half = div.single(X, 2)
 >>> half(10)
 5.0

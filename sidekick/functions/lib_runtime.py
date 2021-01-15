@@ -384,17 +384,20 @@ def background(func: Func, /, *args, **kwargs) -> Background:
         We can inspect partial results. ``res.maybe`` will return Just(value)
         if computation is completed and ``Nothing`` otherwise.
 
+        >>> res = sk.background(fib, 30)
         >>> res.maybe()
         Nothing
 
         In order to inspect errors or the current state of excution, use
         the result method.
 
+        >>> res = sk.background(fib, 30)
         >>> res.result()
         Err(TimeoutError)
 
         We can finally force completion using the blocking operation:
 
+        >>> res = sk.background(fib, 30)
         >>> res.get()
         832040
     """

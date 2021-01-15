@@ -4,7 +4,7 @@ Special types of iterators.
 from collections import deque
 from collections.abc import Iterator
 
-from sidekick._empty import EMPTY as NOT_GIVEN
+from sidekick._empty import _EMPTY as NOT_GIVEN
 
 
 # noinspection PyPep8Naming
