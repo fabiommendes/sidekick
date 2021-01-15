@@ -2,7 +2,7 @@ from itertools import tee, chain, takewhile, dropwhile, islice, count
 
 from toolz import groupby
 
-from .iter import Iter
+from .iter import Iter, generator
 from .lib_basic import uncons
 from .._toolz import partition_all, partition as _partition, sliding_window, partitionby
 from ..functions import fn, to_callable
@@ -16,6 +16,7 @@ from ..typing import (
     Tuple,
     Iterable,
     T,
+    Literal,
 )
 
 _next = next
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
     from .. import api as sk  # noqa: F401
     from ..api import X, Y  # noqa: F401
 
-    p = ""
+ChunksHow = Literal["values", "pairs", "left", "right", "drop"]
 
 
 @fn.curry(2)
@@ -137,7 +138,7 @@ def _chunks_sizes_ex(ns, seq, drop, pad):
 
 
 @fn.curry(2)
-def chunks_by(func: Func, seq: Seq, how: str = "values") -> Iter:
+def chunks_by(func: Func, seq: Seq, how: ChunksHow = "values") -> Iter:
     """
     Partition sequence into chunks according to a function.
 
@@ -169,7 +170,7 @@ def chunks_by(func: Func, seq: Seq, how: str = "values") -> Iter:
 
         Chunk by pairs
 
-        >>> sk.chunks_by((Y <= X), [1, 2, 3, 2, 4, 8, 0, 1], how='pairs')
+        >>> sk.chunks_by((Y <= X), [1, 2, 3, 2, 4, 8, 0, 1], how='pairs')  # noqa
         sk.iter([(1, 2, 3), (2, 4, 8), (0, 1)])
 
         Chunk by predicate. The different versions simply define in which chunk
@@ -270,7 +271,7 @@ def window(n: int, seq: Seq) -> Iter:
     Examples:
         Pairwise iteration:
 
-        >>> [''.join(p) for p in sk.window(2, "hello!")]
+        >>> [''.join(p) for p in sk.window(2, "hello!")]  # noqa
         ['he', 'el', 'll', 'lo', 'o!']
 
     See Also:
@@ -301,9 +302,9 @@ def pairs(seq: Seq, *, prev=NOT_GIVEN, next=NOT_GIVEN) -> Iter:
             items followed with the next value.
 
     Examples:
-        >>> [''.join(p) for p in sk.pairs("hello!", prev="-")]
+        >>> [''.join(p) for p in sk.pairs("hello!", prev="-")]  # noqa
         ['-h', 'he', 'el', 'll', 'lo', 'o!']
-        >>> [''.join(p) for p in sk.pairs("hello!", next="!")]
+        >>> [''.join(p) for p in sk.pairs("hello!", next="!")]  # noqa
         ['he', 'el', 'll', 'lo', 'o!', '!!']
 
     See Also:
@@ -417,15 +418,19 @@ def distribute(n: int, seq: Seq) -> Tuple[Seq, ...]:
     return tuple(Iter(islice(it, i, None, n)) for i, it in enumerate(results))
 
 
-@fn
+@generator
 def inits(seq: Seq) -> Seq:
     """
     Lazily return all sub-sequences at beginning of seq.
 
     Examples:
-        >>> [''.join(sub) for sub in inits('abc')]
+        >>> [''.join(sub) for sub in inits('abc')]  # noqa
         ['', 'a', 'ab', 'abc']
     """
-    for i in count():
+    seq, consume = tee(seq)
+    i = 0
+    for i, x in enumerate(consume):
         seq, consume = tee(seq)
         yield islice(consume, i)
+    seq, consume = tee(seq)
+    yield islice(consume, i + 1)

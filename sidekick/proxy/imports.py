@@ -1,11 +1,14 @@
 import re
 from functools import lru_cache
 from importlib import import_module
+import logging
 
 from .deferred import deferred
 
+log = logging.getLogger("sidekick")
+
 GIT_PATH = re.compile(r"(?:git\+)?\w+://(?:[\w.]+)/(?P<repo>[^/]+/[^/]+).git")
-LOCAL_PATH = re.compile(r"(\w+(?:\.\w+)*)(:\w+)?")
+LOCAL_PATH = re.compile(r"(\.?\w+(?:\.\w+)*)(:\w+)?")
 END_PATH = re.compile(r".+?:\w+")
 PYPI_ERROR = """The package {module!r} was not found in your system. 
 

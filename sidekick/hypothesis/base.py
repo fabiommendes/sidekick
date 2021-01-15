@@ -1,10 +1,12 @@
 import random
 import re
+from collections import abc
 from collections import deque
 from keyword import iskeyword
 
 from hypothesis import strategies as st
 from hypothesis.strategies._internal.core import defines_strategy
+
 from ..seq import singleton, Iter
 
 IDENTIFIER_RE = re.compile(r"[^\d\W]\w*", re.ASCII)
@@ -135,10 +137,10 @@ def seqs(elements, **kwargs):
 
     Seq can be real Python sequences or iterables.
     """
-    return st.one_of(sequencies(elements, **kwargs), iterators(elements, **kwargs))
+    return st.one_of(sized(elements, **kwargs), iterators(elements, **kwargs))
 
 
-def seqs_n(elements, size=None, **kwargs):
+def seqs_n(elements, size=None, kinds=None, **kwargs):
     """
     Returns sequences alongside their sizes.
 
@@ -150,10 +152,16 @@ def seqs_n(elements, size=None, **kwargs):
     if size is not None:
         kwargs["min_size"] = kwargs["max_size"] = size
 
-    funcs = (tuple, list, deque, iter, Iter, CustomIterable, CustomIterator)
+    sized = (tuple, list, deque, CustomSequence)
+    if kinds is None:
+        kinds = (iter, Iter, CustomIterable, CustomIterator, *sized)
+    elif kinds == "sized":
+        kinds = sized
+    elif kinds == "iterators":
+        kinds = (iter, Iter, CustomIterator)
     data = st.lists(elements, **kwargs)
 
-    return st.builds(lambda fn, xs: (len(xs), fn(xs)), funcs, data)
+    return st.builds(lambda fn, xs: (len(xs), fn(xs)), kinds, data)
 
 
 def iterators(elements, **kwargs):
@@ -161,10 +169,10 @@ def iterators(elements, **kwargs):
     Map iter() function to sequences. Return an iterator that can be immediately
     used with the next() function.
     """
-    return sequencies(elements, kind=list, **kwargs).map(iter)
+    return sized(elements, kind=list, **kwargs).map(iter)
 
 
-def sequencies(elements, kind=SEQ_TYPES, *, size=None, **kwargs):
+def sized(elements, kind=SEQ_TYPES, *, size=None, **kwargs):
     """
     Create a sized container of uniform type based on lists strategy.
 
@@ -183,8 +191,12 @@ def sequencies(elements, kind=SEQ_TYPES, *, size=None, **kwargs):
         unique and unique_by.
 
     Examples:
-        >>> st.sized(st.integers())
-        list(integers).map(container)
+        >>> from hypothesis import strategies as st, given
+        >>> @given(sized(st.integers(min_value=0)))
+        ... def sum_is_positive(values):
+        ...     assert len(values) >= 0
+        ...     assert len(values) >= 0
+        ...
     """
     kind = tuple(singleton(kind))
     n_kinds = len(kind)
@@ -256,7 +268,7 @@ def preds(arity=None, **kwargs):
     return funcs(st.booleans(), arity, **kwargs)
 
 
-class CustomIterable:
+class CustomIterable(abc.Iterable):
     def __init__(self, data):
         self.data = data
 
@@ -264,9 +276,26 @@ class CustomIterable:
         yield from self.data
 
 
-class CustomIterator:
+class CustomIterator(abc.Iterator):
     def __init__(self, data):
         self.data = iter(data)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return next(self.data)
+
+
+class CustomSequence(abc.Sequence):
+    def __init__(self, data):
+        self.data = data
+
+    def __getitem__(self, i):
+        return self.data[i]
+
+    def __len__(self) -> int:
+        return len(self.data)
 
     def __iter__(self):
         return self

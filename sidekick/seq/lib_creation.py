@@ -56,6 +56,8 @@ def repeat(obj, times=None):
         >>> sk.repeat(42, times=5)
         sk.iter([42, 42, 42, 42, 42])
     """
+    if times is None:
+        return Iter(itertools.repeat(obj))
     return Iter(itertools.repeat(obj, times))
 
 

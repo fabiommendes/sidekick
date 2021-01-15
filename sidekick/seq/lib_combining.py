@@ -112,7 +112,7 @@ def zip_aligned(
 
         But gives an error otherwise.
 
-        >>> sk.zip_aligned((1, 2, 3), (4, 5, 6, 7))
+        >>> sk.zip_aligned((1, 2, 3), (4, 5, 6, 7)).last()
         Traceback (most recent call last):
         ...
         UnalignedZipError: sequences are not aligned

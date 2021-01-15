@@ -51,6 +51,7 @@ def cond(test, then, else_):
     executes either the ``then`` or ``else_`` branches.
 
     Examples:
+        >>> from sidekick.api import placeholder as _
         >>> collatz = sk.cond(sk.is_even, _ // 2, (3 * _) + 1)
         >>> [collatz(1), collatz(2), collatz(3), collatz(4)]
         [4, 1, 10, 2]
@@ -204,6 +205,7 @@ def is_falsy(x):
     return not bool(x)
 
 
+# noinspection PyOverloads
 @overload
 def is_a(cls: TypeCheck) -> Callable[[Any], bool]:
     ...

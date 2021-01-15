@@ -122,7 +122,7 @@ class Signature(inspect.Signature):
         Examples:
             >>> def add(x: int, y: int) -> int:
             ...     return x + y
-            >>> sig = Signature.from_callable(add)
+            >>> sig = sk.signature(add)
             >>> sig.call(add, 1, 2)
             Ok(3)
             >>> sig.call(add, 1, 2j)

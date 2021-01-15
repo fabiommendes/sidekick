@@ -1,18 +1,21 @@
-from functools import partial
+from functools import partial, cached_property
 from types import MappingProxyType as mappingproxy
 
 from .core_functions import arity, declaration, to_callable, make_xor, signature
 from .fn_placeholders import compile_ast, call_node
 from .signature import Signature
-from .utils import mixed_accessor, lazy_string, lazy_property
+from .utils import mixed_accessor, lazy_string
 from .._modules import GetAttrModule, set_module_class
-from ..typing import Union, Dict, Any
+from ..typing import Union, Dict, Any, Callable, TYPE_CHECKING
 from . import fn_mixins as mixins
 
 set_module_class(__name__, GetAttrModule)
 identity = lambda x: x
 thunk: "fn"
 apply: "fn"
+
+if TYPE_CHECKING:
+    from sidekick.api import X, Y
 
 FUNCTION_ATTRIBUTES = {
     "doc": "__doc__",
@@ -62,14 +65,17 @@ class fn(mixins.FnMixin, metaclass=FunctionMeta):
     """
 
     __slots__ = ("_func", "__dict__", "__weakref__")
-    func: callable = property(lambda self: self._func)
-    __sk_callable__: callable = property(lambda self: self._func)
+    func: Callable = property(lambda self: self._func)
 
-    @lazy_property
-    def __wrapped__(self):
+    @property
+    def __sk_callable__(self) -> Callable:
         return self._func
 
-    @lazy_property
+    @cached_property
+    def __wrapped__(self) -> Callable:
+        return self._func
+
+    @cached_property
     def __signature__(self) -> Signature:
         return signature(self.__wrapped__)
 
@@ -147,7 +153,7 @@ class fn(mixins.FnMixin, metaclass=FunctionMeta):
 
     def __rrshift__(self, other):
         f = to_callable(other)
-        g = self.__sk_callable__
+        g: Callable = self.__sk_callable__
         return fn(lambda *args, **kw: g(f(*args, **kw)))
 
     __lshift__ = __rrshift__
@@ -301,7 +307,7 @@ class Curried(fn):
     __slots__ = ("args", "_arity", "keywords")
     __sk_callable__ = property(lambda self: self)
 
-    @lazy_property
+    @cached_property
     def __signature__(self):
         sig = signature(self.__wrapped__)
         return sig.partial(*self.args, **self.keywords)
@@ -319,7 +325,9 @@ class Curried(fn):
         self.keywords = keywords
         self._arity = arity
 
-    def arity(self):
+    def arity(self, how='short'):
+        if how != 'short':
+            raise ValueError('curried functions only accept short arity specifier')
         return self._arity
 
     def __repr__(self):

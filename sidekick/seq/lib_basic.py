@@ -2,7 +2,7 @@ from collections import deque
 from itertools import islice, chain, repeat, tee
 
 from .iter import generator, Iter
-from .._empty import EMPTY as NOT_GIVEN
+from .._empty import _EMPTY as NOT_GIVEN
 from .._toolz import peek as _peek, peekn as _peekn
 from ..functions import fn, to_callable
 from ..typing import Seq, Any, Callable, T, TYPE_CHECKING, Pred, Tuple

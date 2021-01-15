@@ -4,6 +4,7 @@ from .typing import Union, Type, Func
 _property = property
 
 __all__ = ["lazy", "delegate_to", "alias", "property"]
+__doctest_skip__ = ["lazy", "delegate_to"]  # require preparation code
 
 ATTR_ERROR_MSG = """An AttributeError was raised when evaluating the {name}
 lazy property:

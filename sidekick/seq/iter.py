@@ -1,6 +1,6 @@
 import itertools
 import operator
-from functools import wraps
+from functools import wraps, cached_property
 
 from .._utils import safe_repr
 from ..functions import fn
@@ -30,7 +30,19 @@ class Iter(Iterator[T]):
     __slots__ = ("_iterator", "_size_hint")
     _iterator: Iterator[T]
 
-    def __new__(cls, iterator: Iterator[T], size_hint=NotImplemented):
+    if TYPE_CHECKING:
+        from .. import seq as _mod
+
+        _mod = _mod
+    else:
+
+        @cached_property
+        def _mod(self):
+            from .. import seq
+
+            return seq
+
+    def __new__(cls, iterator: Iterator[T], size_hint: int = None):
         if isinstance(iterator, Iter):
             return iterator
 
@@ -142,25 +154,68 @@ class Iter(Iterator[T]):
             return NotImplemented
         return Iter(itertools.product([data, self._iterator]))
 
-    def __rmatmul__(self, fn):
-        if callable(fn):
-            return Iter(map(fn, self._iterator), self._size_hint)
+    def __rmatmul__(self, func):
+        if callable(func):
+            return Iter(map(func, self._iterator), self._size_hint)
         return NotImplemented
 
-    def __length_hint__(self, _hint=operator.length_hint):
-        if self._size_hint is NotImplemented:
-            return _hint(self._iterator, NotImplemented)
+    def __length_hint__(self):
+        if self._size_hint is None:
+            return operator.length_hint(self._iterator)
         return self._size_hint
 
     #
     # Conversion to collections
     #
-    list = property(list)
-    tuple = property(tuple)
-    set = property(set)
-    frozenset = property(frozenset)
-    str = property(lambda self: "".join(self))
-    bytes = property(lambda self: b"".join(self))
+    def list(self) -> list:
+        """
+        Convert iterator to list consuming iterator.
+
+        Infinite operators do not terminate.
+        """
+        return list(self)
+
+    def tuple(self) -> tuple:
+        """
+        Convert iterator to tuple consuming iterator.
+
+        Infinite operators do not terminate.
+        """
+        return tuple(self)
+
+    def set(self) -> set:
+        """
+        Convert iterator to tuple consuming iterator.
+
+        Infinite operators do not terminate.
+        """
+        return set(self)
+
+    def frozenset(self) -> frozenset:
+        """
+        Convert iterator to tuple consuming iterator.
+
+        Infinite operators do not terminate.
+        """
+        return frozenset(self)
+
+    def str(self) -> str:
+        """
+        Convert iterator to string consuming iterator and concatenating
+        elements.
+
+        Infinite operators do not terminate.
+        """
+        return "".join(self)
+
+    def bytes(self) -> str:
+        """
+        Convert iterator to bytes consuming iterator and concatenating
+        elements.
+
+        Infinite operators do not terminate.
+        """
+        return b"".join(self)
 
     #
     # API
@@ -177,7 +232,7 @@ class Iter(Iterator[T]):
         self._iterator, other = itertools.tee(self._iterator, 2)
         return Iter(other, self._size_hint)
 
-    def tee(self, n=1) -> Tuple["Iter"]:
+    def tee(self, n=1) -> Tuple["Iter", ...]:
         """
         Split iterator into n additional copies.
 
@@ -195,6 +250,10 @@ class Iter(Iterator[T]):
         data = tuple(itertools.islice(self._iterator, n))
         self._iterator = itertools.chain(data, self._iterator)
         return data
+
+    #
+    # Wrapping the iterator API
+    #
 
 
 def cycle_n(seq, n):
@@ -239,13 +298,13 @@ def compress_or_select(keys, seq):
     try:
         key = next(keys)
         if key is True:
-            fn = compress
+            func = compress
             yield next(seq)
         elif key is False:
-            fn = compress
+            func = compress
             next(seq)
         elif isinstance(key, int):
-            fn = select
+            func = select
             keys = itertools.chain([key], keys)
         else:
             raise TypeError(f"invalid key: {key!r}")
@@ -253,7 +312,7 @@ def compress_or_select(keys, seq):
     except StopIteration:
         return
 
-    yield from fn(keys, seq)
+    yield from func(keys, seq)
 
 
 @fn
@@ -290,7 +349,7 @@ def stop(x=None):
 
 def yield_and_raise(data, exc):
     """
-    Return content from data and then raise exception.
+    Return content from data and then raise exception afterwards.
     """
     yield from data
     raise exc

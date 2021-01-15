@@ -6,7 +6,7 @@ from itertools import filterfalse, dropwhile, takewhile, islice
 from .iter import Iter, generator
 from .lib_basic import uncons
 from .. import _toolz
-from .._empty import EMPTY as NOT_GIVEN
+from .._empty import empty
 from ..functions import fn, to_callable
 from ..typing import Func, Pred, Seq, Union, TYPE_CHECKING, Callable
 
@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
 _filter = filter
 _snd = op.itemgetter(1)
+NOT_GIVEN = empty()
 
 
 @fn.curry(2)
@@ -291,14 +292,14 @@ def take_at(indices: Seq, seq: Seq) -> Seq:
     non-decreasing sequence is detected.
 
     Examples:
-        >>> "".join(take_at([0, 1, 1, 1, 4, 5, 10], "foo bar baz"))
+        >>> ''.join(take_at([0, 1, 1, 1, 4, 5, 10], "foo bar baz"))
         'fooobaz'
 
     See Also:
         :func:`get`
         :func:`drop_at`
     """
-    return Iter(iter(indices), seq)
+    return Iter(_take_at(iter(indices), seq))
 
 
 def _take_at(indices, seq):
@@ -337,7 +338,7 @@ def strip(prefix: Seq, seq: Seq, partial=False, cmp=NOT_GIVEN) -> Iter:
     Examples:
         >>> ''.join(strip("ab", "abcd"))
         'cd'
-        >>> strip(sk.repeat(3), range(6), partial=True, cmp=(X < Y)))
+        >>> strip(sk.repeat(3), range(6), partial=True, cmp=(X > Y))
         sk.iter([3, 4, 5])
     """
     if partial:
@@ -351,8 +352,10 @@ def strip(prefix: Seq, seq: Seq, partial=False, cmp=NOT_GIVEN) -> Iter:
 
 def _strip_partial(prefix, seq, cmp):
     for x, y in zip(prefix, seq):
-        if not cmp(x, y):
-            yield y
+        if cmp(x, y):
+            continue
+        yield y
+        break
     yield from seq
 
 

@@ -35,7 +35,7 @@ class InvMap(MutableMapping):
             >>> x.kings
             Kings({'Pele': 'soccer', 'Elvis': "rock'n'roll"})
             >>> x.realms
-            InvMap({'soccer': 'Pele', "rock'n'roll": 'Elvis'})
+            Kings({'soccer': 'Pele', "rock'n'roll": 'Elvis'})
         """
         ns = {direct: property(lambda x: x), inverse: property(lambda x: x.inv)}
         return type(class_name, (InvMap,), ns)

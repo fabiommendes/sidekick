@@ -57,7 +57,7 @@ from .lib_selecting import (
     dedupe,
     converge,
 )
-from .lib_transforming import map, zip_map
+from .lib_transforming import map, map_if, zip_map
 
 __all__ = [
     # Core
@@ -123,6 +123,7 @@ __all__ = [
     "distribute",
     # Transforming
     "map",
+    "map_if",
     "zip_map",
     # Augmenting
     "interpose",

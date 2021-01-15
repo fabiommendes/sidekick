@@ -5,9 +5,7 @@ from inspect import Signature
 import pytest
 
 import sidekick.api as sk
-from sidekick import Nothing, Just
-from sidekick import placeholder as _
-from sidekick.api import X, Y
+from sidekick.api import fn, X, Y, Err, Ok, Nothing, Just, placeholder as _
 from types import FunctionType
 
 
@@ -55,7 +53,6 @@ class TestCoreFunctions:
 
 class TestFnAPIMethods:
     def test_fn_operators(self):
-        fn = sk.fn
         id = lambda x: x
         for a, b in [(fn, fn), (fn, id), (id, fn)]:
             f = a(X < 10)
@@ -68,9 +65,9 @@ class TestFnAPIMethods:
         ...
 
     def test_fn_methods_for_argument_selection(self):
-        f = sk.fn(op.add)
-        g = sk.fn(op.sub)
-        h = sk.fn(sum)
+        f = fn(op.add)
+        g = fn(op.sub)
+        h = fn(sum)
 
         # Arg selection
         assert g(1, 3) == g.flip(3, 1)
@@ -88,16 +85,18 @@ class TestFnAPIMethods:
         assert h.variadic_args(1, 2, 3, 4) == 10
 
     def test_fn_methods_for_function_composition(self):
-        f = sk.fn(op.add)
+        f = fn(op.add)
         assert f.do(1, 2) == 1
+        with pytest.raises(TypeError):
+            f.do()
 
-        g = sk.fn(X + 1)
+        g = fn(X + 1)
         assert g.compose(g)(1) == 3
         assert g.pipeline(g, g, g)(1) == 5
         assert g.juxt(g, g, g)(1) == (2, 2, 2, 2)
 
-    def test_fn_methods_runtime_modification(self):
-        f = sk.fn(op.add)
+    def test_fn_methods_runtime(self):
+        f = fn(op.add)
         g = f.once()
 
         assert g(1, 3) == f(1, 3) == 4
@@ -105,22 +104,73 @@ class TestFnAPIMethods:
         assert f(1, 5) == 6
 
         lst = [1, 2, 3]
-        f = sk.fn(lst.pop).thunk(1)
+        f = fn(lst.pop).thunk(1)
         assert lst == [1, 2, 3]
         assert f() == 2 and lst == [1, 3]
 
         lst = [1, 2, 3]
-        f = sk.fn(lst.pop).call_after(2)
+        f = fn(lst.pop).call_after(2)
         assert f() is None and lst == [1, 2, 3]
         assert f() is None and lst == [1, 2, 3]
         assert f() == 3 and lst == [1, 2]
 
         lst = [1, 2, 3]
-        f = sk.fn(lst.pop).call_at_most(3)
+        f = fn(lst.pop).call_at_most(3)
         assert f() == 3 and lst == [1, 2]
         assert f() == 2 and lst == [1]
         assert f() == 1 and lst == []
         assert f() == 1 and lst == []
+
+    def test_catch(self):
+        lst = []
+        assert fn(lst.pop).catch({IndexError: 42}) == 42
+        assert fn(lst.pop).catch(IndexError) is None
+        with pytest.raises(RuntimeError):
+            fn(lst.pop).catch({IndexError: RuntimeError})
+        with pytest.raises(RuntimeError):
+            fn(lst.pop).catch({IndexError: RuntimeError()})
+
+    def test_catching(self):
+        lst = []
+        safe = fn(lst.pop).catching({IndexError: 42})
+        assert safe() == 42
+
+    def test_retry(self):
+        tries = [1, 2, 3]
+
+        @fn
+        def func():
+            if tries:
+                tries.pop()
+                raise ValueError("not yet...")
+            return 42
+
+        assert func.retry(4) == 42
+
+    @pytest.mark.slow
+    def test_throttle(self):
+        f = fn(X + 1).throttle(1e-3)
+        t0 = time.monotonic()
+        assert f(1) == 2
+        assert f(2) == 2
+        assert time.monotonic() - t0 < 1e-3
+
+        f = fn(X + 1).throttle(1e-3, policy="block")
+        t0 = time.monotonic()
+        assert f(1) == 2
+        assert f(2) == 3
+        assert time.monotonic() - t0 >= 1e-3
+
+    def test_background(self):
+        f = fn(time.sleep)
+        bg = f.background(10)
+        assert bg.get(timeout=1e-3, default=42) == 42
+        assert bg.maybe() == Nothing
+        assert bg.result() == Err(TimeoutError)
+
+        f = fn(X + 1)
+        bg = f.background(41)
+        assert bg.get(timeout=1e-3, default=0) == 42
 
 
 class TestFunctionalInterfaces:
@@ -284,24 +334,27 @@ class TestRuntime:
 
     def test_background(self):
         # Compute values
-        f = sk.background(lambda x: x * x)
-        res = f(10)
-        assert callable(res)
+        res = sk.background(X * X, 10)
         assert res() == 100
         assert res.maybe() == Just(100)
+        assert res.result() == Ok(100)
 
         # Is non-blocking
-        g = sk.background(time.sleep)
-        t0 = time.time()
-        g(1)
-        assert time.time() - t0 < 0.1
+        t0 = time.monotonic()
+        sk.background(time.sleep, 1)
+        assert time.monotonic() - t0 < 0.1
 
         # Timeout works
-        g = sk.background(time.sleep, timeout=0.01)
-        res = g(1)
+        res = sk.background(time.sleep, 1)
         with pytest.raises(TimeoutError):
-            res()
+            res(timeout=1e-3)
         assert res.maybe() is Nothing
+        assert res.result() == Err(TimeoutError)
+
+        # Propagate errors
+        res = sk.background(X / Y, 1, 0)
+        with pytest.raises(ZeroDivisionError):
+            res()
 
     def test_throttle(self):
         f = sk.throttle(0.01, lambda x: x * x)

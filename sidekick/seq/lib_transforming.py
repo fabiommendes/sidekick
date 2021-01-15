@@ -31,14 +31,13 @@ def map(func: Func, *seqs: Seq, index: Index = None, product: bool = None) -> It
             integer, it is interpreted as the starting index for counting.
         product:
             If True, apply function to all combinations of tuples created by
-            the input sequences. In this case, it interprets tuples of integers
-            as the starting indexes of the iterator index in each dimension.
+            the input sequences.
 
     Examples:
         A simple map: apply function to list or sequence
 
         >>> sk.map(str.upper, ['Hello', 'World!'])
-        sk.iter(['HELLO', 'WORLD'])
+        sk.iter(['HELLO', 'WORLD!'])
 
         Map also accepts functions of several parameters, which are extracted
         in parallel from different sequences.
@@ -65,8 +64,6 @@ def map(func: Func, *seqs: Seq, index: Index = None, product: bool = None) -> It
 
         >>> sk.map((X * Y), [1, 2], [3, 4, 5], product=True)
         sk.iter([3, 4, 5, 6, 8, ...])
-        >>> sk.map(lambda i, x, y: (i, x * y), [1, 2], [3, 4, 5], product=True, index=(0, 0))
-        sk.iter([(0, 3), (1, 4), (2, 5), (0, 6), (1, 8), ...])
     """
     if not seqs:
         raise TypeError("requires at least one input sequence")
@@ -76,11 +73,8 @@ def map(func: Func, *seqs: Seq, index: Index = None, product: bool = None) -> It
     if product:
         if index is None:
             return Iter(_map(lambda args: func(*args), itertools.product(*seqs)))
-        elif isinstance(index, tuple):
-            if not len(seqs) == len(index):
-                raise ValueError("indexes and sequences must align")
-            seqs = (enumerate(seq, i) for i, seq in zip(index, seqs))
-            return Iter(_map(func, itertools.product(*seqs)))
+        elif index is not None:
+            raise ValueError("indexing is not supported in product mode")
         else:
             index = to_index_seq(index)
             map_fn = lambda i, args: func(i, *args)

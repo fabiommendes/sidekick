@@ -1,7 +1,9 @@
 import pytest
 
-from sidekick.api import placeholder as _, fn, record, lazy, F
+import sidekick.api as sk
+from sidekick.api import placeholder as _, fn, record, lazy, M, F, X, Y
 from sidekick.functions.fn_placeholders import simplify_ast, Cte, Expr
+from types import SimpleNamespace
 
 func = lambda x: x.__inner_function__
 
@@ -50,6 +52,9 @@ class TestPlaceholder:
         assert f(-1) == 1
 
         f = fn(F(dict, [], foo=_))
+        assert f("bar") == {"foo": "bar"}
+
+        f = fn(F[dict]([], foo=_))
         assert f("bar") == {"foo": "bar"}
 
     def test_nested_attribute_access(self):
@@ -104,3 +109,37 @@ class TestThisPlaceholder:
 
     def test_this_descriptor_works(self, instance):
         assert instance.sum == 3
+
+
+# noinspection PyPep8Naming
+class TestInstantPlaceholders:
+    def test_repr(self):
+        assert repr(X) == "X"
+        assert repr(Y) == "Y"
+
+    def test_expressions_with_X(self):
+        assert (X - 1)(1) == 0
+
+    def test_expressions_with_Y(self):
+        assert (X - Y)(1, 2) == -1
+        assert (Y - X)(1, 2) == +1
+        assert (Y - 1)(1, 2) == +1
+        assert (1 - Y)(1, 2) == -1
+        assert (Y + Y)(1, 2) == +4
+
+    def test_XY_are_identity_functions(self, arg=42):
+        assert X(arg) == arg
+        assert Y(..., arg) == arg
+
+        assert sk.to_callable(X)(arg) == arg
+        assert sk.to_callable(Y)(None, arg) == arg
+
+    def test_XY_getattr(self, value=42):
+        arg = SimpleNamespace(attr=value)
+        assert X.attr(arg) == value
+        assert Y.attr(..., arg) == value
+
+    def test_method_caller(self, value=42):
+        arg = SimpleNamespace(method=lambda: value)
+        assert M.method()(arg) == value
+        assert M(1)(X + 1) == 2

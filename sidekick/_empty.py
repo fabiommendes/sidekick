@@ -13,7 +13,7 @@ instances. They can be used in the same way, but have some nice conveniences.
 
 Consider the example
 
-.. code-block:: python
+.. code:: python
 
     def transform(x, func=None):
         return func(x) if func else x
@@ -79,11 +79,12 @@ API reference
 from dataclasses import dataclass
 from typing import Callable, Any, TypeVar, Optional
 
-EMPTY = object()  # Pretty ironic, huh?
+__doctest_skip__ = ["."]
+_EMPTY = object()  # Pretty ironic, huh?
 T = TypeVar("T")
 
 
-def empty(constructor=EMPTY, copy=None):
+def empty(constructor=_EMPTY, copy=None):
     """
     Create an object that represents empty arguments.
 
@@ -96,7 +97,7 @@ def empty(constructor=EMPTY, copy=None):
             An optional callable that is used to construct an empty value. If
             not callable, it is used as the implicit default value.
     """
-    if constructor is EMPTY:
+    if constructor is _EMPTY:
         return Empty(copy)
     elif callable(constructor):
         return EmptyFactory(constructor, copy or constructor)
@@ -164,10 +165,10 @@ class EmptyFactory(Empty):
     copy: Callable[[Any], T]
     factory: Callable[[], Any]
 
-    def __call__(self, arg, default=EMPTY):
+    def __call__(self, arg, default=_EMPTY):
         if arg is not self:
             return arg
-        elif default is EMPTY:
+        elif default is _EMPTY:
             return self.factory()
         else:
             return default
@@ -190,10 +191,10 @@ class EmptyValue(Empty):
     value: T
     factory = property(lambda self: lambda: self.value)
 
-    def __call__(self, arg, default=EMPTY):
+    def __call__(self, arg, default=_EMPTY):
         if arg is not self:
             return arg
-        elif default is EMPTY:
+        elif default is _EMPTY:
             return self.value
         else:
             return default

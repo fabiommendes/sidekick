@@ -1,4 +1,4 @@
-from functools import partial as _partial
+from functools import partial as _partial, wraps
 from operator import methodcaller
 
 from .core_functions import arity, to_callable, quick_fn
@@ -133,14 +133,16 @@ def curry(n, func=None):  # noqa: F811
 
 class _fn_method(fn):
     __slots__ = ()
+    __doc__ = None
 
     def __init__(self, func):
         super().__init__(func)
-        self.__doc__ = func.__doc__
-        self.__module__ = func.__module__
+        wraps(func)(self)
 
     def __getattr__(self, item):
-        return _partial(methodcaller, item)
+        if item.startswith('_'):
+            raise AttributeError(item)
+        return lambda *args, **kwargs: methodcaller(item, *args, **kwargs)
 
 
 @_fn_method
