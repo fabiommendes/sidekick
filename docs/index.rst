@@ -48,6 +48,7 @@ Contents
    :maxdepth: 3
 
    intro-functions.rst
+   intro-seqs.rst
    api-guide.rst
    lib-evil.rst
    lib-functions.rst

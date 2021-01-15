@@ -36,8 +36,9 @@ def doctest(ctx):
     """
     Run sphinx doc tests.
     """
+    ctx.run("pytest tests/ --doctest-modules sidekick/ --doctest-plus", pty=True)
     ctx.run("rm -rf docs/_build/")
-    ctx.run("cd docs && make doctest")
+    ctx.run("cd docs && make doctest", pty=True)
 
 
 @task

@@ -1,5 +1,7 @@
 import inspect
+import re
 from functools import singledispatch, lru_cache, wraps
+
 from decorator import decorator
 
 from .signature import Signature
@@ -9,9 +11,7 @@ from ..typing import (
     Any,
     Callable,
     FunctionType,
-    Mapping,
     FunctionTypes,
-    Set,
     T,
     Tuple,
     Union,
@@ -120,14 +120,6 @@ def to_callable(func: Any) -> Callable:
         return _to_callable(func)
 
 
-to_callable.register = _to_callable.register
-to_callable.dispatch = _to_callable.dispatch
-
-to_callable.register(FunctionType, lambda fn: fn)
-to_callable.register(Mapping, lambda dic: lambda x: map_function(dic, x))
-to_callable.register(Set, lambda set_: set_.__contains__)
-
-
 def tuple_identity(*args: T, **kwargs) -> Union[T, Tuple[T, ...]]:
     """
     An extended splicing function when multiple arguments are given.
@@ -156,16 +148,14 @@ def identity(x, /, *args, **kwargs):
 
 identity.fn_extends = None
 tuple_identity.fn_extends = ...
-
-to_callable.register(type(None), lambda fn: identity)
+to_callable.register = _to_callable.register
+to_callable.dispatch = _to_callable.dispatch
+to_callable.register(FunctionType, lambda f: f)
 to_callable.register(type(Ellipsis), lambda _: tuple_identity)
-
-
-def map_function(dic, x):
-    try:
-        return dic.get(x, x)
-    except (KeyError, AttributeError):
-        return x
+to_callable.register(type(None), lambda _: identity)
+to_callable.register(dict, lambda d: lambda x: d.get(x, x))
+to_callable.register(set, lambda s: s.__contains__)
+to_callable.register(frozenset, lambda s: s.__contains__)
 
 
 @to_callable.register(str)
@@ -175,16 +165,6 @@ def _(code, ns=None):
     except KeyError:
         pass
     return compile_callable(code, ns)
-
-
-@lru_cache(128)
-def compile_callable(code, ns=None):
-    """
-    Convert strings to the corresponding lambda functions.
-    """
-
-    code = compile(f"lambda {code}", "<sidekick>", "eval", dont_inherit=True)
-    return eval(code, {} if ns is None else ns)
 
 
 @singledispatch
@@ -261,6 +241,66 @@ def make_xor(f, g):
             return g(*args, **kwargs)
 
     return xor
+
+
+#
+# String expression compiling
+#
+@lru_cache(128)
+def compile_callable(code, ns=None):
+    """
+    Convert strings to the corresponding lambda functions.
+    """
+    if code.startswith('/'):
+        return compile_regex_function(code)
+
+    code = compile(f"lambda {code}", "<sidekick>", "eval", dont_inherit=True)
+    return eval(code, {} if ns is None else ns)
+
+
+def compile_regex_function(expr):
+    """
+    Compile an regex expression of type:
+
+    * "/<regex>/" -> simple regex match. Return match objects.
+    * "/<regex>/<rep>/" -> regex replacement.
+
+    """
+    try:
+        _empty, head, *rest, mod = expr.split('/')
+    except IndexError:
+        raise ValueError(f'invalid regex expression: {expr!r}')
+    parts = [head]
+    rest.reverse()
+
+    while rest:
+        nxt = rest.pop()
+        if parts[-1].endswith('\\'):
+            parts[-1] += nxt + '/'  # This was a escaped solidus
+        else:
+            parts.append(nxt)
+
+    # We have 2 valid scenarios:
+    # /<regex>/ --> parts = [regex]
+    # /<regex>/<replace>/ --> parts = [regex, replace]
+    if mod:
+        raise NotImplementedError('regex modifiers are not accepted yet')
+    if len(parts) == 1:
+        return re.compile(parts[0]).fullmatch
+    elif len(parts) == 2:
+        sub = re.compile(parts[0]).sub
+        pattern = parts[1]
+
+        # For now we only support the $0-$9 and $$ as a escape
+        def sub_fn(m):
+            if (r := m.group(1)) == '$':
+                return r
+            return f'\\g<{r}>'
+
+        pattern = re.sub(r'\$([$0-9])', sub_fn, pattern)
+        return lambda st: sub(pattern, st)
+    else:
+        raise ValueError(f'invalid regex expression: {expr!r}')
 
 
 from .fn import fn  # noqa: E402, F811

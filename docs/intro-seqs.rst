@@ -216,7 +216,7 @@ Consider the simple for loop bellow:
 We express it functionally using the pattern
 
 >>> seq = range(11)
->>> sk.reduce(lambda x, y: x + y, seq, initial=0)
+>>> sk.fold(lambda x, y: x + y, 0, seq)
 55
 
 The reduce function uses a binary operator (in this case, the "+" operator) to

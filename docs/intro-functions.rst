@@ -594,7 +594,7 @@ Either way is easy to implement with one-liners. Raising errors,
 
 >>> dic = {3: 'fizz', 5: 'buzz'}
 >>> next(sk.map(dic.__getitem__, range(10)))
-Traceback
+Traceback (most recent call last):
 ...
 KeyError: 0
 
@@ -629,6 +629,7 @@ produce real functions:
 
 When called with a single argument, both are equal:
 
+>>> x = 42
 >>> id_none(x) == id_ellipsis(x) == x
 True
 
@@ -657,12 +658,12 @@ sk.iter([2, 3, 4])
 3) Regex match
 
 >>> sk.filter(r'/\w+/', ['foo', 'foo bar'])
-'foo'
+sk.iter(['foo'])
 
 4) Regex replacement
 
->>> sk.filter(r"/.+?(\w+)/a $1/", ['foo', 'foo bar'])
-sk.iter(['a foo', 'a bar'])
+>>> sk.map(r"/\w+/a $0/", ['foo', 'foo bar'])
+sk.iter(['a foo', 'a foo a bar'])
 
 
 Fn-function methods

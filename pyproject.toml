@@ -22,11 +22,11 @@ classifiers = [
 	"Programming Language :: Python :: 3.8",
 	"Topic :: Software Development :: Libraries",
 ]
-requires = [ "toolz >= 0.10.0" ]
+requires = [ "toolz >= 0.10.0", "decorator" ]
 
 
 [tool.flit.metadata.requires-extra]
-test = [ "pytest", "pytest-cov", "mock", "hypothesis" ]
+test = [ "pytest", "pytest-cov", "mock", "pytest-doctest-plus", "hypothesis" ]
 doc = [ "sphinx", "sphinx_rtd_theme" ]
 dev = [ "flake8", "black", "readme_renderer" ]
 hypothesis = [ "hypothesis" ]

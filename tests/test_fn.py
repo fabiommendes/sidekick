@@ -4,7 +4,7 @@ from typing import Any
 import pytest
 
 import sidekick.api as sk
-from sidekick import fn, curry, placeholder as _
+from sidekick.api import fn, curry, placeholder as _, to_callable
 from sidekick.pred import cond, is_odd
 
 
@@ -114,11 +114,6 @@ class TestPredicateOperations:
         assert p(2) is True
         assert p(1) is False
 
-    def test_predicate_accepts_extended_function_semantics(self):
-        print(_, type(_), _ == 2)
-        assert fn(_ == 2)(2) is True
-        assert fn(_ == 2)(3) is False
-
     def test_predicate_composes_on_logical_operations(self):
         p1 = fn(_ > 0)
         p2 = fn(_ < 10)
@@ -158,6 +153,51 @@ class TestPredicateOperations:
 
         assert str(fn(f).declaration()) == "def f(x, y): ..."
         assert fn(f).__doc__.strip() == """Some docstring"""
+
+
+class TestExtendedFunctionSemantics:
+    def test_accept_placeholder_expressions(self):
+        assert to_callable(_ == 2)(3) is False
+        assert to_callable(_ == 2)(2) is True
+
+    def test_accept_none_and_ellipsis_as_identity(self, x=42):
+        id1 = to_callable(None)
+        id2 = to_callable(...)
+        assert id1(x) == x
+        assert id1(x, x) == x
+        assert id2(x) == x
+        assert id2(x, x) == (x, x)
+
+    def test_sets_as_predicates(self):
+        f = to_callable({1, 2, 3, 4})
+        assert f(1) is True
+        assert f(42) is False
+
+    def test_dicts_as_explicit_associations(self):
+        f = to_callable({1: 1, 2: 4, 3: 5, 4: 16})
+        assert f(2) == 4
+        assert f(5) == 5
+
+    def test_string_operators(self):
+        f = to_callable('+')
+        assert f(2, 3) == 5
+
+    def test_string_quick_lambdas(self):
+        f = to_callable('x: x + 1')
+        assert f(2) == 3
+
+    def test_regex_match(self):
+        f = to_callable(r'/\d+/')
+        assert f('10')
+        assert f('500')
+        assert not f('abc')
+
+    def test_regex_replacement(self):
+        f = to_callable(r'/(\d+)/$1i32;/')
+        assert f('x = 10') == 'x = 10i32;'
+
+        g = to_callable(r"/\w+/a $0/")
+        assert g('foo bar') == 'a foo a bar'
 
 
 class TestSignature:
