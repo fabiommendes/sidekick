@@ -1,4 +1,5 @@
 from functools import wraps
+from typing import Sequence
 
 from .iter import Iter, generator
 from .lib_augmenting import interpose, pad, pad_with, append, insert
@@ -59,7 +60,33 @@ from .lib_selecting import (
 )
 from .lib_transforming import map, map_if, zip_map
 
+
+#: Utility functions
+def is_seq(obj) -> bool:
+    """
+    Return true if object is a non-string sequence.
+
+    See Also:
+        as_seq
+    """
+    return not isinstance(obj, str) and isinstance(obj, Sequence)
+
+
+def as_seq(obj) -> Sequence:
+    """
+    Force object to be a sequence.
+
+    Non-sequence arguments and strings are converted into singleton tuples.
+
+    See Also:
+        is_seq
+    """
+    return obj if is_seq(obj) else (obj,)
+
 __all__ = [
+    # Utils
+    'as_seq',
+    'is_seq',
     # Core
     "Iter",
     "iter",

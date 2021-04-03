@@ -7,6 +7,7 @@ from types import (
     MappingProxyType,
 )
 from typing import *
+
 from ._empty import empty
 
 #
@@ -53,7 +54,6 @@ Lattice = Group
 Functor = Generic
 Applicative = Functor
 Monad = Applicative
-
 
 #: Empty values
 #: Sharing empty collection types is generally a good practice since coercing

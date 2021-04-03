@@ -1,9 +1,26 @@
-import sys
 from pathlib import Path
 
 import pytest
+import sys
+
+import sidekick.api as sk
+import sidekick.hypothesis
+from sidekick import op
 
 sys.path.append(str(Path(__file__).parent.parent))
+
+
+@pytest.fixture(autouse=True)
+def sidekick_namespace(doctest_namespace):
+    doctest_namespace.update(
+        sk=sk,
+        X=sk.X,
+        Y=sk.Y,
+        M=sk.M,
+        F=sk.F,
+        op=op,
+        st=sidekick.hypothesis,
+    )
 
 
 @pytest.fixture(params=[tuple, lambda: iter(())])
