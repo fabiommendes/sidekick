@@ -1,15 +1,14 @@
 import pytest
 
-import sidekick as sk
-from sidekick import placeholder as _
-from sidekick import properties as prop
+from sidekick.api import namespace, placeholder as _
+import sidekick.properties as mod
 
 
 class TestLazyDecorator:
     @pytest.fixture(scope="class")
     def cls(self):
         class Cls(object):
-            @sk.lazy
+            @mod.lazy
             def c(self):
                 return self.a + self.b
 
@@ -32,7 +31,7 @@ class TestLazyDecorator:
 
     def test_lazy_works_with_quick_lambdas(self, cls):
         class B(cls):
-            d = sk.lazy(_.a + _.b + _.c)
+            d = mod.lazy(_.a + _.b + _.c)
 
         x = B(1, 2)
         assert x.d == 6
@@ -41,19 +40,19 @@ class TestLazyDecorator:
         assert cls.c.is_lazy
         assert cls.c.is_property
         assert cls.c.is_mutable
-        assert isinstance(cls.c, prop._Lazy)
+        assert isinstance(cls.c, mod._Lazy)
 
     def test_descriptor_can_find_name_its_name(self, cls):
         assert cls.c._init_name(cls) == "c"
-        assert prop.find_descriptor_name(cls.c, cls) == "c"
-        assert prop.find_descriptor_owner(cls.c, cls) is cls
+        assert mod.find_descriptor_name(cls.c, cls) == "c"
+        assert mod.find_descriptor_owner(cls.c, cls) is cls
 
     def test_cannot_find_descriptor_name_of_wrong_class(self, cls):
         with pytest.raises(RuntimeError):
-            prop.find_descriptor_name(cls.c, object)
+            mod.find_descriptor_name(cls.c, object)
 
         with pytest.raises(RuntimeError):
-            prop.find_descriptor_owner(cls.c, object)
+            mod.find_descriptor_owner(cls.c, object)
 
 
 class TestLazyShared:
@@ -63,7 +62,7 @@ class TestLazyShared:
             a = 1.0
             b = 2.0
 
-            @sk.lazy(shared=True)
+            @mod.lazy(shared=True)
             def c(self):
                 return self.a + self.b
 
@@ -80,9 +79,9 @@ class TestDelegateToDecorator:
     @pytest.fixture(scope="class")
     def cls(self):
         class cls(object):
-            x = sk.delegate_to("data", mutable=True)
-            y = sk.delegate_to("data.w", mutable=True)
-            z = sk.delegate_to("data")
+            x = mod.delegate_to("data", mutable=True)
+            y = mod.delegate_to("data.w", mutable=True)
+            z = mod.delegate_to("data")
 
             def __init__(self, data):
                 self.data = data
@@ -91,7 +90,7 @@ class TestDelegateToDecorator:
 
     @pytest.fixture
     def data(self):
-        return sk.namespace(x=1, y=2, z=3, w=4)
+        return namespace(x=1, y=2, z=3, w=4)
 
     @pytest.fixture
     def obj(self, data, cls):
@@ -114,7 +113,7 @@ class TestDelegateToDecorator:
         assert obj.z == 3
 
     def test_delegate_class_accessor(self, cls):
-        assert isinstance(cls.x, prop._MutableDelegate)
+        assert isinstance(cls.x, mod._MutableDelegate)
 
 
 class TestAliasDecorator:
@@ -122,10 +121,10 @@ class TestAliasDecorator:
     def cls(self):
         class Class(object):
             x = 1
-            y = sk.alias("x", mutable=True)
-            z = sk.alias("x")
-            w = sk.alias("x", transform=2 * _, prepare=_ / 2)
-            k = sk.alias("x", transform=2 * _)
+            y = mod.alias("x", mutable=True)
+            z = mod.alias("x")
+            w = mod.alias("x", transform=2 * _, prepare=_ / 2)
+            k = mod.alias("x", transform=2 * _)
 
         return Class
 
