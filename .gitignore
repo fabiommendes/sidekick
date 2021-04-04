@@ -37,3 +37,4 @@ src/sidekick/__meta__.py
 pending/
 pip-wheel-metadata/
 .hypothesis
+coverage.xml
