@@ -2,17 +2,26 @@ from pathlib import Path
 import re
 from setuptools import setup, find_namespace_packages
 
-# Package properties
+def read_requirements():
+     lines = (repo_dir / "requirements.txt").read_text().splitlines()
+     return [ln.replace(' ', '') for ln in lines if not ln.startswith('#') and ln.strip()]
+
+# Sub-package name
 sub_package = "properties"
+
+dist_dir = Path(__file__).parent
+repo_dir = dist_dir.parent
+package_dir = dist_dir / "sidekick" / sub_package
+
+# Package properties
 min_python = (3, 6)
 python_requires = ">=3.6"
 install_requires = []
-extras_require = {"extra": ["sidekick.core"]}
+extras_require = {"extra": ["sidekick.core"], "dev": read_requirements()}
 
 # Package properties
 version_re = re.compile(r"""__version__\s+=\s+['"]([^'"]+)['"]""")
 roles_re = re.compile(r":py(?::\w)*:")
-package_dir = Path("sidekick") / sub_package
 read_version = lambda: version_re.findall((package_dir / "__init__.py").read_text())[0]
 setup(
     name=f"sidekick-{sub_package}",

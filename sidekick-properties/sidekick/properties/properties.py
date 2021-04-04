@@ -33,7 +33,7 @@ want to signal that the attribute is missing, consider using the option
 
 # TODO: separate module with extended function interface
 try:
-    from sidekick.functions import to_callable
+    from sidekick.functions import to_callable  # type: ignore
 except ImportError:
 
     def to_callable(x: Optional[Callable]) -> Callable:

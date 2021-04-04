@@ -3,7 +3,7 @@ import re
 from setuptools import setup, find_namespace_packages
 
 # Package properties
-sub_package = "properties"
+sub_package = "experimental"
 min_python = (3, 6)
 python_requires = ">=3.6"
 install_requires = []

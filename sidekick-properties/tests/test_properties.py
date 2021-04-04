@@ -1,7 +1,13 @@
-import pytest
+from types import SimpleNamespace
 
-from sidekick.api import namespace, placeholder as _
+import pytest
 import sidekick.properties as mod
+import sidekick.properties.properties as impl
+
+try:
+    from sidekick.core import placeholder as _
+except ImportError:
+    _ = None
 
 
 class TestLazyDecorator:
@@ -20,39 +26,33 @@ class TestLazyDecorator:
 
     def test_lazy_attribute_is_cached(self, cls):
         a = cls("foo", "bar")
+        other = "foo" + "bar"
         assert a.c == "foobar"
         assert a.c is a.c
-        assert a.c is not "foobar"
+        assert a.c is not other
 
     def test_lazy_attribute_is_writable(self, cls):
         a = cls(1, 2)
         a.c = 0
         assert a.c == 0
 
-    def test_lazy_works_with_quick_lambdas(self, cls):
-        class B(cls):
-            d = mod.lazy(_.a + _.b + _.c)
-
-        x = B(1, 2)
-        assert x.d == 6
-
     def test_lazy_class_accessor(self, cls):
         assert cls.c.is_lazy
         assert cls.c.is_property
         assert cls.c.is_mutable
-        assert isinstance(cls.c, mod._Lazy)
+        assert isinstance(cls.c, impl._Lazy)
 
     def test_descriptor_can_find_name_its_name(self, cls):
         assert cls.c._init_name(cls) == "c"
-        assert mod.find_descriptor_name(cls.c, cls) == "c"
-        assert mod.find_descriptor_owner(cls.c, cls) is cls
+        assert impl.find_descriptor_name(cls.c, cls) == "c"
+        assert impl.find_descriptor_owner(cls.c, cls) is cls
 
     def test_cannot_find_descriptor_name_of_wrong_class(self, cls):
         with pytest.raises(RuntimeError):
-            mod.find_descriptor_name(cls.c, object)
+            impl.find_descriptor_name(cls.c, object)
 
         with pytest.raises(RuntimeError):
-            mod.find_descriptor_owner(cls.c, object)
+            impl.find_descriptor_owner(cls.c, object)
 
 
 class TestLazyShared:
@@ -90,7 +90,7 @@ class TestDelegateToDecorator:
 
     @pytest.fixture
     def data(self):
-        return namespace(x=1, y=2, z=3, w=4)
+        return SimpleNamespace(x=1, y=2, z=3, w=4)
 
     @pytest.fixture
     def obj(self, data, cls):
@@ -113,18 +113,26 @@ class TestDelegateToDecorator:
         assert obj.z == 3
 
     def test_delegate_class_accessor(self, cls):
-        assert isinstance(cls.x, mod._MutableDelegate)
+        assert isinstance(cls.x, impl._MutableDelegate)
 
 
 class TestAliasDecorator:
     @pytest.fixture(scope="class")
-    def cls(self):
+    def double(self):
+        return lambda x: 2 * x
+
+    @pytest.fixture(scope="class")
+    def half(self):
+        return lambda x: x / 2
+
+    @pytest.fixture(scope="class")
+    def cls(self, double, half):
         class Class(object):
             x = 1
             y = mod.alias("x", mutable=True)
             z = mod.alias("x")
-            w = mod.alias("x", transform=2 * _, prepare=_ / 2)
-            k = mod.alias("x", transform=2 * _)
+            w = mod.alias("x", transform=double, prepare=half)
+            k = mod.alias("x", transform=double)
 
         return Class
 
@@ -158,3 +166,24 @@ class TestAliasDecorator:
 
         with pytest.raises(AttributeError):
             obj.k = 42
+
+
+@pytest.mark.skipif(_ is None, reason="Tests that uses sidekick API")
+class TestQuickLambdaIntegration:
+    def test_lazy_works_with_quick_lambdas(self, cls):
+        class B(cls):
+            d = mod.lazy(_.a + _.b + _.c)
+
+        x = B(1, 2)
+        assert x.d == 6
+
+
+@pytest.mark.skipif(_ is None, reason="Tests that uses sidekick API")
+class TestAliasDecoratorUsingPlaceholders(TestAliasDecorator):
+    @pytest.fixture(scope="class")
+    def double(self):
+        return _ * 2
+
+    @pytest.fixture(scope="class")
+    def half(self):
+        return _ / 2
