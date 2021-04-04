@@ -2,9 +2,12 @@ from pathlib import Path
 import re
 from setuptools import setup, find_namespace_packages
 
+
 def read_requirements():
-     lines = (repo_dir / "requirements.txt").read_text().splitlines()
-     return [ln.replace(' ', '') for ln in lines if not ln.startswith('#') and ln.strip()]
+    lines = (repo_dir / "requirements.txt").read_text().splitlines()
+    return [
+        ln.replace(" ", "") for ln in lines if not ln.startswith("#") and ln.strip()
+    ]
 
 # Sub-package name
 sub_package = "properties"
@@ -17,7 +20,11 @@ package_dir = dist_dir / "sidekick" / sub_package
 min_python = (3, 6)
 python_requires = ">=3.6"
 install_requires = []
-extras_require = {"extra": ["sidekick.core"], "dev": read_requirements()}
+extras_require = {
+    "extra": ["sidekick.core"],
+    "dev": read_requirements(),
+    "test": [r for r in read_requirements() if 'test' in r or 'hypothesis' in r]
+}
 
 # Package properties
 version_re = re.compile(r"""__version__\s+=\s+['"]([^'"]+)['"]""")
@@ -43,9 +50,9 @@ setup(
     ],
     python_requires=f">={min_python[0]}.{min_python[1]}",
     package_data={f"sidekick.{sub_package}": ["py.typed", "*.pyi"]},
-    platforms=['any'],
+    platforms=["any"],
     license="MIT License",
-    long_description=roles_re.sub('', Path("README.rst").read_text()),
+    long_description=roles_re.sub("", Path("README.rst").read_text()),
     version=read_version(),
     packages=find_namespace_packages(include=["sidekick.*"]),
     install_requires=install_requires,
