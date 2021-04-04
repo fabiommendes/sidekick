@@ -1,5 +1,5 @@
 =======================
-``sidekick.properties``
+``sidekick.proxy``
 =======================
 
 Functions in this module are helpers intended to create convenient and
