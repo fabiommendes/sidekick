@@ -6,4 +6,4 @@ A Sidekick sub-module responsible for defining lazy properties.
 from .properties import lazy, delegate_to, alias, property, Prop
 
 __author__ = "Fábio Macêdo Mendes"
-__version__ = "0.1.0"
+__version__ = "0.2.0"

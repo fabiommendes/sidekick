@@ -1,4 +1,3 @@
-from . import core_functions as _core
 from . import fn_instances as _instances
 from .core_functions import (
     to_fn,
@@ -58,9 +57,7 @@ from .lib_runtime import (
 )
 from .signature import Signature
 from .stub import Stub
-from .._modules import set_module_class, LazyPackage
 
-set_module_class(__name__, LazyPackage)
 __all__ = [
     # Base
     "_",
@@ -136,6 +133,6 @@ __all__ = [
     "variadic_args",
     "set_null",
 ]
-
+__version__ = '0.1.0'
 _wrap_fn_functions(globals(), exclude={"fn", "placeholder", "_", "X", "Y", "M", "F"})
 _instances.register_all()

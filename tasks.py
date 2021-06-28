@@ -5,6 +5,24 @@ sub_package = "properties"
 
 
 @task
+def install(ctx):
+    """
+    Install all sidekick libraries.
+    """
+    groups = [
+        # Core libs
+        ['functions', 'properties', 'proxy',  'seq'],
+        # Data types
+        ['tree', 'collections', 'types'],
+        # Extra
+        ['api', 'beta',  'core', 'experimental', 'extra', 'hypothesis', 'ideas']
+    ]
+    for grp in groups:
+        for lib in grp:
+            ctx.run(f'cd sidekick-{lib} && python setup.py develop')
+
+
+@task
 def test(ctx, all=False, maxfail=None, verbose=False):
     """
     Run tests.

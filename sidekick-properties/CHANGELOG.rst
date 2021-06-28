@@ -9,6 +9,7 @@ Roadmap
   analyzers (mypy, PyRight and PyCharm) 
 * Convert to a namespace package? We loose flit, but get a neater namespace. 
 * Do we need a mypy plugin?
+* Make delegate_to also accept prepare and transform attributes.
 * No bugs?
 
 

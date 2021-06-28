@@ -82,6 +82,10 @@ class TestDelegateToDecorator:
             x = mod.delegate_to("data", mutable=True)
             y = mod.delegate_to("data.w", mutable=True)
             z = mod.delegate_to("data")
+            w_double_ro = mod.delegate_to("data.w", transform=lambda x: 2.0 * x)
+            w_double_rw = mod.delegate_to(
+                "data.w", transform=lambda x: 2.0 * x, prepare=lambda x: x / 2
+            )
 
             def __init__(self, data):
                 self.data = data
@@ -115,6 +119,13 @@ class TestDelegateToDecorator:
     def test_delegate_class_accessor(self, cls):
         assert isinstance(cls.x, impl._MutableDelegate)
 
+    def test_delegate_transforms(self, obj, cls):
+        assert not cls.w_double_ro.is_mutable
+        assert cls.w_double_rw.is_mutable
+        assert obj.w_double_ro == obj.w_double_rw == obj.y * 2.0
+        
+        obj.w_double_rw = 4.0 * obj.y
+        assert obj.w_double_rw == obj.y * 2.0
 
 class TestAliasDecorator:
     @pytest.fixture(scope="class")

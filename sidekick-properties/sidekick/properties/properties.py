@@ -220,7 +220,31 @@ def property(fget=None, fset=None, fdel=None, doc=None):
     return _Property(fget, fset, fdel, doc)
 
 
-def delegate_to(attr: str, mutable: bool = False) -> Any:
+
+
+@overload
+def delegate_to(attr: str, *, mutable: bool = False) -> Any:
+    ...
+
+
+@overload
+def delegate_to(attr: str, *, transform: Callable[[Any], T]) -> T:
+    ...
+
+
+@overload
+def delegate_to(attr: str, *, prepare: Callable[[Any], T]) -> T:
+    ...
+
+
+@overload
+def delegate_to(
+    attr: str, *, transform: Callable[[Any], T1], prepare: Callable[[Any], T2]
+) -> Prop[T1, T2]:
+    ...
+
+
+def delegate_to(attr, *, transform=None, prepare=None, **kwargs):
     """
     Delegate access to an inner variable.
 
@@ -237,6 +261,13 @@ def delegate_to(attr: str, mutable: bool = False) -> Any:
         mutable:
             If True, makes the the delegation read-write. It writes new values
             to attributes of the delegated object.
+        transform:
+            If given, transform output by this function before returning.
+            A transformed alias without a prepare function is always immutable.
+        prepare:
+            If given, prepare input value before saving. Implies that transform
+            is mutable. If only prepare is given, it assumes that the output
+            transform is an identity function.
 
 
     Examples:
@@ -261,7 +292,16 @@ def delegate_to(attr: str, mutable: bool = False) -> Any:
         >>> q.push(4); q
         Queue([1, 2, 4])
     """
+    mutable = kwargs.pop("mutable", None)
+    if kwargs:
+        raise TypeError(f"invalid args: {set(kwargs)}")
+
     attr, _, name = attr.partition(".")
+    if transform is not None or prepare is not None:
+        if mutable is not None:
+            raise TypeError("cannot define mutable when a transform is given.")
+        return _TransformingDelegate(attr, name or None, transform=transform, prepare=prepare)
+
     if mutable:
         return _MutableDelegate(attr, name or None)
     else:
@@ -479,6 +519,45 @@ class _MutableDelegate(_ReadOnlyDelegate):
         owner = getattr(obj, self.attr)
         name = self.name or find_descriptor_name(self, type(obj))
         setattr(owner, name, value)
+
+    def fset(self, instance, value):
+        return self.__set__(instance, value)
+
+
+class _TransformingDelegate(_MutableDelegate):
+    """
+    Mutable version of Delegate.
+    """
+
+    __slots__ = ("transform", "prepare")
+    is_mutable = property(lambda self: self.prepare is not None)
+
+    def __init__(self, attr, name=None, transform=None, prepare=None):
+        super().__init__(attr, name)
+        self.transform = to_callable(transform)
+        self.prepare = None if prepare is None else to_callable(prepare)
+
+    def __get__(self, obj, cls=None):
+        if obj is None:
+            return self
+        return self.transform(super().__get__(obj, cls))
+
+    def __set__(self, obj, value):
+        if self.prepare is None:
+            raise AttributeError(self.attr)
+        
+        value = self.prepare(value)
+        owner = getattr(obj, self.attr)
+        name = self.name or find_descriptor_name(self, type(obj))
+        setattr(owner, name, value)
+
+    def fget(self, obj):
+        return self.transform(super().fget(obj))
+
+    def fset(self, obj, value):
+        if self.prepare is None:
+            raise AttributeError("cannot change attribute")
+        super().fset(obj, self.prepare(value))
 
 
 class _ReadOnlyAlias(DescriptorMixin[T, T]):
