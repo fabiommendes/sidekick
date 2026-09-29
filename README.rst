@@ -61,7 +61,7 @@ the last two elements.
 
 We construct our summation function using the magic objects ``X`` and ``Y``.
 They are function factories that return lambdas corresponding to the expression
-in which they participate. Hence, ``X + 1`` corresponds to ``lambda x: x +1``
+in which they participate. Hence, ``X + 1`` corresponds to ``lambda x: x + 1``
 and ``X + Y`` to ``lambda x, y: x + y``. If you are familiar to any language in the
 Haskell family, it should resemble the `operator section syntax <https://wiki.haskell.org/Section_of_an_infix_operator>`.
 

@@ -1,6 +1,6 @@
-=======================
-``sidekick.properties``
-=======================
+==================
+``sidekick.empty``
+==================
 
 Functions in this module are helpers intended to create convenient and
 declarative idioms when declaring classes. Perhaps it is not entirely correct

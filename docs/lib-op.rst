@@ -12,11 +12,14 @@ So we can use it as a drop-in replacement to the operator module:
 >>> op.add(1, 2)
 3
 
-But one that accepts additional idioms
+Functions in this module are curried and accepts fn attributes
 
 >>> succ = op.add(1)
 >>> succ(41)
 42
+
+>>> op.add.signature()
+add(Any, Any) -> Any
 
 .. _operator: https://docs.python.org/3/library/operator.html
 

@@ -1,18 +1,22 @@
 import itertools
+from typing import Callable, Iterable, TYPE_CHECKING, Literal, overload
 
-from .iter import Iter
-from .util import to_index_seq
-from ..functions import fn, to_callable
-from ..typing import Func, Seq, Index, TYPE_CHECKING, Pred
+from .iter import iter
+from .util import NOT_GIVEN, c, to_index_seq, to_callable, b, a
 
 if TYPE_CHECKING:
-    from ..api import sk, X, Y, op  # noqa: F401
+    from sidekick.api import sk, X, Y, op  # noqa: F401
 
 _map = map
 
 
-@fn.curry(2)
-def map(func: Func, *seqs: Seq, index: Index = None, product: bool = None) -> Iter:
+def map(
+    func: Callable[..., b],
+    /,
+    *seqs: Iterable[a],
+    index: int | Iterable[c] | bool = NOT_GIVEN,
+    product: bool = False,
+) -> iter[b]:
     """
     Evaluate function at elements of sequences.
 
@@ -27,7 +31,7 @@ def map(func: Func, *seqs: Seq, index: Index = None, product: bool = None) -> It
         seqs:
             Input sequences.
         index:
-            If true, pass the index as the first argument. If indexed is an
+            If true, pass the index as the first argument. If index is an
             integer, it is interpreted as the starting index for counting.
         product:
             If True, apply function to all combinations of tuples created by
@@ -71,23 +75,52 @@ def map(func: Func, *seqs: Seq, index: Index = None, product: bool = None) -> It
     func = to_callable(func)
 
     if product:
-        if index is None:
-            return Iter(_map(lambda args: func(*args), itertools.product(*seqs)))
-        elif index is not None:
-            raise ValueError("indexing is not supported in product mode")
-        else:
-            index = to_index_seq(index)
-            map_fn = lambda i, args: func(i, *args)
-            return Iter(_map(map_fn, index, itertools.product(*seqs)))
-    elif index is None:
-        return Iter(_map(func, *seqs))
-    else:
-        index = to_index_seq(index)
-        return Iter(_map(func, index, *seqs))
+        index_seq = to_index_seq(index)
+        if index_seq is None:
+            return iter(_map(lambda args: func(*args), itertools.product(*seqs)))
+        map_fn = lambda i, args: func(i, *args)
+        return iter(_map(map_fn, index_seq, itertools.product(*seqs)))
+
+    index_seq = to_index_seq(index)
+    if index_seq is None:
+        return iter(_map(func, *seqs))
+    return iter(_map(func, index_seq, *seqs))
 
 
-@fn.curry(3)
-def map_if(pred: Pred, func: Func, *seqs: Seq, index: Index = None) -> Iter:
+@overload
+def map_if(
+    pred: Callable[[a], bool],
+    func: Callable[..., a],
+    /,
+    *seqs: Iterable[a],
+    index: Literal[False] = False,
+) -> iter[a]:
+    ...
+
+
+@overload
+def map_if(
+    pred: Callable[[b, a], bool],
+    func: Callable[..., a],
+    /,
+    *seqs: Iterable[a],
+    index: Iterable[b],
+) -> iter[a]:
+    ...
+
+
+@overload
+def map_if(
+    pred: Callable[[int, a], bool],
+    func: Callable[..., a],
+    /,
+    *seqs: Iterable[a],
+    index: Literal[True] | int,
+) -> iter[a]:
+    ...
+
+
+def map_if(pred, func, /, *seqs, index):
     """
     Applies func in the elements in which pred(elem) is True.
 
@@ -113,9 +146,9 @@ def map_if(pred: Pred, func: Func, *seqs: Seq, index: Index = None) -> Iter:
     if not seqs:
         raise TypeError("requires at least one input sequence")
 
-    index = to_index_seq(index)
-    if index is not None:
-        seqs = (index, *seqs)
+    index_seq = to_index_seq(index)
+    if index_seq is not None:
+        seqs = (index_seq, *seqs)
 
     if len(seqs) == 1:
         map_func = lambda x: func(x) if pred(x) else x
@@ -124,11 +157,14 @@ def map_if(pred: Pred, func: Func, *seqs: Seq, index: Index = None) -> Iter:
     else:
         map_func = lambda *args: func(*args) if pred(*args) else args[0]
 
-    return Iter(_map(map_func, *seqs))
+    return iter(_map(map_func, *seqs))
 
 
-@fn.curry(2)
-def zip_map(funcs: Seq[Func], *seqs: Seq, index: Index = None) -> Iter:
+def zip_map(
+    funcs: Iterable[Callable[..., a]],
+    *seqs: Iterable[b],
+    index: int | Iterable[b] | bool = NOT_GIVEN,
+) -> iter[a]:
     """
     Apply sequence of functions to sequences of arguments.
 

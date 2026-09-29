@@ -1,8 +1,9 @@
 import random
 from functools import lru_cache
 
+from sidekick.core.utils import snake_case
+
 from .named_record import Record, clean_field, normalize_field_mapping, RecordMeta
-from .._utils import snake_case
 
 
 class union(type):
@@ -57,7 +58,7 @@ class union(type):
         return tuple(cls for cls in bases if cls is not Union)
 
     @classmethod
-    def create_record_case(cls, name, bases, ns, **kwargs):
+    def create_record_case(cls, name, bases: tuple, ns: dict, **kwargs):
         """
         Create record type as a new case in union class.
         """
@@ -157,7 +158,7 @@ class SingletonMeta(CaseType):
 
     def __init__(cls, *args, **kwargs):
         super().__init__(*args)
-        cls._hash = random.randrange(1, 2 ** 32)
+        cls._hash = random.randrange(1, 2**32)
         cls._instance = type.__call__(cls)
 
     __instancecheck__ = lambda cls, other: other is cls._instance
@@ -172,7 +173,7 @@ class SingletonMixin:
     """
 
     __slots__ = ()
-    _hash = random.randrange(1, 2 ** 32)
+    _hash = random.randrange(1, 2**32)
 
     __instancecheck__ = lambda self, other: self is other
     __eq__ = lambda self, other: self is other or NotImplemented
@@ -224,6 +225,6 @@ def query_name(name):
 
 # We have to declare union a generic value since the meta-type constructor
 # explicitly checks for the presence of a Union base class.
-Union = NotImplemented
-Union = union("Union")
+Union = NotImplemented  # type: ignore
+Union = union("Union")  # type: union
 SingletonCase = Case()

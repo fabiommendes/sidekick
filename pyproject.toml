@@ -39,7 +39,7 @@ Documentation = "https://sidekick.readthedocs.io/en/latest/"
 
 [tool.black]
 line-length = 88
-target_version = ['py36']
+target_version = ['py39']
 include = 'sidekick|tests'
 exclude = '''
 (

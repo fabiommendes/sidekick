@@ -1,18 +1,19 @@
 from types import MemberDescriptorType
+from typing import Any, Callable, Dict, Generic, TypeVar
 
-from .._operators import OP_NAMES, UNARY, BINARY, COMPARISON
-from ..functions import call
+from sidekick.core.operator import OP_TO_NAMES, UNARY, ARITHMETIC_BINARY, COMPARISON
 
-ZOMBIE_CLASSES = {}
-UNARY_METHODS = [OP_NAMES[op] for op in UNARY]
+ZOMBIE_CLASSES: Dict[type, type] = {}
+UNARY_METHODS = [OP_TO_NAMES[op] for op in UNARY]
 UNARY_METHODS.extend(["iter"])
-BINARY_METHODS = [OP_NAMES[op].rstrip("_") for op in COMPARISON + BINARY]
+BINARY_METHODS = [OP_TO_NAMES[op].rstrip("_") for op in COMPARISON + ARITHMETIC_BINARY]
 RBINARY_METHODS = ["r" + op for op in BINARY_METHODS]
 BINARY_METHODS.extend(["getitem", "getattr"])
 ARBITRARY_METHODS = ["setitem", "call"]
+T = TypeVar("T")
 
 
-class Zombie:
+class Zombie(Generic[T]):
     """
     A magic zombie object.
 
@@ -20,9 +21,9 @@ class Zombie:
     interaction. This only works with pure Python objects with no slots since
     the Delayed object must have the same C level interface as the real object.
 
-    For a safer version of :class:`Deferred`, try the :class:`Proxy` class.
-    One advantage of deferred objects is that, when alive, they transform to
-    objects of the correct class.
+    For a safer version of :class:`Zombie`, try :class:`Proxy` or :class:`deferred`.
+    One advantage of zombies over those alternatives is that, when alive, they
+    transform to objects of the correct class.
 
     Optional positional and keyword arguments used to call the first
     argument.
@@ -54,25 +55,25 @@ class Zombie:
         <class '...SomeClass'>
     """
 
-    def __init__(self, func, *args, **kwargs):
+    __constructor: Callable[[], Any]
+
+    def __init__(self, func: Callable[..., T], *args, **kwargs):
         object.__setattr__(self, "_Zombie__constructor", lambda: func(*args, **kwargs))
 
     def __getattr__(self, attr):
-        self.__awake()
-        return getattr(self, attr)
+        return getattr(self.__wake_up(), attr)
 
     def __del__(self):
         del self.__constructor
 
-    def __call__(self, *args, **kwargs):
-        self.__awake()
-        return self(*args, **kwargs)
+    def __call__(self, /, *args, **kwargs):
+        return self.__wake_up()(*args, **kwargs)
 
     def __setitem__(self, k, v):
-        self.__awake()
+        self.__wake_up()
         self[k] = v
 
-    def __awake(self):
+    def __wake_up(self) -> "Zombie[T]":
         result = self.__constructor()
         del self.__constructor
         if hasattr(result, "__dict__"):
@@ -259,7 +260,6 @@ ZombieTypes = (Zombie, SlottedZombie)
 #
 # Add magical methods to ZombieTypes
 #
-@call()
 def _patch_zombie_class():
     definitions = []
     zombie_ns = dict(Zombie.__dict__)
@@ -289,3 +289,7 @@ def _patch_zombie_class():
         for k, v in zombie_ns.items():
             if k not in cls.__dict__:
                 setattr(cls, k, v)
+
+
+_patch_zombie_class()
+del _patch_zombie_class

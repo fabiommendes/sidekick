@@ -2,6 +2,8 @@ import re
 from functools import lru_cache
 from importlib import import_module
 import logging
+from types import ModuleType
+from typing import Optional
 
 from .deferred import deferred
 
@@ -10,7 +12,7 @@ log = logging.getLogger("sidekick")
 GIT_PATH = re.compile(r"(?:git\+)?\w+://(?:[\w.]+)/(?P<repo>[^/]+/[^/]+).git")
 LOCAL_PATH = re.compile(r"(\.?\w+(?:\.\w+)*)(:\w+)?")
 END_PATH = re.compile(r".+?:\w+")
-PYPI_ERROR = """The package {module!r} was not found in your system. 
+PYPI_ERROR = """The package {module!r} was not found in your system.
 
 Please install the necessary dependencies using `pip install {pipname}`.
 """
@@ -30,7 +32,7 @@ def import_later(path, package=None, error=None, pypi=None):
         path:
             Python path to module or object. Modules are specified by their
             Python names (e.g., 'os.path') and objects are identified by their
-            module path + ":" + object name (e.g., "os.path.splitext").
+            module path + ":" + object name (e.g., "os.path:splitext").
         package:
             Package name if path is a relative module path.
         error:
@@ -52,6 +54,19 @@ def import_later(path, package=None, error=None, pypi=None):
         is great to break circular imports.
 
         >>> mod = import_later('.sub_module', package=__package__)
+        
+    Note:
+        If you want use this module for the runtime benefits, but still want to
+        be able for your module to typecheck, use this idiom:
+        
+        .. code:: python
+        
+            from typing import TYPE_CHECKING
+            
+            if TYPE_CHECKING:
+                import foo
+            else:
+                foo = import_later("foo")
     """
     if END_PATH.fullmatch(path):
         path, _, obj = path.rpartition(":")
@@ -82,7 +97,7 @@ class _LazyModule(deferred):
 
 class _DeferredImport(deferred):
     """
-    An object of a module that has not been imported yet.
+    Proxy to a parent module that has not been imported yet.
     """
 
     def __init__(self, path, attr, package=None, error=None):
@@ -90,8 +105,7 @@ class _DeferredImport(deferred):
         super().__init__(lambda: getattr(mod, attr))
 
 
-def _check_import(*args, error=None, **kwargs):
-    fn, *args = args
+def _check_import(fn, /, *args, error=None, **kwargs):
     try:
         return fn(*args, **kwargs)
     except ImportError:
@@ -112,7 +126,7 @@ def _get_error_message(error, pip_name, path):
 
 
 @lru_cache(1024)
-def _import_from_github(path: str, package: str = None):
+def _import_from_github(path: str, package: Optional[str] = None) -> ModuleType:
     """
     Easter egg/hack that allows importing packages from git. It pip installs the
     package before loading it.

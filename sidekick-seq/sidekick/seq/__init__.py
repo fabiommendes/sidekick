@@ -1,7 +1,6 @@
-from functools import wraps
 from typing import Sequence
 
-from .iter import Iter, generator
+from .iter import iter, generator
 from .lib_augmenting import interpose, pad, pad_with, append, insert
 from .lib_basic import (
     cons,
@@ -11,10 +10,14 @@ from .lib_basic import (
     nth,
     find,
     last,
+    last_n,
     only,
     is_empty,
     length,
     consume,
+    peek,
+    peek_n,
+    first_repeated,
 )
 from .lib_combining import concat, interleave, zip_aligned, merge_sorted, join, diff
 from .lib_creation import cycle, iterate, repeat, repeatedly, singleton, unfold, nums
@@ -26,6 +29,7 @@ from .lib_grouping import (
     pairs,
     partition,
     distribute,
+    inits,
 )
 from .lib_reducers import (
     fold,
@@ -51,44 +55,26 @@ from .lib_selecting import (
     remove,
     separate,
     drop,
+    drop_at,
     rdrop,
     take,
     rtake,
+    take_at,
+    strip,
     unique,
     dedupe,
+    random_sample,
+    indexed,
     converge,
 )
 from .lib_transforming import map, map_if, zip_map
 
-
-#: Utility functions
-def is_seq(obj) -> bool:
-    """
-    Return true if object is a non-string sequence.
-
-    See Also:
-        as_seq
-    """
-    return not isinstance(obj, str) and isinstance(obj, Sequence)
-
-
-def as_seq(obj) -> Sequence:
-    """
-    Force object to be a sequence.
-
-    Non-sequence arguments and strings are converted into singleton tuples.
-
-    See Also:
-        is_seq
-    """
-    return obj if is_seq(obj) else (obj,)
-
+__version__ = "0.1.0"
 __all__ = [
     # Utils
-    'as_seq',
-    'is_seq',
+    "as_seq",
+    "is_seq",
     # Core
-    "Iter",
     "iter",
     "generator",
     # Basic
@@ -100,9 +86,13 @@ __all__ = [
     "find",
     "only",
     "last",
+    "last_n",
     "is_empty",
     "length",
     "consume",
+    "peek",
+    "peek_n",
+    "first_repeated",
     # Creation
     "cycle",
     "iterate",
@@ -116,12 +106,17 @@ __all__ = [
     "remove",
     "separate",
     "drop",
+    "drop_at",
     "rdrop",
     "take",
     "rtake",
+    "take_at",
+    "strip",
     "unique",
     "dedupe",
     "converge",
+    "random_sample",
+    "indexed",
     # Reducers
     "fold",
     "reduce",
@@ -148,6 +143,7 @@ __all__ = [
     "pairs",
     "partition",
     "distribute",
+    "inits",
     # Transforming
     "map",
     "map_if",
@@ -168,61 +164,24 @@ __all__ = [
 ]
 
 
-def iter(obj):
+#: Utility functions
+def is_seq(obj) -> bool:
     """
-    Convert iterable to a sidekick Iter() iterator.
+    Return true if object is a non-string sequence.
+
+    See also:
+        as_seq
     """
-    return Iter(obj)
+    return not isinstance(obj, str) and isinstance(obj, Sequence)
 
 
-#
-# Fluent interface for the Iter class
-#
-def register_fluent_interface(ns=globals(), blacklist=()):
-    from ..functions import fn
+def as_seq(obj) -> Sequence:
+    """
+    Force object to be a sequence.
 
-    def make_method(idx, func, sig):
-        @wraps(func)
-        def method(self, *args, **kwargs):
-            args = list(args)
-            args.insert(idx, self)
-            return func(*args, **kwargs)
+    Non-sequence arguments and strings are converted into singleton lists.
 
-        method.__signature__ = sig.partial(seq=...)
-        return method
-
-    for name in __all__:
-        func = ns[name]
-        if not isinstance(func, fn) or hasattr(Iter, name) or name in blacklist:
-            continue
-
-        sig = func.signature()
-        names = sig.argnames()
-        try:
-            idx = names.index("seq")
-        except ValueError:
-            continue
-        else:
-            setattr(Iter, name, make_method(idx, func, sig))
-
-    class Mixin:
-        @wraps(map)
-        def map(self: Iter, func, index=None):
-            return map(func, self, index=index)
-
-        @wraps(filter)
-        def filter(self: Iter, func, index=None):
-            return filter(func, self, index=index)
-
-        @wraps(zip_map)
-        def zip_map(self: Iter, funcs, index=None):
-            return zip_map(funcs, self, index=index)
-
-    for k, v in vars(Mixin).items():
-        if k.startswith("_"):
-            continue
-        setattr(Iter, k, v)
-
-
-register_fluent_interface()
-del register_fluent_interface
+    See also:
+        is_seq
+    """
+    return obj if is_seq(obj) else [obj]

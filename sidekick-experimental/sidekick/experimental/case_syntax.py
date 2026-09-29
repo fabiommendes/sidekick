@@ -1,5 +1,7 @@
+from abc import ABC
 from functools import update_wrapper
 from types import MappingProxyType, SimpleNamespace
+from typing import Generic, Iterable, Type, TypeVar
 
 from .union import Union
 

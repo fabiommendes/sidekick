@@ -1,11 +1,14 @@
 # Dev requirements for all sidekick projects
 # You may want to include docs/requirements.txt in order to build docs.
-pytest ~= 5.4
-pytest-cov ~= 2.10
+pytest
+pytest-cov 
 black
-mypy == 0.812
-hypothesis ~= 6.3
-invoke ~= 1.5
-tox ~= 3.23
-readme_renderer ~= 29.0
-flake8 ~= 3.9
+mypy
+hypothesis
+invoke
+tox
+readme_renderer
+flake8
+sphinx
+sphinx_rtd_theme
+toolz

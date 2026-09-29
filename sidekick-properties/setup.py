@@ -3,12 +3,6 @@ import re
 from setuptools import setup, find_namespace_packages
 
 
-def read_requirements():
-    lines = (repo_dir / "requirements.txt").read_text().splitlines()
-    return [
-        ln.replace(" ", "") for ln in lines if not ln.startswith("#") and ln.strip()
-    ]
-
 # Sub-package name
 sub_package = "properties"
 
@@ -19,11 +13,9 @@ package_dir = dist_dir / "sidekick" / sub_package
 # Package properties
 min_python = (3, 6)
 python_requires = ">=3.6"
-install_requires = []
 extras_require = {
     "extra": ["sidekick.core"],
-    "dev": read_requirements(),
-    "test": [r for r in read_requirements() if 'test' in r or 'hypothesis' in r]
+    "test": ["hypothesis", "pytest", "pytest-cov"],
 }
 
 # Package properties
@@ -55,6 +47,6 @@ setup(
     long_description=roles_re.sub("", Path("README.rst").read_text()),
     version=read_version(),
     packages=find_namespace_packages(include=["sidekick.*"]),
-    install_requires=install_requires,
+    install_requires=[],
     extras_require=extras_require,
 )

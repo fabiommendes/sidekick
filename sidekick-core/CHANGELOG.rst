@@ -7,9 +7,7 @@ Roadmap
 
 * Reliable and practical type inference that works across the main static
   analyzers (mypy, PyRight and PyCharm) 
-* Convert to a namespace package? We loose flit, but get a neater namespace. 
-* Do we need a mypy plugin?
-* No bugs?
+* A mypy plugin?
 
 
 ---------
@@ -20,5 +18,3 @@ Changelog
 =====
 
 First release as a separate module
-
-* Somewhat better typing inference

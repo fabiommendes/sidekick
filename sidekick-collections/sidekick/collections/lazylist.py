@@ -1,14 +1,16 @@
-import itertools
 from collections.abc import MutableSequence
+from collections import deque
+import itertools
+from typing import Iterable, Iterator, Sized
 
-from typing import Callable
+from .util import a
 
 __all__ = ["LazyList"]
 INF = float("inf")
 
 
 # noinspection PyCallByClass
-class LazyList(MutableSequence, list):
+class LazyList(MutableSequence[a]):
     """
     A list whose members are calculated by consuming a (possibly infinite) iterator
     on-the-fly.
@@ -23,161 +25,172 @@ class LazyList(MutableSequence, list):
             length=float('inf').
     """
 
-    __slots__ = ("_iter", "_tail", "_missing")
+    __slots__ = ("_data", "_parts")
+    _data: list[a]
+    _parts: deque[tuple[int | float | None, list[a] | Iterator[a]]]
 
-    def __new__(cls, iterable, *, size=None):
-        return list.__new__(cls)
+    def __init__(self, iterable=(), *, size=None):
+        self._data = []
+        self._parts = deque()
 
-    def __init__(self, iterable, *, size=None):
-        list.__init__(self)
-        self._iter = iter(iterable)
-        self._tail = []
-        self._missing = size
-        if size == "inf" or size == float("inf"):
-            self._missing = INF
-        if self._missing not in [None, INF]:
-            self._iter = itertools.islice(self._iter, self._missing)
+        if iterable == ():
+            size = 0
+        elif size == "inf" or size == float("inf"):
+            size = INF
+        elif isinstance(size, int):
+            iterable = itertools.islice(iterable, size)
+        elif isinstance(iterable, LazyList):
+            size = iterable._size_fast()
+        elif isinstance(iterable, Sized):
+            self._data.extend(iterable)
+            size = 0
+        else:
+            size = None
+            
+        if size != 0:
+            self._parts.append((size, iter(iterable)))
 
     @property
-    def is_lazy(self):
-        return self._iter is not None
-
+    def is_consumed(self) -> bool:
+        """
+        True if LazyList has consumed all of its lazy components.
+        """
+        return self._parts == []
+    
     @property
-    def can_be_infinite(self):
-        if self._missing is INF:
-            return True
-        elif self._missing is not None:
-            return False
-        return self._iter is not None
-
-    def _index_operation(self, op: Callable, idx: int, *args):
-        if idx < 0 and self._iter is not None:
-            try:
-                return op(self._tail, idx, *args)
-            except IndexError:
-                self.consume()
-        elif self._iter is not None:
-            self.consume_until(idx)
-        return op(self, idx, *args)
+    def is_surely_infinite(self) -> bool:
+        """
+        True if LazyList is known to be infinite.
+        
+        Notice that ``lst.is_surely_infinite`` ``lst.is_surely_finite`` 
+        can be False at the same time.
+        """
+        for (n, _) in self._parts:
+            if n == INF:
+                return True
+        return False
+    
+    @property
+    def is_surely_finite(self) -> bool:
+        """
+        True if LazyList is known to be finite.
+        
+        Notice that ``lst.is_surely_infinite`` ``lst.is_surely_finite`` 
+        can be False at the same time.
+        """
+        return all(isinstance(n, int) for (n, _) in self._parts)
 
     def __setitem__(self, idx, value):
-        self._index_operation(list.__setitem__, idx, value)
+        self.consume(idx)
+        self._data[idx] = value
 
     def __getitem__(self, idx):
-        if isinstance(idx, int):
-            return self._index_operation(list.__getitem__, idx)
-        elif isinstance(idx, slice):
-            raise TypeError("slices are not supported yet")
-        else:
-            raise TypeError
+        self.consume(idx)
+        return self._data[idx]
 
     def __iter__(self):
-        yield from list.__iter__(self)
-        has_length = self._missing is not None
-        if self._iter is not None:
-            for x in self._iter:
-                list.append(self, x)
-                if has_length:
-                    self._missing -= 1
-                yield x
-            self._iter = None
-            list.extend(self, self._tail)
-            tail = list(self._tail)
-            self._tail.clear()
-            yield from tail
+        yield from self._data
+
+        while self._parts:
+            n, data = self._parts[0]
+
+            if isinstance(data, list):
+                self._data.extend(data)
+                self._parts.popleft()
+                yield from data
+            elif n is None or n == INF:
+                yield from data
+                self._parts.popleft()
+            else:
+                for x in data:
+                    yield x
+                    n -= 1
+                    self._parts[0] = (n, data)    
 
     def __repr__(self):
-        name = type(self).__name__
-        if self._iter is None:
-            return f"{name}({super().__repr__()})"
+        n = len(self._data)
+        parts = [*map(repr, itertools.islice(self, n + 3))]
+        if len(parts) == n + 3:
+            parts.append("...")
+        data = ", ".join(parts)
+        return f"{type(self).__name__}([{data}])"
+
+    def __len__(self) -> int:
+        size = len(self._data)
+
+        for i, (n, seq) in enumerate(self._parts):
+            if n is None:
+                data = list(seq)
+                n = len(data)
+                self._parts[i] = (n, data)
+            elif n == INF:
+                raise OverflowError("cannot get the size of an infinite iterator")
+            size += n
+
+        return size
+
+    def __delitem__(self, idx: int | slice):
+        self.consume(idx)
+        del self._data[idx]
+
+    def append(self, value: a):
+        if self._parts and isinstance(self._parts[-1][1], list):
+            n, lst = self._parts[-1]
+            self._parts[-1] = n + 1, lst
+            lst.append(value)
         else:
-            pre_data = list.__repr__(self)[1:-1]
-            pos_data = repr(self._tail)[1:-1]
-            data = "..." if not pre_data else pre_data + ", ..."
-            data = data if not pos_data else "%s, %s" % (data, pos_data)
-            return "%s([%s])" % (name, data)
+            self._parts.append((1, [value]))
 
-    def __eq__(self, other):
-        if not isinstance(other, list):
-            return NotImplemented
-
-        if isinstance(other, LazyList):
-            if self._missing is INF or other._missing is INF:
-                return False
-
-        a, b = iter(self), iter(other)
-        for x, y in zip(a, b):
-            if x != y:
-                return False
-        return is_consumed(a) and is_consumed(b)
-
-    def append(self, value):
-        if self._iter is None:
-            list.append(self, value)
+    def extend(self, iterable: Iterable[a]):
+        if isinstance(iterable, Sized):
+            n = len(iterable)
+            self._parts.append((n, list(iterable)))
         else:
-            self._tail.append(value)
+            self._parts.append((None, iterable))
 
-    def extend(self, iterable):
-        if self._iter is None:
-            list.extend(self, iterable)
-        else:
-            self._tail.extend(iterable)
+    def insert(self, idx: int, value: a):
+        self.consume(idx)
+        self._data.insert(idx, value)
 
-    def __len__(self):
-        if self._iter is None:
-            return list.__len__(self)
-        elif self._missing == INF:
-            raise OverflowError("cannot get the size of an infinite iterator")
-        elif self._missing is not None:
-            return list.__len__(self) + self._missing + len(self._tail)
-        else:
-            self.consume()
-            return list.__len__(self)
-
-    def __delitem__(self, idx):
-        return self._index_operation(list.__delitem__, idx)
-
-    def insert(self, idx, value):
-        return self._index_operation(list.insert, idx, value)
-
-    def consume(self):
+    def consume(self, n: int | None | slice = None):
         """
         Consume iterator and save all elements to list.
+
+        If an index is given, consume up to the given index.
         """
 
-        if self._iter is not None:
-            if self._missing is INF:
-                raise OverflowError("cannot consume an infinite iterator")
-            list.extend(self, self._iter)
-            list.extend(self, self._tail)
-            self._tail.clear()
-            self._iter = None
-            self._missing = 0
+        match n:
+            case None:
+                while self._parts:
+                    n, data = self._parts[0]
+                    if n == INF:
+                        raise OverflowError("cannot consume infinite iterator")
+                    elif n is None:
+                        for x in data:
+                            self._data.append(x)
+                    else:
+                        self._data.extend(data)
+                    self._parts.popleft()
 
-    def consume_until(self, n: int):
-        """
-        Consume iterator until list reaches at most size n.
-        """
+            case int():
+                for _ in itertools.islice(self, n):
+                    pass
 
-        head_size = list.__len__(self)
-        if n < 0:
-            raise ValueError("negative values are not accepted")
-        if head_size >= n or self._iter is None:
-            return
+            case slice(stop=n) if n is None or n < 0:
+                self.consume()
 
-        values = itertools.islice(self._iter, n - head_size)
-        list.extend(self, values)
-        try:
-            list.append(self, next(self._iter))
-        except StopIteration:
-            if self._missing is not None:
-                self._missing -= list.__len__(self) - head_size
-            self.consume()
+            case slice(stop=n):
+                self.consume(n)
 
+            case _:
+                raise TypeError(f"invalid index: {type(n).__name__}")
 
-def is_consumed(it):
-    try:
-        next(it)
-        return False
-    except StopIteration:
-        return True
+    def _size_fast(self) -> int | None:
+        n = len(self._data)
+        for n, _ in self._parts:
+            if isinstance(n, int):
+                n += 1
+            else:
+                return None
+        return n
+

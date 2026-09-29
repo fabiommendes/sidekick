@@ -1,17 +1,16 @@
 import itertools
+from typing import Sequence, overload, Iterable, Callable, TYPE_CHECKING
 
-from .iter import Iter, generator
+from .iter import iter
 from .lib_basic import is_empty
-from .util import vargs
-from .. import _toolz as toolz
-from ..functions import fn
-from ..typing import Seq, Union, Raisable, Callable, Func, TYPE_CHECKING, NOT_GIVEN
+from .util import c, to_callable, vargs, toolz, b, a, Raisable, NOT_GIVEN
+
 
 if TYPE_CHECKING:
-    from .. import api as sk, to_callable  # noqa: F401
+    from sidekick import api as sk  # noqa: F401
 
 
-class UnalignedZipError(Exception):
+class UnalignedZipError(ValueError):
     """
     Raised by zip_aligned when two iterators do not have the same size.
     """
@@ -24,8 +23,17 @@ class UnalignedZipError(Exception):
         return cls("sequences are not aligned")
 
 
-@fn
-def concat(seqs: Union[Seq, Seq[Seq]], *extra) -> Iter:
+@overload
+def concat(seqs: Sequence[Iterable[a]]) -> iter[a]:
+    ...
+
+
+@overload
+def concat(seq: Iterable[a], *seqs: Iterable[a]) -> iter[a]:
+    ...
+
+
+def concat(*args):
     """
     Concatenates all iterators in sequence of iterators.
 
@@ -40,13 +48,22 @@ def concat(seqs: Union[Seq, Seq[Seq]], *extra) -> Iter:
         >>> sk.concat(map(range, sk.nums(1, ...)))
         sk.iter([0, 0, 1, 0, 1, 2, ...])
     """
-    if extra:
-        return Iter(itertools.chain(seqs, *extra))
-    return Iter(itertools.chain.from_iterable(seqs))
+    if len(args) == 1:
+        return iter(itertools.chain.from_iterable(args))
+    return iter(itertools.chain(*args))
 
 
-@fn.curry(1)
-def interleave(seqs: Union[Seq, Seq[Seq]], *extra, aligned=False):
+@overload
+def interleave(seq: Iterable[a], *, aligned: bool = False) -> iter[a]:
+    ...
+
+
+@overload
+def interleave(*seqs: Iterable[a], aligned: bool = False) -> iter[a]:
+    ...
+
+
+def interleave(*args, aligned=False):
     """
     Interleave sequence of sequences.
 
@@ -54,9 +71,9 @@ def interleave(seqs: Union[Seq, Seq[Seq]], *extra, aligned=False):
         seqs:
             a sequence of sequences
         aligned:
-            If True, stops when the first iterator exausts. Aligned does not
+            If True, stops when the first iterator exhausts. Aligned does not
             work with an infinite sequence of sequences, but all sequences in
-            this finite list may be inifinite.
+            this finite list may be infinite.
 
     Examples:
         >>> sk.interleave([1, 2, 3], 'abc')
@@ -67,11 +84,11 @@ def interleave(seqs: Union[Seq, Seq[Seq]], *extra, aligned=False):
         >>> sk.interleave([[1, 2, 3], 'abc'])
         sk.iter([1, 'a', 2, 'b', 3, 'c'])
     """
-    if extra:
-        seqs = (seqs, *extra)
+    if len(args) == 1:
+        args = args[0]
     if aligned:
-        return Iter(_interleave_aligned(seqs))
-    return Iter(toolz.interleave(seqs))
+        return iter(_interleave_aligned(args))
+    return iter(toolz.interleave(args))
 
 
 def _interleave_aligned(seqs):
@@ -88,10 +105,9 @@ def _interleave_aligned(seqs):
             break
 
 
-@generator
 def zip_aligned(
-    *args: Seq, error: Callable[[], Raisable] = UnalignedZipError.default
-) -> Iter:
+    *args: Iterable[a], error: Callable[[], Raisable] = UnalignedZipError.default
+) -> iter[a]:
     """
     Zip and raises an error if sizes do not match.
 
@@ -117,14 +133,19 @@ def zip_aligned(
         ...
         UnalignedZipError: sequences are not aligned
     """
+    return iter(_zip_aligned(args, error))
+
+
+def _zip_aligned(args, error):
     args = tuple(map(iter, args))
     yield from zip(*args)
     if not all(map(is_empty, args)):
         raise error()
 
 
-@fn
-def diff(*seqs: Seq, key: Func = None, default=NOT_GIVEN) -> Iter:
+def diff(
+    *seqs: Iterable[a], key: Callable[[a], b] = NOT_GIVEN, default=NOT_GIVEN
+) -> iter[tuple[a, a]]:
     """
     Return those items that differ in a pairwise comparison between sequences.
 
@@ -133,26 +154,44 @@ def diff(*seqs: Seq, key: Func = None, default=NOT_GIVEN) -> Iter:
         sk.iter([(3, 4), (4, 8)])
     """
     kwargs = {}
-    if key is not None:
+    if key is not NOT_GIVEN:
         kwargs["key"] = to_callable(key)
     if default is not NOT_GIVEN:
         kwargs["default"] = default
-    return Iter(toolz.diff(*vargs(seqs), **kwargs))
+    return iter(toolz.diff(*vargs(seqs), **kwargs))
 
 
-@fn.curry(4)
-def join(leftkey: Func, leftseq: Seq, rightkey: Func, rightseq: Seq, **kwargs) -> Iter:
+def join(
+    leftkey: Callable[[a], c],
+    leftseq: Iterable[a],
+    rightkey: Callable[[b], c],
+    rightseq: Iterable[b],
+    **kwargs,
+) -> iter[b]:
     """
     Join two sequences on common attributes.
     """
 
     leftkey = to_callable(leftkey)
     rightkey = to_callable(rightkey)
-    return Iter(toolz.join(leftkey, leftseq, rightkey, rightseq, **kwargs))
+    return iter(toolz.join(leftkey, leftseq, rightkey, rightseq, **kwargs))
 
 
-@fn
-def merge_sorted(*seqs, key=None) -> Iter:
+@overload
+def merge_sorted(
+    seqs: Sequence[Iterable[a]], /, *, key: Callable[[a], a] = NOT_GIVEN
+) -> iter[a]:
+    ...
+
+
+@overload
+def merge_sorted(
+    seq: Iterable[a], /, *seqs: Iterable[a], key: Callable[[a], a] = NOT_GIVEN
+) -> iter[a]:
+    ...
+
+
+def merge_sorted(*seqs, key=NOT_GIVEN):
     """
     Merge and sort a collection of sorted collections.
 
@@ -161,5 +200,8 @@ def merge_sorted(*seqs, key=None) -> Iter:
         sk.iter([0, 1, 2, 3, 4, 5, ...])
     """
     seqs = seqs[0] if len(seqs) == 1 else seqs
-    key = key and to_callable(key)
-    return Iter(toolz.merge_sorted(*seqs, key=key))
+    if key is NOT_GIVEN:
+        key_ = None
+    else:
+        key_ = to_callable(key)
+    return iter(toolz.merge_sorted(*seqs, key=key_))

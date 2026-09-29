@@ -1,18 +1,20 @@
+import builtins
 import itertools
 from collections import deque
+from typing import Callable, Iterable, TYPE_CHECKING
 
-from .iter import Iter, generator
+from .iter import iter
 from .lib_basic import uncons
-from .. import _toolz as toolz
-from ..functions import fn
-from ..typing import Seq, TYPE_CHECKING, NOT_GIVEN, Func, T
+from .util import toolz, a, NOT_GIVEN
+
 
 if TYPE_CHECKING:
-    from .. import api as sk  # noqa: F401
+    from sidekick import api as sk  # noqa: F401
+
+_iter = builtins.iter
 
 
-@fn.curry(2)
-def interpose(elem, seq: Seq) -> Iter:
+def interpose(elem: a, seq: Iterable[a], /) -> iter[a]:
     """
     Introduce element between each pair of elements in seq.
 
@@ -20,11 +22,12 @@ def interpose(elem, seq: Seq) -> Iter:
         >>> sk.interpose("a", [1, 2, 3])
         sk.iter([1, 'a', 2, 'a', 3])
     """
-    return Iter(toolz.interpose(elem, seq))
+    return iter(toolz.interpose(elem, seq))
 
 
-@fn.curry(2)
-def pad(value, seq: Seq, size: int = None, step: int = None) -> Iter:
+def pad(
+    value: a, seq: Iterable[a], /, *, size: int = NOT_GIVEN, step: int = NOT_GIVEN
+) -> iter[a]:
     """
     Fill resulting sequence with value after the first sequence terminates.
 
@@ -34,7 +37,7 @@ def pad(value, seq: Seq, size: int = None, step: int = None) -> Iter:
         seq:
             Input sequence.
         size:
-            Optional minimum size of sequence.
+            Optional minimum size of resulting sequence.
         step:
             If given, pad at a multiple of step.
 
@@ -47,14 +50,19 @@ def pad(value, seq: Seq, size: int = None, step: int = None) -> Iter:
 
         >>> sk.pad(0, [1, 2, 3], size=5)
         sk.iter([1, 2, 3, 0, 0])
+
+    See also:
+        :func:`pad_with`
     """
-    if step is None:
-        out = itertools.chain(seq, itertools.repeat(value))
-    else:
+    out: Iterable[a]
+
+    if step is NOT_GIVEN:
         out = _pad_multiple(value, seq, step)
-    if size is not None:
+    else:
+        out = itertools.chain(seq, itertools.repeat(value))
+    if size is not NOT_GIVEN:
         out = itertools.islice(out, size)
-    return Iter(out)
+    return iter(out)
 
 
 def _pad_multiple(value, seq, n):
@@ -66,8 +74,9 @@ def _pad_multiple(value, seq, n):
         yield from itertools.repeat(value, i)
 
 
-@fn.curry(2)
-def pad_with(func: Func, seq: Seq, nargs=1, default=NOT_GIVEN) -> Iter:
+def pad_with(
+    func: Callable[[a], a], seq: Iterable[a], /, nargs=1, default=NOT_GIVEN
+) -> iter[a]:
     """
     Pad sequence iterating the last item with func.
 
@@ -97,6 +106,8 @@ def pad_with(func: Func, seq: Seq, nargs=1, default=NOT_GIVEN) -> Iter:
         >>> sk.pad_with(op.add, [1, 1], nargs=2)
         sk.iter([1, 1, 2, 3, 5, 8, ...])
 
+    See also:
+        :func:`pad`
     """
     if func is None:
         out = _pad_last(seq, default)
@@ -108,7 +119,7 @@ def pad_with(func: Func, seq: Seq, nargs=1, default=NOT_GIVEN) -> Iter:
             out = itertools.islice(_pad_iterate_n(nargs, func, seq), nargs)
         else:
             out = _pad_iterate_n(nargs, func, seq)
-    return Iter(out)
+    return iter(out)
 
 
 def _pad_last(seq, default):
@@ -142,29 +153,35 @@ def _pad_iterate_n(n, func, seq):
         args.append(x)
 
 
-@fn.curry(2)
-def append(elem: T, seq: Seq[T]) -> Iter[T]:
+def append(elem: a, seq: Iterable[a]) -> iter[a]:
     """
     Return a new sequence with element appended to the end.
 
     Examples:
         >>> sk.append(4, [1, 2, 3])
         sk.iter([1, 2, 3, 4])
+
+    See also:
+        :func:`insert`
     """
-    return Iter(itertools.chain(seq, [elem]))
+    return iter(itertools.chain(seq, [elem]))
 
 
-@fn.curry(3)
-@generator
-def insert(idx: int, value: T, seq: Seq[T]) -> Iter[T]:
+def insert(idx: int, value: a, seq: Iterable[a], /) -> iter[a]:
     """
     Return sequence that inserts value at the given index.
 
     Examples:
-        >>> sk.insert(2, 2.5, [1, 2, 3])
-        sk.iter([1, 2, 2.5, 3])
+        >>> sk.insert(2, 2.5, [1.0, 2.0, 3.0])
+        sk.iter([1.0, 2.0, 2.5, 3.0])
 
+    See also:
+        :func:`append`
     """
+    return iter(_insert(idx, value, seq))
+
+
+def _insert(idx, value, seq):
     seq = iter(seq)
     yield from itertools.islice(seq, idx)
     yield value

@@ -1,26 +1,22 @@
 import itertools
 import operator as op
 from collections import deque
+from typing import Callable, Iterable, TYPE_CHECKING
 from itertools import filterfalse, dropwhile, takewhile, islice
 
-from .iter import Iter, generator
+from .iter import iter
 from .lib_basic import uncons
-from .. import _toolz
-from .._empty import empty
-from ..functions import fn, to_callable
-from ..typing import Func, Pred, Seq, Union, TYPE_CHECKING, Callable
+from .util import toolz, to_callable, c, b, a, Pred, NOT_GIVEN
 
 if TYPE_CHECKING:
-    from .. import api as sk, Union  # noqa: F401
-    from ..api import X, Y  # noqa: F401
+    from sidekick import api as sk  # noqa: F401
+    from sidekick.api import X, Y  # noqa: F401
 
 _filter = filter
 _snd = op.itemgetter(1)
-NOT_GIVEN = empty()
 
 
-@fn.curry(2)
-def filter(pred: Pred, seq: Seq):
+def filter(pred: Pred[a], seq: Iterable[a]) -> iter[a]:
     """
     Return an iterator yielding those items of iterable for which function(item)
     is true.
@@ -38,16 +34,15 @@ def filter(pred: Pred, seq: Seq):
         >>> sk.filter((X % 2), range(10))
         sk.iter([1, 3, 5, 7, 9])
 
-    See Also:
+    See also:
         :func:`remove`
         :func:`separate`
     """
     pred = to_callable(pred)
-    return Iter(_filter(pred, seq))
+    return iter(_filter(pred, seq))
 
 
-@fn.curry(2)
-def remove(pred: Pred, seq: Seq) -> Iter:
+def remove(pred: Pred[a], seq: Iterable[a]) -> iter[a]:
     """
     Opposite of filter. Return those items of sequence for which pred(item)
     is False
@@ -56,15 +51,16 @@ def remove(pred: Pred, seq: Seq) -> Iter:
         >>> sk.remove((X < 5), range(10))
         sk.iter([5, 6, 7, 8, 9])
 
-    See Also:
+    See also:
         :func:`filter`.
         :func:`separate`
     """
-    return Iter(filterfalse(to_callable(pred), seq))
+    return iter(filterfalse(to_callable(pred), seq))
 
 
-@fn.curry(2)
-def separate(pred: Func, seq: Seq, consume: bool = False) -> (Seq, Seq):
+def separate(
+    pred: Pred[a], seq: Iterable[a], /, *, consume: bool = False
+) -> tuple[iter[a], iter[a]]:
     """
     Split sequence it two. The first consists of items that pass the
     predicate and the second of those items that don't.
@@ -85,31 +81,28 @@ def separate(pred: Func, seq: Seq, consume: bool = False) -> (Seq, Seq):
         >>> sk.separate((X % 2), [1, 2, 3, 4, 5])
         (sk.iter([1, 3, 5]), sk.iter([2, 4]))
 
-    See Also:
+    See also:
         :func:`filter`
         :func:`remove`
     """
     pred = to_callable(pred)
     if consume:
-        a, b = [], []
-        add_a = a.append
-        add_b = b.append
+        ok_lst = list[a]()
+        bad_lst = list[a]()
+        add_a = ok_lst.append
+        add_b = bad_lst.append
         for x in seq:
-            if pred(x):
-                add_a(x)
-            else:
-                add_b(x)
-        return a, b
+            (add_a if pred(x) else add_b)(x)
+        return iter(ok_lst), iter(bad_lst)
     else:
-        a, b = itertools.tee((x, pred(x)) for x in seq)
+        seq1, seq2 = itertools.tee((x, pred(x)) for x in seq)
         return (
-            Iter(x for x, keep in a if keep),
-            Iter(x for x, exclude in b if not exclude),
+            iter(x for x, keep in seq1 if keep),
+            iter(x for x, keep in seq2 if not keep),
         )
 
 
-@fn.curry(2)
-def drop(key: Union[Pred, int], seq: Seq) -> Iter:
+def drop(key: int | Pred[a], seq: Iterable[a], /) -> iter[a]:
     """
     Drop items from the start of iterable.
 
@@ -128,20 +121,18 @@ def drop(key: Union[Pred, int], seq: Seq) -> Iter:
         >>> sk.drop(3, range(10))
         sk.iter([3, 4, 5, 6, 7, 8, ...])
 
-    See Also:
+    See also:
         :func:`take`
         :func:`rdrop`
         :func:`strip`
     """
     if isinstance(key, int):
-        return Iter(islice(seq, key, None))
+        return iter(islice(seq, key, None))
     else:
-        return Iter(dropwhile(to_callable(key), seq))
+        return iter(dropwhile(to_callable(key), seq))
 
 
-@fn.curry(2)
-@generator
-def rdrop(key: Union[Pred, int], seq: Seq) -> Iter:
+def rdrop(key: int | Pred[a], seq: Iterable[a], /) -> iter[a]:
     """
     Drop items from the end of iterable.
 
@@ -152,12 +143,14 @@ def rdrop(key: Union[Pred, int], seq: Seq) -> Iter:
         >>> sk.rdrop((X >= 2), [1, 2, 4, 1, 2, 4])
         sk.iter([1, 2, 4, 1])
 
-    See Also:
+    See also:
         :func:`drop`
         :func:`rtake`
     """
-    seq = iter(seq)
+    return iter(_rdrop(key, iter(seq)))
 
+
+def _rdrop(key, seq):
     if isinstance(key, int):
         n: int = key
         out = deque(take(n, seq), n)
@@ -179,8 +172,7 @@ def rdrop(key: Union[Pred, int], seq: Seq) -> Iter:
                 clear()
 
 
-@fn.curry(2)
-def drop_at(indices: Seq, seq: Seq) -> Seq:
+def drop_at(indices: set[a] | Iterable[a], seq: Iterable[a], /) -> iter[a]:
     """
     Drop all elements in the given positions.
 
@@ -190,13 +182,13 @@ def drop_at(indices: Seq, seq: Seq) -> Seq:
         >>> "".join(drop_at({1, 2, 4, 10}, "foobar"))
         'fbr'
 
-    See Also:
+    See also:
         :func:`drop`
         :func:`take_at`
     """
     if isinstance(indices, set):
-        return Iter(x for i, x in enumerate(seq) if i not in indices)
-    return Iter(_drop_at_lazy(iter(indices), iter(seq)))
+        return iter(x for i, x in enumerate(seq) if i not in indices)
+    return iter(_drop_at_lazy(iter(indices), iter(seq)))
 
 
 def _drop_at_lazy(indices, seq):
@@ -216,8 +208,7 @@ def _drop_at_lazy(indices, seq):
     yield from seq
 
 
-@fn.curry(2)
-def take(key: Union[Pred, int], seq: Seq) -> Iter:
+def take(key: int | Pred[a], seq: Iterable[a], /) -> iter[a]:
     """
     Return the first entries iterable.
 
@@ -237,18 +228,16 @@ def take(key: Union[Pred, int], seq: Seq) -> Iter:
         >>> sk.take((X < 5), range(10))
         sk.iter([0, 1, 2, 3, 4])
 
-    See Also:
+    See also:
         :func:`drop`
     """
     if isinstance(key, int):
-        return Iter(islice(seq, key))
+        return iter(islice(seq, key))
     else:
-        return Iter(takewhile(to_callable(key), seq))
+        return iter(takewhile(to_callable(key), seq))
 
 
-@fn.curry(2)
-@generator
-def rtake(key: Union[Pred, int], seq: Seq) -> Iter:
+def rtake(key: int | Pred[a], seq: Iterable[a], /) -> iter[a]:
     """
     Return the last entries iterable.
 
@@ -259,12 +248,14 @@ def rtake(key: Union[Pred, int], seq: Seq) -> Iter:
         >>> sk.rtake((X >= 2), [1, 2, 4, 1, 2, 4])
         sk.iter([2, 4])
 
-    See Also:
+    See also:
         :func:`take`
         :func:`rdrop`
     """
-    seq = iter(seq)
+    return iter(_rtake(key, iter(seq)))
 
+
+def _rtake(key, seq):
     if isinstance(key, int):
         yield from deque(seq, key)
     else:
@@ -280,8 +271,7 @@ def rtake(key: Union[Pred, int], seq: Seq) -> Iter:
         yield from tail
 
 
-@fn.curry(2)
-def take_at(indices: Seq, seq: Seq) -> Seq:
+def take_at(indices: set[a] | Iterable[a], seq: Iterable[a], /) -> iter[a]:
     """
     Return a sequence with values in the positions specified by indices.
 
@@ -295,11 +285,11 @@ def take_at(indices: Seq, seq: Seq) -> Seq:
         >>> ''.join(take_at([0, 1, 1, 1, 4, 5, 10], "foo bar baz"))
         'fooobaz'
 
-    See Also:
+    See also:
         :func:`get`
         :func:`drop_at`
     """
-    return Iter(_take_at(iter(indices), seq))
+    return iter(_take_at(iter(indices), seq))
 
 
 def _take_at(indices, seq):
@@ -318,8 +308,12 @@ def _take_at(indices, seq):
             raise ValueError("non-decreasing sequence of indices")
 
 
-@fn.curry(2)
-def strip(prefix: Seq, seq: Seq, partial=False, cmp=NOT_GIVEN) -> Iter:
+def strip(
+    prefix: Iterable[a],
+    seq: Iterable[a],
+    partial: bool = False,
+    cmp: Callable[[a, a], bool] = NOT_GIVEN,
+) -> iter[a]:
     """
     If seq starts with the same elements as in prefix, remove them from
     result.
@@ -332,7 +326,7 @@ def strip(prefix: Seq, seq: Seq, partial=False, cmp=NOT_GIVEN) -> Iter:
         partial:
             If True, remove partial matches with prefix.
         cmp:
-            If given, uses as a comparation function between elements of prefix
+            If given, uses as a comparison function between elements of prefix
             and sequence. It removes elements that cmp(x, y) returns True.
 
     Examples:
@@ -343,11 +337,11 @@ def strip(prefix: Seq, seq: Seq, partial=False, cmp=NOT_GIVEN) -> Iter:
     """
     if partial:
         cmp = NOT_GIVEN.resolve(cmp, op.eq)
-        return Iter(_strip_partial(iter(prefix), iter(seq), cmp=cmp))
+        return iter(_strip_partial(iter(prefix), iter(seq), cmp=cmp))
     elif cmp is NOT_GIVEN:
-        return Iter(_strip_full(tuple(prefix), iter(seq)))
+        return iter(_strip_full(tuple(prefix), iter(seq)))
     else:
-        return Iter(_strip_full_cmp(tuple(prefix), iter(seq), cmp))
+        return iter(_strip_full_cmp(tuple(prefix), iter(seq), cmp))
 
 
 def _strip_partial(prefix, seq, cmp):
@@ -377,9 +371,14 @@ def _strip_full_cmp(prefix, seq, cmp):
         yield from seq
 
 
-@fn.curry(1)
-@generator
-def unique(seq: Seq, *, key: Func = None, exclude: Seq = (), slow=False) -> Iter:
+def unique(
+    seq: Iterable[a],
+    /,
+    *,
+    key: Callable[[a], b] = NOT_GIVEN,
+    exclude: Iterable[a] = (),
+    slow: bool = False,
+) -> iter[a]:
     """
     Returns the given sequence with duplicates removed.
 
@@ -406,9 +405,13 @@ def unique(seq: Seq, *, key: Func = None, exclude: Seq = (), slow=False) -> Iter
         Elements of a sequence or their keys should be hashable, otherwise it
         must use a slow path.
 
-    See Also:
+    See also:
         :func:`dedupe`
     """
+    return iter(_unique(seq, key, exclude, slow))
+
+
+def _unique(seq, key, exclude, slow):
     pred = to_callable(key)
     if slow:
         seen = [*exclude] if key is None else [*map(pred, exclude)]
@@ -417,7 +420,7 @@ def unique(seq: Seq, *, key: Func = None, exclude: Seq = (), slow=False) -> Iter
         seen = {*exclude} if key is None else {*map(key, exclude)}
         add = seen.add
 
-    if key is None:
+    if key is NOT_GIVEN:
         for x in seq:
             if x not in seen:
                 add(x)
@@ -430,9 +433,7 @@ def unique(seq: Seq, *, key: Func = None, exclude: Seq = (), slow=False) -> Iter
                 yield x
 
 
-@fn.curry(1)
-@generator
-def dedupe(seq: Seq, *, key: Func = None) -> Iter:
+def dedupe(seq: Iterable[a], *, key: Callable[[a], b] = NOT_GIVEN) -> iter[a]:
     """
     Remove duplicates of successive elements.
 
@@ -443,16 +444,20 @@ def dedupe(seq: Seq, *, key: Func = None) -> Iter:
             Optional key function. It will yield successive values if their
             keys are different.
 
-    See Also:
+    See also:
         :func:`unique`
     """
+    return iter(_dedupe(seq, key))
+
+
+def _dedupe(seq, key):
     try:
         x, rest = uncons(seq)
         yield x
     except ValueError:
         return
 
-    if key is None:
+    if key is NOT_GIVEN:
         for y in rest:
             if x != y:
                 yield y
@@ -467,9 +472,7 @@ def dedupe(seq: Seq, *, key: Func = None) -> Iter:
             key_x = key_y
 
 
-@fn.curry(2)
-@generator
-def converge(pred: Pred, seq: Seq) -> Iter:
+def converge(pred: Pred[a], seq: Iterable[a], /) -> iter[a]:
     """
     Test convergence with the predicate function by passing the last two items
     of sequence. If pred(penultimate, last) returns True, stop iteration.
@@ -488,7 +491,10 @@ def converge(pred: Pred, seq: Seq) -> Iter:
         >>> sum(it)
         1.9921875
     """
-    seq = iter(seq)
+    return iter(_converge(pred, iter(seq)))
+
+
+def _converge(pred, seq):
     try:
         x = next(seq)
     except StopIteration:
@@ -502,20 +508,27 @@ def converge(pred: Pred, seq: Seq) -> Iter:
         x = y
 
 
-@fn.curry(2)
-def random_sample(prob: float, seq: Seq, *, random_state=None) -> Seq:
+def random_sample(prob: float, seq: Iterable[a], *, random_state=None) -> Iterable[a]:
     """
     Choose with probability ``prob`` each element of seq to include in the
     output sequence.
     """
-    return _toolz.random_sample(prob, seq, random_state=random_state)
+    return toolz.random_sample(prob, seq, random_state=random_state)
 
 
-@fn.curry(3)
-def indexed(transform, func: Callable, seq: Seq, *, start=0) -> Seq:
+def indexed(
+    transform: Callable[
+        [Callable[[tuple[int, a]], c], Iterable[tuple[int, a]]], Iterable[tuple[int, a]]
+    ],
+    func: Callable[[a], c],
+    seq: Iterable[a],
+    /,
+    *,
+    start: int = 0,
+) -> Iterable[tuple[int, a]]:
     """
-    Take a function that receives a sequence and a function and transform it
-    to operate in a indexed sequence.
+    Take a function that receives a predicate with a sequence and transform it
+    to operate on an indexed sequence.
 
     This is mostly useful for functions like filter, take, drop, etc that loose
     indexing information after the transform.
@@ -526,5 +539,5 @@ def indexed(transform, func: Callable, seq: Seq, *, start=0) -> Seq:
         sk.iter([(1, 10), (4, 25), (5, 42)])
     """
     func = to_callable(func)
-    func_ = lambda x: func(_snd(x))
-    return transform(func_, enumerate(seq, start))
+    func_: Callable[[tuple[int, a]], c] = lambda x: func(_snd(x))
+    return transform(func_, enumerate(seq, start=start))

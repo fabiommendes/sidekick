@@ -1,9 +1,9 @@
 import collections.abc
 import keyword
 from types import MappingProxyType
+from typing import Mapping
 
 from .anonymous_record import MutableMapView, MapView, record, namespace, MetaMixin
-from ..typing import Mapping
 
 NOT_GIVEN = object()
 Field = collections.namedtuple("Field", ["name", "type", "default"])
@@ -186,8 +186,8 @@ def safe_names(names):
 
 
 def make_record_namespace(bases, meta_info, is_mutable=False):
-    fields = meta_info.fields
-    ns = {"__slots__": tuple(fields)}
+    fields = tuple(meta_info.fields)
+    ns = {"__slots__": fields, "__match_args__": fields}
 
     if not is_mutable:
         ns.setdefault("__hash__", lambda self: hash(tuple(self)))

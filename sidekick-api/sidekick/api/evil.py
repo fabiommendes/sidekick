@@ -1,12 +1,7 @@
 import ctypes
 
-# noinspection PyUnresolvedReferences
 import sys
-
-# noinspection PyUnresolvedReferences
 import types
-
-# noinspection PyUnresolvedReferences
 import warnings
 
 from ._modules import GetAttrModule, set_module_class
@@ -221,8 +216,8 @@ class Object:
 
 
 def __getattr__(name):
-    # Highly obsfuscated code. This is the puzzle. If you solve it you can use
-    # forbidden powers in production code. You can, but you shouldn't. Really,
+    # Highly obsfuscated code. This is a puzzle. If you solve it you can use
+    # forbidden powers in production. You can, but you shouldn't. Really,
     # don't do it!
     import toolz
     import inspect

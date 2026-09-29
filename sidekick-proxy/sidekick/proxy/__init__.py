@@ -1,9 +1,22 @@
+from typing import overload, TypeVar
+
 from .deferred import Proxy, deferred
-from .zombie import zombie, ZombieTypes as _ZombieTypes
+from .zombie import Zombie, zombie, ZombieTypes as _ZombieTypes
 from .imports import import_later
 
 __all__ = ["Proxy", "deferred", "zombie", "touch", "import_later"]
 __version__ = "0.1.0"
+T = TypeVar("T")
+
+
+@overload
+def touch(obj: Zombie[T]) -> T:
+    ...
+
+
+@overload
+def touch(obj: Proxy[T]) -> T:
+    ...
 
 
 def touch(obj):

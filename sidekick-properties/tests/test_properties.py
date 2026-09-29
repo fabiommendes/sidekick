@@ -123,9 +123,10 @@ class TestDelegateToDecorator:
         assert not cls.w_double_ro.is_mutable
         assert cls.w_double_rw.is_mutable
         assert obj.w_double_ro == obj.w_double_rw == obj.y * 2.0
-        
+
         obj.w_double_rw = 4.0 * obj.y
         assert obj.w_double_rw == obj.y * 2.0
+
 
 class TestAliasDecorator:
     @pytest.fixture(scope="class")

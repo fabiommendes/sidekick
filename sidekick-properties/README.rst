@@ -51,8 +51,12 @@ delegate attributes (see :py:func:`delegate_to` for more).
         
 
 Finally, the ``@lazy`` decorator marks a property that is computed lazily at first access.
-Differently from regular Python properties, lazy properties can be written normally (and it
-is not possible to specify an fset() function), and only execute the decorated function 
-during first access. Lazy initializers can be used for optimization (but be careful, since they
-can degrade performance for properties that are always computed during the lifetime of an object)
-or as an architectural choice to decouple attributes from initialization.  
+Differently from regular Python properties, lazy properties only execute the decorated function 
+during first access. Lazy initializers can be used for optimization by avoiding an expensive 
+computation that may not be necessary or as an architectural choice that decouples attribute 
+initialization from object construction.
+
+Be aware that lazy properties can slightly degrade performance for properties that are 
+always computed during the lifetime of an object. If squeezing every bit of performance 
+is important, compute them in __init__.
+  

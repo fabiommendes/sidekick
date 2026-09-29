@@ -6,7 +6,6 @@ from setuptools import setup, find_namespace_packages
 sub_package = "proxy"
 min_python = (3, 6)
 python_requires = ">=3.6"
-install_requires = []
 extras_require = {"extra": ["sidekick.core"]}
 
 # Package properties
@@ -39,6 +38,5 @@ setup(
     long_description=roles_re.sub('', Path("README.rst").read_text()),
     version=read_version(),
     packages=find_namespace_packages(include=["sidekick.*"]),
-    install_requires=install_requires,
     extras_require=extras_require,
 )

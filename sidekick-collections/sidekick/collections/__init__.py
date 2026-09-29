@@ -1,5 +1,5 @@
-# flake8: noqa
-from .frozendict import FrozenKeyDict, FrozenDict
-from .invmap import InvMap
+from .mappings import FrozenKeyDict, FrozenDict, InvMap, FrozenInvMap
 from .lazylist import LazyList
-from .tree import *
+
+__all__ = ["FrozenKeyDict", "FrozenDict", "InvMap", "FrozenInvMap", "LazyList"]
+__version__ = "0.0.1"

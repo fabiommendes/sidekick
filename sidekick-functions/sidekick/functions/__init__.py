@@ -1,27 +1,25 @@
-from . import fn_instances as _instances
-from .core_functions import (
+from sidekick.core import (
     to_fn,
     to_function,
     to_callable,
     quick_fn,
     signature,
     arity,
-    declaration as stub,
+    stub,
+    fn,
+    wrap_fn_functions as _wrap_fn_functions,
 )
-from .fn import fn, wrap_fn_functions as _wrap_fn_functions
-from .fn_interfaces import semigroup, monoid, group, apply, apply_flat, mtimes, mconcat
-from .fn_placeholders import X, Y, F, M, placeholder, _, Placeholder
-from .lib_arguments import (
+from .arguments import (
     flip,
     select_args,
     keep_args,
     reverse_args,
     skip_args,
-    splice_args,
-    variadic_args,
-    set_null,
+    unsplice,
+    variadic,
+    default_args,
 )
-from .lib_combinators import (
+from .creation import (
     identity,
     ridentity,
     always,
@@ -32,7 +30,7 @@ from .lib_combinators import (
     call,
     do,
 )
-from .lib_composition import (
+from .composition import (
     compose,
     pipe,
     pipeline,
@@ -42,8 +40,8 @@ from .lib_composition import (
     rthread_if,
     juxt,
 )
-from .lib_partial_application import partial, rpartial, curry, method
-from .lib_runtime import (
+from .partial import partial, rpartial, curry, method
+from .runtime import (
     once,
     thunk,
     call_after,
@@ -55,7 +53,7 @@ from .lib_runtime import (
     catch,
     catching,
 )
-from .signature import Signature
+from .signature import Signature, BoundArguments, Parameter
 from .stub import Stub
 
 __all__ = [
@@ -70,6 +68,8 @@ __all__ = [
     "placeholder",
     "Placeholder",
     "Signature",
+    "BoundArguments",
+    "Parameter",
     "Stub",
     # Introspection
     "Stub",
@@ -129,10 +129,10 @@ __all__ = [
     "keep_args",
     "reverse_args",
     "skip_args",
-    "splice_args",
-    "variadic_args",
-    "set_null",
+    "unsplice",
+    "variadic",
+    "default_args",
 ]
-__version__ = '0.1.0'
+__version__ = "0.1.0"
 _wrap_fn_functions(globals(), exclude={"fn", "placeholder", "_", "X", "Y", "M", "F"})
-_instances.register_all()
+# TODO: _instances.register_all()

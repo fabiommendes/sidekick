@@ -1,25 +1,41 @@
 from pathlib import Path
 from invoke import task
+import sys
 
 sub_package = "properties"
 
+PACKAGES = [
+    # Core libs
+    ("core", ["properties", "core", "functions", "proxy", "seq"]),
+    # Data types
+    ("data", ["tree", "collections", "types"]),
+    # Extra
+    ("extra", ["api", "beta", "experimental", "extra", "hypothesis", "ideas"]),
+]
+
 
 @task
-def install(ctx):
+def develop(ctx, install=False, dry_run=False):
     """
     Install all sidekick libraries.
     """
-    groups = [
-        # Core libs
-        ['functions', 'properties', 'proxy',  'seq'],
-        # Data types
-        ['tree', 'collections', 'types'],
-        # Extra
-        ['api', 'beta',  'core', 'experimental', 'extra', 'hypothesis', 'ideas']
-    ]
-    for grp in groups:
+    cmd = "install" if install else "develop"
+    
+    run = print if dry_run else ctx.run
+    for _, grp in PACKAGES:
         for lib in grp:
-            ctx.run(f'cd sidekick-{lib} && python setup.py develop')
+            run(f"cd sidekick-{lib} && {sys.executable} setup.py {cmd}")
+
+
+@task
+def uninstall(ctx, dry_run=False):
+    """
+    Install all sidekick libraries.
+    """
+    run = print if dry_run else ctx.run
+    for _, grp in PACKAGES:
+        for lib in grp:
+            run(f"pip uninstall sidekick-{lib} --yes")
 
 
 @task
@@ -81,15 +97,15 @@ def ci(ctx, dry_run=False):
     """
     Full pipeline performed by CI runner.
     """
-    conf = Path('.github/workflows/pythonpackage.yml').read_text()
-    _, _, src = conf.partition('Run CI')
-    _, _, src = src.partition('|')
-    src, _, _ = src.partition('- name: ')
+    conf = Path(".github/workflows/pythonpackage.yml").read_text()
+    _, _, src = conf.partition("Run CI")
+    _, _, src = src.partition("|")
+    src, _, _ = src.partition("- name: ")
     cmds = [ln[8:] for ln in src.splitlines() if ln.strip()]
 
     if dry_run:
         print("Dry run:")
-        print('\n'.join(cmds))
+        print("\n".join(cmds))
         return
 
     print("Running commands:")

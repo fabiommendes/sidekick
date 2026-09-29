@@ -1,4 +1,4 @@
-from .. import api as sk
+from . import take
 
 
 class EqList(list):
@@ -8,7 +8,7 @@ class EqList(list):
 
     def __eq__(self, other):
         if self and self[-1] == ...:
-            other = sk.take(len(self) - 1, other)
+            other = take(len(self) - 1, other)
             self = self[:-1]
         other = list(other)
         assert list.__eq__(self, other), f"Different outputs: {other} != {self}"

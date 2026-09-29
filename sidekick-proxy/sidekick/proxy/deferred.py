@@ -1,8 +1,11 @@
+from typing import Generic, TypeVar
+
 from .zombie import UNARY_METHODS, BINARY_METHODS, RBINARY_METHODS, ARBITRARY_METHODS
-from ..functions import call
+
+T = TypeVar("T")
 
 
-class Proxy:
+class Proxy(Generic[T]):
     """
     Base class for proxy types.
     """
@@ -27,7 +30,7 @@ class Proxy:
 
 
 # noinspection PyMissingConstructor
-class deferred(Proxy):
+class deferred(Proxy[T]):
     """
     Wraps uninitialized object into a proxy shell.
 
@@ -49,14 +52,11 @@ class deferred(Proxy):
     __slots__ = ("_deferred_constructor_",)
 
     def __init__(self, func, *args, **kwargs):
-        init = lambda: func(*args, **kwargs)
-        self._deferred_constructor_ = init
+        self._deferred_constructor_ = lambda: func(*args, **kwargs)
 
     def __repr__(self):
-        # return f"{type(self).__name__}({repr(self._Proxy__get_object())})"
         return f"Proxy({repr(self._Proxy__get_object())})"
 
-    # noinspection PyPep8Naming
     def _Proxy__get_object(self):
         try:
             return self._proxy_obj_
@@ -76,7 +76,6 @@ class deferred(Proxy):
         return getattr(obj, attr)
 
 
-@call()
 def _patch_proxy():
     definitions = []
     template = (
@@ -101,3 +100,7 @@ def _patch_proxy():
     exec(code, {}, ns)
     for k, v in ns.items():
         setattr(Proxy, k, v)
+
+
+_patch_proxy()
+del _patch_proxy

@@ -1,0 +1,1 @@
+../../sidekick-properties/tests/test_properties.py

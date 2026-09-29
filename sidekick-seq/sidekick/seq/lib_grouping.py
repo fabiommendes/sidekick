@@ -1,34 +1,20 @@
-from itertools import tee, chain, takewhile, dropwhile, islice, count
+from itertools import tee, chain, takewhile, dropwhile, islice
+from typing import TYPE_CHECKING, Callable, Iterable, Literal, overload
 
-from toolz import groupby
 
-from .iter import Iter, generator
+from .iter import iter
 from .lib_basic import uncons
-from .._toolz import partition_all, partition as _partition, sliding_window, partitionby
-from ..functions import fn, to_callable
-from ..typing import (
-    Seq,
-    NOT_GIVEN,
-    TYPE_CHECKING,
-    Union,
-    Pred,
-    Func,
-    Tuple,
-    Iterable,
-    T,
-    Literal,
-)
+from .util import toolz, to_callable, b, a, Pred, NOT_GIVEN
+
+
+if TYPE_CHECKING:
+    from sidekick import api as sk  # noqa: F401
+    from sidekick.api import X, Y  # noqa: F401
 
 _next = next
-if TYPE_CHECKING:
-    from .. import api as sk  # noqa: F401
-    from ..api import X, Y  # noqa: F401
-
-ChunksHow = Literal["values", "pairs", "left", "right", "drop"]
 
 
-@fn.curry(2)
-def group_by(key: Func, seq: Seq) -> dict:
+def group_by(key: Callable[[a], b], seq: iter[a]) -> dict[b, list[a]]:
     """
     Group collection by the results of a key function.
 
@@ -36,17 +22,21 @@ def group_by(key: Func, seq: Seq) -> dict:
         >>> sk.group_by((X % 2), range(5))
         {0: [0, 2, 4], 1: [1, 3]}
 
-    See Also:
+    See also:
         :func:`reduce_by`
         :func:`fold_by`
     """
-    return groupby(key, seq)
+    return toolz.groupby(key, seq)
 
 
-@fn.curry(2)
 def chunks(
-    n: Union[int, Iterable[int]], seq: Seq[T], *, pad=NOT_GIVEN, drop: bool = False
-) -> Iter[Tuple[T, ...]]:
+    n: int | Iterable[int],
+    seq: Iterable[a],
+    /,
+    *,
+    pad: a = NOT_GIVEN,
+    drop: bool = False,
+) -> iter[tuple[a, ...]]:
     """
     Partition sequence into non-overlapping tuples of length n.
 
@@ -85,23 +75,23 @@ def chunks(
         >>> sk.chunks([1, 2, 3, ...], range(10))
         sk.iter([(0,), (1, 2), (3, 4, 5), (6, 7, 8, 9)])
 
-    See Also:
+    See also:
         :func:`chunks_by`
         :func:`window`
     """
     if isinstance(n, int):
         if drop:
-            return Iter(_partition(n, seq))
+            return iter(toolz.partition(n, seq))
         elif pad is not NOT_GIVEN:
-            return Iter(_partition(n, seq, pad))
+            return iter(toolz.partition(n, seq, pad))
         else:
-            return Iter(partition_all(n, seq))
+            return iter(toolz.partition_all(n, seq))
     elif drop:
-        return Iter(_chunks_sizes_ex(n, seq, True, None))
+        return iter(_chunks_sizes_ex(n, seq, True, None))
     elif pad:
-        return Iter(_chunks_sizes_ex(n, seq, False, pad))
+        return iter(_chunks_sizes_ex(n, seq, False, pad))
     else:
-        return Iter(_chunks_sizes(n, seq))
+        return iter(_chunks_sizes(n, seq))
 
 
 def _chunks_sizes(ns, seq):
@@ -137,8 +127,31 @@ def _chunks_sizes_ex(ns, seq, drop, pad):
                 break
 
 
-@fn.curry(2)
-def chunks_by(func: Func, seq: Seq, how: ChunksHow = "values") -> Iter:
+@overload
+def chunks_by(
+    func: Callable[[a], b], seq: Iterable[a], *, how: Literal["values"] = "values"
+) -> iter[tuple[a]]:
+    ...
+
+
+@overload
+def chunks_by(
+    func: Callable[[a, a], bool], seq: Iterable[a], *, how: Literal["pairs"]
+) -> iter[tuple[a]]:
+    ...
+
+
+@overload
+def chunks_by(
+    func: Callable[[a], bool],
+    seq: Iterable[a],
+    *,
+    how: Literal["pairs", "left", "right", "drop", "repeat"],
+) -> iter[tuple[a]]:
+    ...
+
+
+def chunks_by(func, seq, /, *, how="values"):
     """
     Partition sequence into chunks according to a function.
 
@@ -161,6 +174,7 @@ def chunks_by(func: Func, seq: Seq, how: ChunksHow = "values") -> Iter:
               chunk to the right.
             * 'drop': create new chunk when func(x) is True. x dropped from output
                sequence. It behaves similarly to str.split.
+            * 'repeat': create new chunk when func(x) is True. x appear in both chunks.
 
     Examples:
         Standard chunker
@@ -183,20 +197,22 @@ def chunks_by(func: Func, seq: Seq, how: ChunksHow = "values") -> Iter:
         >>> sk.chunks_by(sk.is_odd, [1, 2, 3, 2, 4, 8], how='drop')
         sk.iter([(), (2,), (2, 4, 8)])
 
-    See Also:
+    See also:
         :func:`chunks`
         :func:`partition`
     """
     if how == "values":
-        return Iter(partitionby(to_callable(func), seq))
+        return iter(toolz.partitionby(to_callable(func), seq))
     elif how == "pairs":
-        return Iter(_chunks_pairs(func, seq))
+        return iter(_chunks_pairs(func, seq))
     elif how == "left":
-        return Iter(_chunks_left(func, seq))
+        return iter(_chunks_left(func, seq))
     elif how == "right":
-        return Iter(_chunks_right(func, seq))
+        return iter(_chunks_right(func, seq))
     elif how in ("drop", "split"):
-        return Iter(_chunks_split(func, seq))
+        return iter(_chunks_split(func, seq))
+    elif how == "repeat":
+        return iter(_chunks_repeat(func, seq))
     else:
         raise ValueError(f"invalid method: {how!r}")
 
@@ -247,6 +263,21 @@ def _chunks_left(pred, seq):
         yield tuple(buf)
 
 
+def _chunks_repeat(pred, seq):
+    buf = []
+    add = buf.append
+    clear = buf.clear
+
+    for x in seq:
+        add(x)
+        if pred(x) and buf:
+            yield tuple(buf)
+            clear()
+            add(x)
+    if buf:
+        yield tuple(buf)
+
+
 def _chunks_split(pred, seq):
     buf = []
     add = buf.append
@@ -261,8 +292,7 @@ def _chunks_split(pred, seq):
     yield tuple(buf)
 
 
-@fn.curry(2)
-def window(n: int, seq: Seq) -> Iter:
+def window(n: int, seq: Iterable[a], /) -> iter[tuple[a, ...]]:
     """
     Return a sequence of overlapping sub-sequences of size n.
 
@@ -274,22 +304,23 @@ def window(n: int, seq: Seq) -> Iter:
         >>> [''.join(p) for p in sk.window(2, "hello!")]  # noqa
         ['he', 'el', 'll', 'lo', 'o!']
 
-    See Also:
+    See also:
         :func:`pairs`
     """
-    return sliding_window(n, seq)
+    return toolz.sliding_window(n, seq)
 
 
-@fn.curry(1)
-def pairs(seq: Seq, *, prev=NOT_GIVEN, next=NOT_GIVEN) -> Iter:
+def pairs(
+    seq: Iterable[a], /, *, prev: a = NOT_GIVEN, next: a = NOT_GIVEN
+) -> iter[tuple[a, a]]:
     """
     Returns an iterator of a pair adjacent items.
 
-    This is similar to window(2), but requires a fill value specified either
-    with ``prev`` or ``next`` to select if it will form pairs with the preceeding
+    This is similar to window(2), but accept a fill value specified either
+    with ``prev`` or ``next`` to select if it will form pairs with the preceding
     of the following value.
 
-    It must specify either prev or next, never both.
+    It can specify either prev or next, never both.
 
     Args:
         seq:
@@ -307,17 +338,17 @@ def pairs(seq: Seq, *, prev=NOT_GIVEN, next=NOT_GIVEN) -> Iter:
         >>> [''.join(p) for p in sk.pairs("hello!", next="!")]  # noqa
         ['he', 'el', 'll', 'lo', 'o!', '!!']
 
-    See Also:
+    See also:
         :func:`window`
     """
     if prev is NOT_GIVEN and next is NOT_GIVEN:
-        raise TypeError("must specify either prev or next keyword arguments")
+        return window(2, seq)  # type: ignore
     elif prev is NOT_GIVEN:
         a, b = tee(seq)
         _next(b, None)
-        return Iter(zip(a, chain(b, [next])))
+        return iter(zip(a, chain(b, [next])))
     elif next is NOT_GIVEN:
-        return Iter(_pairs_prev(seq, prev))
+        return iter(_pairs_prev(seq, prev))
     else:
         raise TypeError("must specify either prev or next keyword arguments, not both")
 
@@ -329,10 +360,7 @@ def _pairs_prev(seq, prev):
         prev = x
 
 
-@fn.curry(2)
-def partition(
-    key: Union[int, Pred], seq: Seq, sep: bool = False
-) -> Union[Tuple[Seq, Seq], Tuple[list, list, Seq]]:
+def partition(key: int | Pred[a], seq: Iterable[a]) -> tuple[iter[a], iter[a]]:
     """
     Partition sequence in two.
 
@@ -343,10 +371,6 @@ def partition(
             An integer index or predicate used to partition sequence.
         seq:
             Input sequence.
-        sep:
-            If True, split into 3 parts: head, sep, tail, analogously to the
-            builtin str.partition function. The first two elements are lists
-            and can be easily tested for emptiness.
 
     Examples:
         >>> a, b = sk.partition(2, [5, 4, 3, 2, 1])
@@ -364,40 +388,35 @@ def partition(
         >>> sk.partition((X == 3), [1, 2, 3, 4, 5], sep=True)
         ([1, 2], [3], sk.iter([4, 5]))
     """
-    if sep:
-        seq = iter(seq)
-        first = []
-        sep: list = []
-
-        if isinstance(key, int):
-            for i, x in zip(range(key + 1), seq):
-                first.append(x)
-            if len(first) == key + 1:
-                sep = [first.pop()]
-        else:
-            for x in seq:
-                if key(x):
-                    sep.append(x)
-                    break
-                else:
-                    first.append(x)
-        return first, sep, Iter(seq)
-
     if isinstance(key, int):
         a, b = tee(seq)
-        return Iter(islice(a, key)), Iter(islice(b, key, None))
+        return iter(islice(a, key)), iter(islice(b, key, None))
     else:
         pred = to_callable(key)
-        a, b = tee((pred(x), x) for x in seq)
+        a_, b_ = tee((pred(x), x) for x in seq)
         value = lambda x: x[1]
         return (
-            Iter(map(value, takewhile(lambda x: not x[0], a))),
-            Iter(map(value, dropwhile(lambda x: not x[0], b))),
+            iter(map(value, takewhile(lambda x: not x[0], a_))),
+            iter(map(value, dropwhile(lambda x: not x[0], b_))),
         )
 
 
-@fn
-def distribute(n: int, seq: Seq) -> Tuple[Seq, ...]:
+@overload
+def distribute(n: Literal[2], seq: Iterable[a]) -> tuple[iter[a], iter[a]]:
+    ...
+
+
+@overload
+def distribute(n: Literal[3], seq: Iterable[a]) -> tuple[iter[a], iter[a], iter[a]]:
+    ...
+
+
+@overload
+def distribute(n: int, seq: Iterable[a]) -> tuple[iter[a], ...]:
+    ...
+
+
+def distribute(n, seq):
     """
     Distribute items of seq into n different sequences.
 
@@ -415,11 +434,10 @@ def distribute(n: int, seq: Seq) -> Tuple[Seq, ...]:
         sk.iter([1, 3, 5])
     """
     results = tee(seq, n)
-    return tuple(Iter(islice(it, i, None, n)) for i, it in enumerate(results))
+    return tuple(iter(islice(it, i, None, n)) for i, it in enumerate(results))
 
 
-@generator
-def inits(seq: Seq) -> Seq:
+def inits(seq: Iterable[a], /) -> Iterable[a]:
     """
     Lazily return all sub-sequences at beginning of seq.
 
@@ -427,9 +445,13 @@ def inits(seq: Seq) -> Seq:
         >>> [''.join(sub) for sub in inits('abc')]  # noqa
         ['', 'a', 'ab', 'abc']
     """
+    return iter(_inits(seq))
+
+
+def _inits(seq):
     seq, consume = tee(seq)
     i = 0
-    for i, x in enumerate(consume):
+    for i, _ in enumerate(consume):
         seq, consume = tee(seq)
         yield islice(consume, i)
     seq, consume = tee(seq)

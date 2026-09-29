@@ -1,7 +1,7 @@
 import operator as op
 
 from .node_iterators import NodeOrLeafIteratorMixin
-from ...typing import Optional, Sequence, Callable
+from typing import Optional, Sequence, Callable
 
 
 class NodeOrLeaf(NodeOrLeafIteratorMixin):

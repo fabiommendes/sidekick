@@ -1,5 +1,5 @@
 [run]
-source = sidekick/
+source = "sidekick-*/src/sidekick/"
 branch = True
 
 

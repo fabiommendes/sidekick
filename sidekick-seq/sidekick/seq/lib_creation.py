@@ -1,19 +1,20 @@
+import builtins
 import itertools
 from collections import deque
-from numbers import Real
+from typing import Sequence, Callable, Iterable, TYPE_CHECKING
 
-from .iter import generator, Iter
-from .util import to_index_seq, INDEX_DOC
-from ..functions import fn, to_callable
-from ..typing import Seq, TYPE_CHECKING, T, Callable, Index
+from .iter import iter
+from .util import to_callable, to_index_seq, Unpack, Ts, b, a, num, INDEX_DOC, NOT_GIVEN
+
 
 if TYPE_CHECKING:
-    from .. import api as sk  # noqa: F401
-    from ..api import X, Y  # noqa: F401
+    from sidekick import api as sk  # noqa: F401
+    from sidekick.api import X, Y  # noqa: F401
+
+_iter = builtins.iter
 
 
-@fn.curry(1)
-def cycle(seq, n=None):
+def cycle(seq: Iterable[a], /, *, n: int = NOT_GIVEN) -> iter[a]:
     """
     Return elements from the iterable until it is exhausted.
     Then repeat the sequence indefinitely.
@@ -30,13 +31,13 @@ def cycle(seq, n=None):
         >>> sk.cycle([1, 2, 3])
         sk.iter([1, 2, 3, 1, 2, 3, ...])
     """
-    if n is not None:
-        return Iter(_ncycle(n, seq))
-    return Iter(itertools.cycle(seq))
+    if n is NOT_GIVEN:
+        return iter(itertools.cycle(seq))
+    return iter(_cycle_n(n, seq))
 
 
 # This implementation accepts infinite sequences
-def _ncycle(n, seq):
+def _cycle_n(n, seq):
     buf = []
     add = buf.append
     for x in seq:
@@ -45,8 +46,7 @@ def _ncycle(n, seq):
     yield from itertools.chain.from_iterable(repeat(buf, n - 1))
 
 
-@fn.curry(1)
-def repeat(obj, times=None):
+def repeat(obj: a, /, *, times: int = NOT_GIVEN) -> iter[a]:
     """
     Returns the object for the specified number of times.
 
@@ -56,14 +56,12 @@ def repeat(obj, times=None):
         >>> sk.repeat(42, times=5)
         sk.iter([42, 42, 42, 42, 42])
     """
-    if times is None:
-        return Iter(itertools.repeat(obj))
-    return Iter(itertools.repeat(obj, times))
+    if times is NOT_GIVEN:
+        return iter(itertools.repeat(obj))
+    return iter(itertools.repeat(obj, times))
 
 
-@fn
-@generator
-def repeatedly(func, /, *args, **kwargs):
+def repeatedly(func: Callable[..., a], /, *args, **kwargs) -> iter[a]:
     """
     Make infinite calls to a function with the given arguments.
 
@@ -73,6 +71,10 @@ def repeatedly(func, /, *args, **kwargs):
         >>> sk.repeatedly(list, (1, 2))
         sk.iter([[1, 2], [1, 2], [1, 2], [1, 2], [1, 2], ...])
     """
+    return iter(_repeatedly(func, args, kwargs))
+
+
+def _repeatedly(func, args, kwargs):
     func = to_callable(func)
     try:
         while True:
@@ -81,34 +83,22 @@ def repeatedly(func, /, *args, **kwargs):
         yield from stop_seq(e)
 
 
-@fn
-@generator
-def singleton(obj: T, expand: bool = False) -> Iter[T]:
+def singleton(obj: a) -> iter[a]:
     """
     Return iterator with a single object.
 
     Args:
         obj:
             Single element of sequence.
-        expand:
-            If True, return elements of object if it is iterable or wrap it into
-            a singleton iterator if it is not.
 
     Examples:
         >>> sk.singleton(42)
         sk.iter([42])
     """
-    if expand:
-        try:
-            yield from obj
-        except TypeError:
-            pass
-    yield obj
+    return iter(iter([obj]))
 
 
-@fn.curry(2)
-@generator
-def unfold(func, seed):
+def unfold(func: Callable[[b], tuple[b, a]], seed: b) -> iter[a]:
     """
     Invert a fold.
 
@@ -121,6 +111,10 @@ def unfold(func, seed):
         >>> sk.unfold(lambda x: (x + 1, x), 0)
         sk.iter([0, 1, 2, 3, 4, 5, ...])
     """
+    return iter(_unfold(func, seed))
+
+
+def _unfold(func, seed):
     try:
         elem = func(seed)
         while elem is not None:
@@ -131,8 +125,25 @@ def unfold(func, seed):
         yield from stop_seq(e)
 
 
-@fn.curry(2)
-def iterate(func: Callable[..., T], x: T, *args, index: Index = None):
+# @overload
+# def iterate(
+#     func: Callable[[T], T], x: T, /, *, index: int | Iterable[T] | None = None
+# ) -> iter[T]:
+#     ...
+
+
+# @overload
+# def iterate(
+#     func: Callable[[T, T], T], x: T, y: T, /, *, index: int | Iterable[T] | None = None
+# ) -> iter[T]:
+#     ...
+
+
+def iterate(
+    func: Callable[[Unpack[Ts]], a],
+    *args: Unpack[Ts],
+    index: int | Iterable[a] = NOT_GIVEN,
+) -> iter[a]:
     f"""
     Repeatedly apply a function func to input.
 
@@ -181,69 +192,54 @@ def iterate(func: Callable[..., T], x: T, *args, index: Index = None):
         >>> collatz(10)
         sk.iter([10, 5, 16, 8, 4, 2, ...])
 
-    See Also:
+    See also:
         :func:`repeatedly` - call function with the same arguments.
     """
     func = to_callable(func)
-    index = to_index_seq(index)
+    index_seq = to_index_seq(index)
 
-    if index is None and not args:
-        out = _iterate(func, x)
-    elif index is None:
-        out = _iterate_n(func, (x, *args))
+    if index_seq is None:
+        out = _iterate(func, args)
     else:
-        if not args:
-            out = _iterate_indexed(func, index, x)
-        else:
-            out = _iterate_indexed_n(func, index, (x, *args))
-
-    return Iter(out)
+        out = _iterate_indexed(func, index_seq, args)
+    return iter(out)
 
 
-def _iterate(func, x):
+def _iterate(func, args):
     try:
-        yield x
-        while True:
-            x = func(x)
-            yield x
+        yield from args
+        match args:
+            case (x,):
+                while True:
+                    x = func(x)
+                    yield x
+            case (x, y):
+                x, y = args
+                while True:
+                    x, y = y, func(x, y)
+                    yield y
+            case _:
+                args = deque(args, len(args))
+                while True:
+                    new = func(*args)
+                    args.append(new)
+                    yield new
     except StopIteration as e:
         yield from stop_seq(e)
 
 
-def _iterate_n(func, args):
+def _iterate_indexed(func, index, args):
     n = len(args)
     try:
         yield from args
-        if n == 2:
-            x, y = args
-            while True:
-                x, y = y, func(x, y)
-                yield y
-        else:
-            args = deque(args, n)
-            while True:
-                new = func(*args)
-                args.append(new)
-                yield new
-    except StopIteration as e:
-        yield from stop_seq(e)
-
-
-def _iterate_indexed(func, index, x):
-    try:
-        yield x
-        for i in index:
-            x = func(i, x)
-            yield x
-    except StopIteration as e:
-        yield from stop_seq(e)
-
-
-def _iterate_indexed_n(func, index, args):
-    n = len(args)
-    try:
-        yield from args
-        if n == 2:
+        if n == 0:
+            yield from map(func, index)
+        elif n == 1:
+            x = args[0]
+            for i in index:
+                x = func(i, x)
+                yield x
+        elif n == 2:
             x, y = args
             for i in index:
                 x, y = y, func(i, x, y)
@@ -258,12 +254,26 @@ def _iterate_indexed_n(func, index, args):
         yield from stop_seq(e)
 
 
-class _nums(fn):
+class Nums:
     """
-    Enrich the nums() function.
+    Create numeric sequences.
+
+    Examples:
+        >>> sk.nums(0, 1, 2, ...)
+        sk.iter([0, 1, 2, 3, 4, 5, ...])
     """
 
-    def __getitem__(self, item):
+    __slots__ = ()
+
+    def __call__(self, *args: int) -> iter[int]:
+        n = len(args)
+        if n == 0:
+            return iter(itertools.count(0))
+        elif n == 1:
+            return iter(itertools.count(args[0]))
+        return iter(self.from_sequence(args))
+
+    def __getitem__(self, item) -> iter[num]:
         if isinstance(item, tuple):
             return self.from_sequence(item)
         elif isinstance(item, slice):
@@ -272,77 +282,40 @@ class _nums(fn):
             raise TypeError
 
     def __iter__(self):
-        return Iter(itertools.count())
+        return itertools.count()
 
-    def from_sequence(self, seq):
+    def from_sequence(self, seq: Sequence[num]) -> iter[num]:
         """
         Create iterator from sequence of numbers.
         """
-        return Iter(self._from_sequence(seq))
+        return iter(_from_sequence(seq))
 
-    def _from_sequence(self, seq):
-        if len(seq) < 2:
-            raise ValueError("sequence must have at least 2 elements")
-
-        idx = seq.index(...)
-        if idx == 0:
-            raise ValueError("range cannot start with an ellipsis")
-
-        idx_ = idx - len(seq)
-
-        if idx_ == -1:
-            n_args = len(seq)
-            if n_args == 2:
-                yield from itertools.count(seq[0])
-            else:
-                *start, a, b, _ = seq
-                yield from start
-                yield from itertools.count(a, b - a)
-
-        elif idx_ == -2:
-            n_args = len(seq)
-            if n_args == 3:
-                a, _, stop = seq
-                step = 1
-            else:
-                *start, a, b, _, stop = seq
-                step = b - a
-                yield from start
-            while a <= stop:
-                yield a
-                a += step
-
-        else:
-            prefix = seq[: idx + 1]
-            suffix = seq[idx + 1 :]
-            yield from self._from_sequence(prefix)
-            if ... in suffix:
-                raise NotImplementedError("contains multiple ranges")
-            yield from suffix
-
-    def from_slice(self, slice):
+    def from_slice(self, slice: slice):
         """
         Create iterator from slice object.
         """
 
         start = 0 if slice.start is None else slice.start
         step = 1 if slice.step is None else slice.step
-        return self.count(start, step, stop=slice.step)
+        return iter(self.count(start, step, stop=slice.step))
 
-    def count(self, start=0, step=1, stop=None):
+    def count(
+        self, start: int = 0, step: int = 1, stop: int | None = None
+    ) -> iter[int]:
         """
         Return values starting from start advancing by the given step.
         """
         out = itertools.count(start, step)
-        if stop is not None:
-            out = itertools.takewhile(lambda x: x < stop, out)
-        return Iter(out)
+        if stop is None:
+            return iter(out)
+        stop_: int = stop
+        return iter(itertools.takewhile(lambda x: x < stop_, out))
 
-    def evenly_spaced(self, a: Real, b: Real, n: int) -> Iter:
+    def evenly_spaced(self, a: num, b: num, n: int) -> iter[num]:
         """
         Return a sequence of n evenly spaced numbers from a to b.
         """
-        return Iter(_evenly_spaced(a, b, n))
+        return iter(_evenly_spaced(a, b, n))
 
 
 def _evenly_spaced(a, b, n):
@@ -354,21 +327,48 @@ def _evenly_spaced(a, b, n):
         a += dt
 
 
-@_nums
-def nums(*args: int) -> Iter[int]:
-    """
-    Create numeric sequences.
+def _from_sequence(seq: Sequence[num]):
+    if len(seq) < 2:
+        raise ValueError("sequence must have at least 2 elements")
 
-    Examples:
-        >>> sk.nums(0, 1, 2, ...)
-        sk.iter([0, 1, 2, 3, 4, 5, ...])
-    """
-    n = len(args)
-    if n == 0:
-        return Iter(itertools.count(0))
-    elif n == 1:
-        return Iter(itertools.count(args[0]))
-    return Iter(nums.from_sequence(args))
+    idx = seq.index(...)
+    if idx == 0:
+        raise ValueError("range cannot start with an ellipsis")
+
+    idx_ = idx - len(seq)
+
+    if idx_ == -1:
+        n_args = len(seq)
+        if n_args == 2:
+            yield from itertools.count(seq[0])
+        else:
+            *start, a, b, _ = seq
+            yield from start
+            yield from itertools.count(a, b - a)
+
+    elif idx_ == -2:
+        n_args = len(seq)
+        if n_args == 3:
+            a, _, stop = seq
+            step = 1
+        else:
+            *start, a, b, _, stop = seq
+            step = b - a
+            yield from start
+        while a <= stop:
+            yield a
+            a += step
+
+    else:
+        prefix = seq[: idx + 1]
+        suffix = seq[idx + 1 :]
+        yield from _from_sequence(prefix)
+        if ... in suffix:
+            raise NotImplementedError("contains multiple ranges")
+        yield from suffix
+
+
+nums = Nums()
 
 
 def stop_seq(e):

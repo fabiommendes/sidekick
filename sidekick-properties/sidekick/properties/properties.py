@@ -17,6 +17,7 @@ D = TypeVar("D")
 
 
 __doctest_skip__ = ["lazy", "delegate_to"]  # requires preparation code
+__all__ = ["lazy", "delegate_to", "alias", "property", "Prop"]
 
 _property = property
 ATTR_ERROR_MSG = """An AttributeError was raised when evaluating the {name}
@@ -46,8 +47,7 @@ class Prop(Generic[T1, T2]):
     """
     A property that produces values of type T1 and accepts values of type T2.
 
-    Often those types are the same, but we cannot express it in Python's
-    type system.
+    Often those types are the same.
     """
 
     if TYPE_CHECKING:
@@ -71,7 +71,7 @@ class Prop(Generic[T1, T2]):
 def lazy(
     *,
     shared: bool = False,
-    name: str = None,
+    name: str | None = None,
     attr_error: Union[Type[Exception], bool] = False,
 ) -> Callable[[Callable[[Any], T]], Prop[T, T]]:
     ...
@@ -82,13 +82,13 @@ def lazy(
     func: Callable[[Any], T],
     *,
     shared: bool = False,
-    name: str = None,
+    name: str | None = None,
     attr_error: Union[Type[Exception], bool] = False,
 ) -> T:
     ...
 
 
-def lazy(  # type: ignore
+def lazy(
     func=None,
     *,
     shared=False,
@@ -220,8 +220,6 @@ def property(fget=None, fset=None, fdel=None, doc=None):
     return _Property(fget, fset, fdel, doc)
 
 
-
-
 @overload
 def delegate_to(attr: str, *, mutable: bool = False) -> Any:
     ...
@@ -300,7 +298,9 @@ def delegate_to(attr, *, transform=None, prepare=None, **kwargs):
     if transform is not None or prepare is not None:
         if mutable is not None:
             raise TypeError("cannot define mutable when a transform is given.")
-        return _TransformingDelegate(attr, name or None, transform=transform, prepare=prepare)
+        return _TransformingDelegate(
+            attr, name or None, transform=transform, prepare=prepare
+        )
 
     if mutable:
         return _MutableDelegate(attr, name or None)
@@ -545,7 +545,7 @@ class _TransformingDelegate(_MutableDelegate):
     def __set__(self, obj, value):
         if self.prepare is None:
             raise AttributeError(self.attr)
-        
+
         value = self.prepare(value)
         owner = getattr(obj, self.attr)
         name = self.name or find_descriptor_name(self, type(obj))

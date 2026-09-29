@@ -9,3 +9,6 @@ except ImportError as exc:
 
 from .tree import leaves, trees, shallow_trees
 from .base import atoms, identifiers, kwargs, fcall, sized, AtomT
+
+
+__version__ = "0.0.1"

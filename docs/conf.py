@@ -64,7 +64,7 @@ copyright = "2019, %s" % author
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
-with open(repo_dir / "sidekick" / "__init__.py") as fd:
+with open(repo_dir / "sidekick-core" / "sidekick" / "core" / "__init__.py") as fd:
     data = fd.read()
     m = re.search(r'__version__\s*=\s*"(?P<version>[\d.]+)"', data)
     release = m.group("version")
@@ -78,7 +78,7 @@ version = ".".join(release.split(".")[:2])
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
